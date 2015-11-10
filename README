@@ -3,3 +3,5 @@
 The main logic resides in the FeatureExtraction library.
 
 sample_usage.py provides simple sample code to use the library.
+
+NOTE: The module assumes that the user has NumPy and scikitlearn installed on their development environment.
