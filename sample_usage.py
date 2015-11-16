@@ -12,7 +12,7 @@ import json
 import numpy as np
 from FeatureExtractor import obtain_molecules
 from FeatureExtractor import molecule_feature_matrix
-from DetectCorrelations import correlation_remover
+from DetectCorrelations import correlation_identifier
 
 DATASET_NUMBER = '03'
 DATASET_DIRECTORY = '5HT1A_Agonist/'
@@ -62,7 +62,7 @@ def main():
     # Splice the matrix so we don't count the final characteristic feature
     # (1 or 0 ). We limit the amount of features we want to be the top 100.
     # This amount can be changed to fit our needs.
-    key_indices_actives = correlation_remover.identify_uniform_features( \
+    key_indices_actives = correlation_identifier.identify_uniform_features( \
         np.array(actives_feature_matrix)[:,0:len(actives_feature_matrix[0])-1], 100)
 
     print("Key features for the active features:")
@@ -72,7 +72,7 @@ def main():
     # No inactives are in the dataset, so can't really do anything with them
     if inactives_feature_matrix != []:
     # Perform the same procedure for the inactive reactants
-        key_indices_inactives = correlation_remover.identify_uniform_features( \
+        key_indices_inactives = correlation_identifier.identify_uniform_features( \
             np.array(inactives_feature_matrix)[:,0:len(actives_feature_matrix[0])-1], 100)
 
     print("Key features for the inactive features:")
