@@ -14,16 +14,26 @@ import feature_imputer
 
 __author__="Aakash Ravi"
 
-def retrieve_features( descriptor_file, molecules_to_fragments_file, molecule_smiles, active_flag ):
+def retrieve_features( descriptor_file, molecules_to_fragments_file,
+    molecule_smiles, active_flag, feature_array ):
+
     "Parameter 'molecule_smiles' is an array of molecule smiles we want to fetch the features for, \
     the function returns a matrix of *average* features of the *fragments* for each smile in the array. \
     The function also requires an active_flag, which will then trigger an automatic adding of a '1' feature \
-    to each molecule, indicating that it is active. Similarly with '0' and inactive."
+    to each molecule, indicating that it is active. Similarly with '0' and inactive. \
+    Finally, the feature_array is an array of features that the function will deem relevant. \
+    We may have some degenerate features (i.e. where all the values are 0) so the function will \
+    remove those features from the array and return only the non degenrate ones."
 
     # Define the final feature matrix holding the average features of the molecule
     # The average is computed by taking the features of each fragment of the molecule
     # and dividing it by the number of fragments in that molecule
     final_feature_matrix = []
+
+    # Take care of degenerate case where no molecules are inputted for analysis
+    if molecule_smiles == []:
+        print("ERROR: No molecules inputted for feature retrieval")
+        return []
 
     with open(molecules_to_fragments_file, 'r') as input_stream:
 
@@ -100,4 +110,53 @@ def retrieve_features( descriptor_file, molecules_to_fragments_file, molecule_sm
                 final_feature_matrix.append(final_feature_vector)
                 print(molecule_smiles[molecule_index] + ' successfully analyzed')
 
-        return final_feature_matrix
+        # Identify non degenerate features
+        # Cannot index nested list with a multidimensional index,
+        # so need to do some fancy indexing
+        non_degenerate_features = \
+        identify_non_degenerate_features( np.array(final_feature_matrix)[:,0:(len(final_feature_matrix[0])-1)], \
+            feature_array)
+        
+        # Add the final characteristic feature
+        non_degenerate_features.append(len(final_feature_matrix[0])-1)
+        # Take only the non degenerate features from the feature matrix
+        non_degenerate_feature_matrix = np.array(final_feature_matrix)[:,non_degenerate_features]
+
+        return non_degenerate_feature_matrix
+
+def identify_non_degenerate_features( feature_matrix, feature_array ):
+
+    "This function will remove any features that have the exact same value \
+    for all molecules. Such an event is incredibly unlikely as this implies that \
+    all features in every fragment of every molecule have the same value - an \
+    incredibly unlikely event. Thus we deem such features redundant and remove them."
+
+    non_degenerate_feature_indices = []
+
+    # Loop through all the features of the feature_matrix
+    for j in range(0,len(feature_matrix[0])):
+
+        # Cannot index nested list with a multidimensional index.
+        # so need to do some fancy indexing
+        current_feature = np.array(feature_matrix)[:,j]
+
+        # Val is the feature value for one observations, if all observations
+        # have this same val, we know that the feature is degenerate
+        val = current_feature[0]
+        equal_range =0
+
+        for i in range (0,len(current_feature)):
+            if current_feature[i] == val:
+                equal_range +=1
+            else:
+                break
+
+        # If equal range is not equal to the length, we know that every observation
+        # didn't have the same value for this feature, therefore it is not degenerate.
+        # And so we add it to the list of non-degenerate indices and also add this
+        # indice to the feature_array to keep track of the list of important features
+        if equal_range != len(current_feature):
+            non_degenerate_feature_indices.append(j)
+            feature_array.append(j)
+
+    return non_degenerate_feature_indices
