@@ -91,10 +91,10 @@ def FlushData(output_filename, data):
 def FlushClassData(output_filename, data):
     # Write the first entry
     with open(output_filename, 'w') as f_handle:
-        f_handle.write(str(data[0].key) + ',' + str(data[0].molecule) + ',' + str(data[0].active_flag) + '\n')
+        f_handle.write("key" + ',' + "molecule" + ',' + "active_flag" + '\n')
     # Append the rest
     with open(output_filename, 'a') as f_handle:
-        for i in range(1, len(data)):
+        for i in range(0, len(data)):
             # f_handle.write("%d,%s,%d,\n" %(data[i].key, data[i].molecule,data[i].active_flag))
             f_handle.write(str(data[i].key) + "," + str(data[i].molecule) + "," + str(data[i].active_flag) + "\n")
 
