@@ -76,12 +76,17 @@ def AddClassData(all_clusters, active_molecule_list, inactive_molecule_list,
 
 # Method for flushing the identification key of a data point, and the data point itself
 def FlushData(output_filename, data):
-    # Write the first entry
+    # Write the column name entries
     with open(output_filename, 'w') as f_handle:
-        np.savetxt(f_handle, data[0], delimiter=",", fmt="%f")
+        f_handle.write("key" + ',')
+        for i in range(1, len(data[0][0])):
+            if i < len(data[0][0])-1:
+                f_handle.write("Dimension " + str(i) + ',')
+            else:
+                f_handle.write("Dimension " + str(i) + '\n')
     # Append the rest
     with open(output_filename,'a') as f_handle:
-        for i in range(1, len(data)): 
+        for i in range(0, len(data)):
             np.savetxt(f_handle, data[i], delimiter=",", fmt="%f")
 
 # Method for flushing the key of a data point along with the specific molecule

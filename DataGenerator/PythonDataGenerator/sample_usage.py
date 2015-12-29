@@ -35,7 +35,7 @@ def main():
     # Add class data about the point (the molecule of the point, its activity, etc.)
     # We would like a ratio of 60% active clusters and 40% inactive clusters
     data_with_classes = generate_clusters.AddClassData(labelled_clusters, ["C15H20O4","Al2Be3O18Si6"], \
-        ["C6H10O7"," C12H24O2"], .6)
+        ["C6H10O7","C12H24O2"], .6)
 
     # Flush the data points
     generate_clusters.FlushClassData("fragment_data_points.csv", data_with_classes)
