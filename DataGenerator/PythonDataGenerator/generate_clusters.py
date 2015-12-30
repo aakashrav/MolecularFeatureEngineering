@@ -123,11 +123,11 @@ def LabelDataWithKeys(clusters):
 # Generates several subspace clusters, using random seed values for the center
 def GenerateSeveralClusters(clusters, clustered_dimensions, unclustered_dimensions, 
     amount_of_clusters, points_per_cluster, cluster_radius, unclustered_subspace_range,
-    distance_ratio_between_clusters, max_dimensional_range):
+    distance_ratio_between_clusters, max_shifting_range):
 
     # Generate a starting cluster center, working as a seed to generate future clusters.
     center_seed = []
-    random_center_seed = random.randint(0,max_dimensional_range)
+    random_center_seed = random.randint(0,max_shifting_range)
     # Make sure that the clustered dimensions are quite close to eachother
     for i in range(0, clustered_dimensions):
         center_seed.append(random_center_seed)
@@ -144,9 +144,9 @@ def GenerateSeveralClusters(clusters, clustered_dimensions, unclustered_dimensio
         # Add this cluster to our list of clusters
         clusters.append(cluster)
         # Generate a new center for the next cluster, we will shift the center by our
-        # intercluster distance
+        # at least our inter_cluster_distance but at most our max_shifting_range
         for k in range(0, len(center_seed)):
-            random_shift = random.randint(inter_cluster_distance, max_dimensional_range)
+            random_shift = random.randint(inter_cluster_distance, max_shifting_range)
 
             # Randomly choose positive or negative shift
             pos_or_neg = random.randint(0,1)

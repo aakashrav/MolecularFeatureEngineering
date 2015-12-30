@@ -9,7 +9,7 @@ def main():
     # Number of unclustered dimensions
     num_unclustered_dimensions = 3
     # Amount of clusters 
-    amount_of_clusters = 5
+    amount_of_clusters = 10
     # Points per cluster
     amount_of_points = 20
     # Radius (or deviation from the center) in each cluster
@@ -18,13 +18,12 @@ def main():
     unclustered_noise_range = 100
     # The minimum distance between two clusters
     distance_ratio_between_clusters = 3
-    # The maximum range of centers for each dimension (centers coordinates
-    # should always stay between 0 and this amount.
-    max_dimensional_range = 200
+    # The maximum distance between two sequentially generated clusters
+    max_shifting_range = 200
 
     generate_clusters.GenerateSeveralClusters(clusters, num_unclustered_dimensions, num_unclustered_dimensions,
         amount_of_clusters, amount_of_points, cluster_radius, unclustered_noise_range,
-        distance_ratio_between_clusters, max_dimensional_range)
+        distance_ratio_between_clusters, max_shifting_range)
     
     # Label the data points in our clusters with identification keys
     labelled_clusters = generate_clusters.LabelDataWithKeys(clusters)
