@@ -176,6 +176,8 @@ def GenerateSubspaceCluster(cluster, clustered_dimensions, unclustered_dimension
 
     clustered_vectors, labels_true = make_blobs(n_samples=points_in_cluster, centers=center_vector,
         cluster_std=final_deviation_per_dimension, random_state=1)
+    
+    pre_random_permutation_cluster = []
 
     # Now add random noise for the unclustered dimensions
     for i in range(1, len(clustered_vectors)):
@@ -185,7 +187,25 @@ def GenerateSubspaceCluster(cluster, clustered_dimensions, unclustered_dimension
             clustered_vectors[i,k] = random_number_in_range
 
         # Add this final vector to the list of points    
-        cluster.append(clustered_vectors[i])
+        pre_random_permutation_cluster.append(clustered_vectors[i])
+
+    # Shuffle the cluster's dimensions so that we have some variety
+    random_permutation = np.arange(clustered_dimensions + unclustered_dimensions)
+    np.random.shuffle(random_permutation)
+
+    # Sort through the cluster and map the data points according to this permutation
+    # of the dimensions
+    for i in range(1, len(pre_random_permutation_cluster)):
+        permuted_data_point = []
+        PerformPermutationMapping(pre_random_permutation_cluster[i],permuted_data_point, \
+            random_permutation)
+        cluster.append(permuted_data_point)
 
     #Return the cluster for good measure
     return cluster
+
+# Perform the permutation on the arr, and deposit contents into newarr
+def PerformPermutationMapping(arr,newarr,permutation):
+    for j in range(0,len(arr)):
+        newarr.append(arr[permutation[j]])
+
