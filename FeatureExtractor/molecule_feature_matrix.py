@@ -12,6 +12,8 @@ import numpy as np
 import re
 import feature_imputer
 
+NON_FRAGMENT_VERSION = 0
+
 __author__="Aakash Ravi"
 
 def retrieve_features( descriptor_file, molecules_to_fragments_file,
@@ -38,6 +40,11 @@ def retrieve_features( descriptor_file, molecules_to_fragments_file,
     with open(molecules_to_fragments_file, 'r') as input_stream:
 
         molecules_to_fragments = json.load(input_stream)
+
+        # Keep a list of already found fragments so we don't
+        # redundantly analyze fragments that have already been
+        # done
+        found_fragments = []
 
         # Perform this feature averaging procedure for each molecule in the array
         # 'molecule_smiles', and return a matrix of found values
@@ -73,19 +80,33 @@ def retrieve_features( descriptor_file, molecules_to_fragments_file,
                     line = line.rstrip().split(',')
                     name = line[0][1:-1]
 
-                    # We found a desired fragment of the molecule, so add this to the 
-                    # list of features
-                    if name in fragments:
-                        print("Found fragment: " + name)
+                    if NON_FRAGMENT_VERSION:
+                        if (name in fragments):
+                            print("Found fragment: " + name)
 
-                        # Here we just copy the newly obtained features into our feature matrix
-                        # If the feature is not a number, we explicitly input np.nan
-                        for j in range(1, len(line)-1):
-                            try:
-                                molecule_feature_matrix[index][j] = float(line[j])
-                            except ValueError:
-                                molecule_feature_matrix[index][j] = np.nan
-                        index+=1
+                            # Here we just copy the newly obtained features into our feature matrix
+                            # If the feature is not a number, we explicitly input np.nan
+                            for j in range(1, len(line)-1):
+                                try:
+                                    molecule_feature_matrix[index][j] = float(line[j])
+                                except ValueError:
+                                    molecule_feature_matrix[index][j] = np.nan
+                            index+=1
+                    else:
+                        # We found a desired fragment of the molecule, so add this to the 
+                        # list of features
+                        if (name in fragments) and (name not in found_fragments):
+                            print("Found fragment: " + name)
+                            found_fragments.append(name)
+
+                            # Here we just copy the newly obtained features into our feature matrix
+                            # If the feature is not a number, we explicitly input np.nan
+                            for j in range(1, len(line)-1):
+                                try:
+                                    molecule_feature_matrix[index][j] = float(line[j])
+                                except ValueError:
+                                    molecule_feature_matrix[index][j] = np.nan
+                            index+=1
 
 
                 # Here we call the imputer API to impute NaN
@@ -96,18 +117,25 @@ def retrieve_features( descriptor_file, molecules_to_fragments_file,
 
                 # Compute average features over all fragments to 
                 # return final averaged features of the molecule
-                final_feature_vector = np.mean(molecule_feature_matrix, axis=0)
+                if NON_FRAGMENT_VERSION:
+                    final_feature_vector = np.mean(molecule_feature_matrix, axis=0)
 
                 # Add '1' at the end if its an active molecule '0' if not
-                if active_flag:
-                    final_feature_vector[len(header)-1] = 1
+                if NON_FRAGMENT_VERSION:
+                        final_feature_vector[len(header)-1] = active_flag
                 else:
-                    final_feature_vector[len(header)-1] = 0
+                    for ind in range(0, len(molecule_feature_matrix)):
+                        molecule_feature_matrix[ind][len(header)-1] = active_flag
 
                 # And finally we add the new feature vector to our matrix of averaged features
                 # At the end, this matrix will contain the averaged features for every molecule
                 # inputted in parameter 'molecule_smiles'
-                final_feature_matrix.append(final_feature_vector)
+                if NON_FRAGMENT_VERSION:
+                    final_feature_matrix.append(final_feature_vector)
+                else:
+                    for ind in range(0, len(molecule_feature_matrix)):
+                        final_feature_matrix.append(molecule_feature_matrix[ind])
+
                 print(molecule_smiles[molecule_index] + ' successfully analyzed')
 
         # Identify non degenerate features
@@ -122,16 +150,15 @@ def retrieve_features( descriptor_file, molecules_to_fragments_file,
         # Take only the non degenerate features from the feature matrix
         non_degenerate_feature_matrix = np.array(final_feature_matrix)[:,non_degenerate_features]
 
-        return non_degenerate_feature_matrix
+        fully_clean_matrix = feature_imputer.FinalImpute(non_degenerate_feature_matrix)
+        return fully_clean_matrix
 
-def identify_non_degenerate_features( feature_matrix, feature_array ):
+def identify_non_degenerate_features( feature_matrix, non_degenerate_feature_array ):
 
     "This function will remove any features that have the exact same value \
     for all molecules. Such an event is incredibly unlikely as this implies that \
-    all features in every fragment of every molecule have the same value - an \
-    incredibly unlikely event. Thus we deem such features redundant and remove them."
-
-    non_degenerate_feature_indices = []
+    all features in every fragment of every molecule have the same value - a \
+    very unlikely event. Thus we deem such features redundant and remove them."
 
     # Loop through all the features of the feature_matrix
     for j in range(0,len(feature_matrix[0])):
@@ -156,7 +183,6 @@ def identify_non_degenerate_features( feature_matrix, feature_array ):
         # And so we add it to the list of non-degenerate indices and also add this
         # indice to the feature_array to keep track of the list of important features
         if equal_range != len(current_feature):
-            non_degenerate_feature_indices.append(j)
-            feature_array.append(j)
+            non_degenerate_feature_array.append(j)
 
-    return non_degenerate_feature_indices
+    return non_degenerate_feature_array

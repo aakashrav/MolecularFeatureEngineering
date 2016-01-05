@@ -12,12 +12,14 @@ import json
 import numpy as np
 from FeatureExtractor import obtain_molecules
 from FeatureExtractor import molecule_feature_matrix
+from FeatureExtractor import feature_imputer
 from DetectCorrelations import correlation_identifier
 
 DATASET_NUMBER = '03'
 DATASET_DIRECTORY = '5HT1A_Agonist/'
 FRAGMENTS_DIRECTORY = 'fragments/'
 DESCRIPTORS_DIRECTORY = 'descriptors/'
+ELKI_CSV_FILE = '/Users/AakashRavi/Desktop/Aakash/Education/ChemicalInformatics/ELKI/subclutest.csv'
 
 def main():
     dataset_file = os.path.dirname(os.path.realpath(__file__)) + \
@@ -32,9 +34,6 @@ def main():
     # First fetch the desired set of actives and inactives
     actives = obtain_molecules.get_actives(dataset_file + 'known-ligands.smi')
     inactives = obtain_molecules.get_inactives(dataset_file + 'known-decoys.smi')
-
-    # print("Actives: %s\n", actives)
-    # print("Inactives: %s\n", inactives)
 
     feature_array = []
     feature_array_inactives = []
@@ -65,24 +64,40 @@ def main():
     key_indices_actives = correlation_identifier.identify_uniform_features( \
         np.array(actives_feature_matrix)[:,0:len(actives_feature_matrix[0])-1], 100)
 
-    print("Key features for the active features:")
-    print(key_indices_actives)
-    
-    key_indices_inactives = []
-    # No inactives are in the dataset, so can't really do anything with them
-    if inactives_feature_matrix != []:
-    # Perform the same procedure for the inactive reactants
-        key_indices_inactives = correlation_identifier.identify_uniform_features( \
-            np.array(inactives_feature_matrix)[:,0:len(actives_feature_matrix[0])-1], 100)
+    # print("Key features for the active features:")
+    # print(key_indices_actives)
 
-    print("Key features for the inactive features:")
-    print(key_indices_inactives)
+    non_correlated_active_matrix = np.array(actives_feature_matrix)[:,key_indices_actives]
+    print("Non correlated feature matrix for the actives")
+    for i in range(0,len(non_correlated_active_matrix)):
+            print(non_correlated_active_matrix[i])
+
+    with open(ELKI_CSV_FILE,'w') as f_handle:
+        print(len(non_correlated_active_matrix))
+        print(len(non_correlated_active_matrix[0]))  
+        np.savetxt(f_handle, non_correlated_active_matrix, delimiter=",", fmt="%f")     
+    
+    # key_indices_inactives = []
+    # # No inactives are in the dataset, so can't really do anything with them
+    # if inactives_feature_matrix != []:
+    # # Perform the same procedure for the inactive reactants
+    #     key_indices_inactives = correlation_identifier.identify_uniform_features( \
+    #         np.array(inactives_feature_matrix)[:,0:len(actives_feature_matrix[0])-1], 100)
+
+    # # print("Key features for the inactive features:")
+    # # print(key_indices_inactives)
 
     # Take union of the key features to obtain our full set of key features
-    full_key_feature_set = np.union1d(key_indices_actives, key_indices_inactives)
+    # full_key_feature_set = np.union1d(key_indices_actives, key_indices_inactives)
 
-    print("Full set of key feature indices: ")
-    print(full_key_feature_set)
+    # print("Full set of key feature indices: ")
+    # print(full_key_feature_set)
+    
+    # for i in range(0, len(actives_feature_matrix)):
+    #     for j in range(0, len(actives_feature_matrix[0])):
+    #         print(actives_feature_matrix[i][j])
+
+    # correlation_identifier.get_top_features(actives_feature_matrix, 5)
 
 
 if __name__ == '__main__':

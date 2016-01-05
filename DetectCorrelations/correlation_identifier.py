@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from sklearn import linear_model
 
 __author__="Aakash Ravi"
 
@@ -14,7 +15,8 @@ def identify_uniform_features( feature_matrix, num_features ):
     We then divide the standard deviation by the mean of the feature, \
     this way we have a normalized score that we can compare accross \
     features. We can then use this score to identify the 'best' features \
-    and return their indices."
+    and return their indices. This score is also known as the 'Coefficient \
+    of Variance'"
     
     # Avoid degenerate cases when our dataset is sometimes empty
     if feature_matrix == []:
@@ -30,13 +32,34 @@ def identify_uniform_features( feature_matrix, num_features ):
     std_deviation = np.sqrt(d)
     # Divide by the mean for the feature
     mean_features = np.mean(feature_matrix, axis=0)
-    variance_score = np.divide(std_deviation,mean_features)
+    # We need to take the absolute value of the mean since the mean may be
+    # negative. We only care about the ratio between the mean and standard
+    # deviation, so dividing by the absolute value suffices.
+    variance_score = np.divide(std_deviation,np.absolute(mean_features))
     
     # Take the features with the lowest scores -
     # these correspond to features with the lowest variation
     indices = np.argpartition(variance_score,num_features)[0:num_features]
 
     return indices
+
+def get_top_features( feature_matrix, num_features ):
+    "This function performs performs logistic regression on our sample fragment \
+    data and finds coefficients for the features. Using these coefficients the \
+    function will return the most important features that correspond to the active \
+    molecules by choosing the features that correspond to the highest coefficient values."
+
+    log_reg = linear_model.LogisticRegression(solver = 'liblinear')
+    TRAINING_DATA = np.array(feature_matrix)[0:len(feature_matrix)*.8,0:len(feature_matrix[0])-1]
+    TEST_DATA = np.array(feature_matrix)[len(feature_matrix)*.8:len(feature_matrix), \
+    0:len(feature_matrix[0])-1]
+
+    TRAINING_RESULTS = np.array(feature_matrix)[0:len(feature_matrix)*.8,len(feature_matrix[0])-1]
+    TEST_RESULTS = np.array(feature_matrix)[len(feature_matrix) *.8:len(feature_matrix), \
+    len(feature_matrix[0])-1]
+    
+    print(log_reg.fit(TRAINING_DATA, TRAINING_RESULTS))
+
 
 # TODO: Implement on the next version(?)
 def identify_correlated_uniform_features( feature_matrix, uniform_indices, \
