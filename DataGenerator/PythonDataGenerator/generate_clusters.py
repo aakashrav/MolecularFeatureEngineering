@@ -134,19 +134,19 @@ def GenerateSeveralClusters(clusters, clustered_dimensions, unclustered_dimensio
 
     # Compute the minimum physical distance between clusters, should be the radius of a cluster
     # multiplied by the distance ration between clusters.
-    inter_cluster_distance = distance_ratio_between_clusters * cluster_radius
+    min_inter_cluster_distance = distance_ratio_between_clusters * cluster_radius
 
-    for j in range(1, amount_of_clusters):
+    for j in range(0, amount_of_clusters):
         cluster = []
         # Generate cluster with a specific center
         GenerateSubspaceCluster(cluster, clustered_dimensions, unclustered_dimensions,
-            points_per_cluster, cluster_radius, center_seed, unclustered_subspace_range)
+            points_per_cluster[j], cluster_radius, center_seed, unclustered_subspace_range)
         # Add this cluster to our list of clusters
         clusters.append(cluster)
         # Generate a new center for the next cluster, we will shift the center by our
-        # at least our inter_cluster_distance but at most our max_shifting_range
+        # at least our min_inter_cluster_distance but at most our max_shifting_range
         for k in range(0, len(center_seed)):
-            random_shift = random.randint(inter_cluster_distance, max_shifting_range)
+            random_shift = random.randint(min_inter_cluster_distance, max_shifting_range)
 
             # Randomly choose positive or negative shift
             pos_or_neg = random.randint(0,1)
@@ -162,8 +162,7 @@ def GenerateSubspaceCluster(cluster, clustered_dimensions, unclustered_dimension
     # Create a local copy of the center_seed since we will be manipulating
     # the values
     center_vector = []
-    for i in range(0, len(center_seed)):
-        center_vector.append(center_seed[i])
+    center_vector.extend(center_seed)
     #Add some dummy centers for the unclustered dimensions
     for i in range(0, unclustered_dimensions):
         center_vector.append(0)
@@ -179,8 +178,8 @@ def GenerateSubspaceCluster(cluster, clustered_dimensions, unclustered_dimension
     
     pre_random_permutation_cluster = []
 
-    # Now add random noise for the unclustered dimensions
-    for i in range(1, len(clustered_vectors)):
+    # Now add random data for the unclustered dimensions
+    for i in range(0, len(clustered_vectors)):
         for k in range(clustered_dimensions,(clustered_dimensions + unclustered_dimensions)):
 
             random_number_in_range = random.randint(0,unclustered_subspace_range)
@@ -195,7 +194,7 @@ def GenerateSubspaceCluster(cluster, clustered_dimensions, unclustered_dimension
 
     # Sort through the cluster and map the data points according to this permutation
     # of the dimensions
-    for i in range(1, len(pre_random_permutation_cluster)):
+    for i in range(0, len(pre_random_permutation_cluster)):
         permuted_data_point = []
         PerformPermutationMapping(pre_random_permutation_cluster[i],permuted_data_point, \
             random_permutation)

@@ -9,9 +9,9 @@ def main():
     # Number of unclustered dimensions
     num_unclustered_dimensions = 3
     # Amount of clusters 
-    amount_of_clusters = 10
+    amount_of_clusters = 11
     # Points per cluster
-    amount_of_points = 20
+    amount_of_points = [20,4,5,23,18,10,23,5,10,21,30]
     # Radius (or deviation from the center) in each cluster
     cluster_radius = 4
     #  Range of noise for the unclustered dimensions
