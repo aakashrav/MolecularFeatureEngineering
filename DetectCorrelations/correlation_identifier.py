@@ -7,15 +7,17 @@ from sklearn import linear_model
 __author__="Aakash Ravi"
 
 def identify_uniform_features( feature_matrix, num_features ):
-    "This function takes in a correlation matrix and computes \
+    "This function takes in a matrix of size (n x m), where n is the \
+    number of fragments, and m the number of features. It then computes \
     features which do not differ a lot in the data set. \
     This is done by taking the diagonal values of the covariance \
     matrix, which correspond to the variation of a certain feature \
     and taking the square root, obtaining the standard deviation. \
     We then divide the standard deviation by the mean of the feature, \
     this way we have a normalized score that we can compare accross \
-    features. We can then use this score to identify the 'best' features \
-    and return their indices. This score is also known as the 'Coefficient \
+    features. We can then use this score to identify the 'best' features- \
+    features with the lowest variance -  and return their indices. \
+    This score is also known as the 'Coefficient \
     of Variance'"
     
     # Avoid degenerate cases when our dataset is sometimes empty
@@ -62,10 +64,90 @@ def get_top_features( feature_matrix, num_features ):
 
 
 # TODO: Implement on the next version(?)
-def identify_correlated_uniform_features( feature_matrix, uniform_indices, \
-    num_features, threshold ):
-    "This function ideally takes the output indices from identify_uniform_features \
-    and finds features that are correlated to these output indices. This will help in \
-    identifying features that are highly *positively* correlated to these uniform \
-    indices, giving us an even broader range of features to choose from."
+def identify_correlated_features( feature_matrix, \
+    num_features, threshold = .30 ):
+    "This function takes as input the feature_matrix, and returns a subset of features that are \
+    highly representative of all the features. This subset will be in the form of a vector containing \
+    the indices of the subset of features. \
+    This is done by finding features with a lot of 'neighbors' in the correlation matrix. A feature \
+    i has neighbor feature j, if corr(i,j) >= threshold (so neighbors are highly correlated). We will \
+    then identify num_features features with the highest amount of neighbors. Credits to this method \
+    goes to Ondrej Micka."
+
+    # Avoid degenerate cases when our dataset is sometimes empty
+    if feature_matrix == []:
+        print("ERROR: empty feature matrix, couldn't identify \
+            uniform features")
+        return []
+
+    cv_matrix = np.cov(feature_matrix, None, rowvar=0)
+
+    neighbor_matrix = get_neighbor_matrix(cv_matrix, threshold)
+    # Vector holding the degree (number of neighbors) for every feature
+    degree_vector = []
+    for row in neighbor_matrix:
+        deg = len(filter(lambda x: x == 1, row))
+        # We subtract -1 since a feature is always perfectly correlated to itself
+        degs.append(deg - 1) 
+    
+    if degree_vector == []:
+        max_degree_feature = 0
+    else:
+        max_degree_feature = max(degree_vector)
+        index_of_max_feature = degree_vector.index(max_degree_feature)
+    
+    # Keep track of all features that have some sort of correlation
+    features_with_neighbors = [True]*len(degree_vector)
+            
+    # While there are correlated features, we choose the feature with highest degree, 
+    # the one with the most neighbors, as a representant of some 'neighbor class'. We
+    # then delete all features that are correlated with this representant (if it wasn't)
+    # already chosen)
+    significant_features = []
+    while(max_degree_feature > 0):
+        significant_features.append(index_of_max_feature)
+
+        # We start to clean up the neighbor matrix by making sure all neighbors of our 
+        # chosen representative no longer count as neighbors for other feaures since
+        # they will be removed.
+        for j in range(0,len(cv_matrix)):
+            # Perform for every neighbor of our chosen 'max' feature
+            if (j != index_of_max_feature) and \
+            features_with_neighbors[j] and \
+            (cv_matrix[index_of_max_feature][j] >= threshold):
+                # First reduce the degree of all j's neighbors, since we will be removing it
+                for k in range(0,len(cv_matrix)):
+                    if features_with_neighbors[k] and (cv_matrix[k][j]>=threshold):
+                        degree_vector[k] -= 1
+
+        # Next, we finally remove all neighbors of i, since we already chose i as one of our features
+        # and we don't want correlated features 
+        for j in range(0,len(cv_matrix)):
+            if (j != index_of_max_feature) and \
+            features_with_neighbors[j] and \
+            (cv_matrix[index_of_max_feature][j] >= threshold):
+                degree_vector[j] = 0
+                features_with_neighbors[j] = False
+
+        # Then move on to the next feature with neighbors, until we have chosen all of them
+        max_degree_feature = max(degree_vector)
+        index_of_max_feature = degrees.index(max_degree_feature)
+
+        # Only keep the representants of each 'neighbor class' found from the previous
+        # method. All other features are not significant.
+        return significant_features
+
+def get_neighbor_matrix(covariance_matrix, threshold):
+    "Returns a matrix M, where M(i,j)=M(j,i)=1 if cov(feature i, feature j)>=threshold, \
+    and M(i,j)=M(j,i)=0 otherwise."
+    
+     neighbor_matrix = numpy.zeros(shape=(len(covariance_matrix),len(covariance_matrix)))
+
+     for i in range(0, len(covariance_matrix)):
+        for j in range(0, len(covariance_matrix[i])):
+            if covariance_matrix[i][j] >= threshold:
+                neighbor_matrix[i][j] =1
+
+    return neighbor_matrix
+
 
