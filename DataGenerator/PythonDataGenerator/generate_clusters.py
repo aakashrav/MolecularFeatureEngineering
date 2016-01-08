@@ -122,8 +122,8 @@ def LabelDataWithKeys(clusters):
 
 # Generates several subspace clusters, using random seed values for the center
 def GenerateSeveralClusters(clusters, clustered_dimensions, unclustered_dimensions, 
-    amount_of_clusters, points_per_cluster, cluster_radius, unclustered_subspace_range,
-    distance_ratio_between_clusters, max_shifting_range):
+    amount_of_clusters, points_per_cluster, deviation_per_dimension, unclustered_subspace_range,
+    distance_ratio_between_clusters, max_shifting_range, purity):
 
     # Generate a starting cluster center, working as a seed to generate future clusters.
     center_seed = []
@@ -131,6 +131,9 @@ def GenerateSeveralClusters(clusters, clustered_dimensions, unclustered_dimensio
     # Make sure that the clustered dimensions are quite close to eachother
     for i in range(0, clustered_dimensions):
         center_seed.append(random_center_seed)
+
+    # Compute the cluster's radius
+    cluster_radius = ComputeClusterRadiusFromDeviation(deviation_per_dimension, clustered_dimensions)
 
     # Compute the minimum physical distance between clusters, should be the radius of a cluster
     # multiplied by the distance ration between clusters.
@@ -140,7 +143,8 @@ def GenerateSeveralClusters(clusters, clustered_dimensions, unclustered_dimensio
         cluster = []
         # Generate cluster with a specific center
         GenerateSubspaceCluster(cluster, clustered_dimensions, unclustered_dimensions,
-            points_per_cluster[j], cluster_radius, center_seed, unclustered_subspace_range)
+            points_per_cluster[j], cluster_radius, center_seed, unclustered_subspace_range,
+            purity)
         # Add this cluster to our list of clusters
         clusters.append(cluster)
         # Generate a new center for the next cluster, we will shift the center by our
@@ -158,7 +162,7 @@ def GenerateSeveralClusters(clusters, clustered_dimensions, unclustered_dimensio
 # Generate a single subspace cluster using the center_vector seed and a radius
 # for the cluster
 def GenerateSubspaceCluster(cluster, clustered_dimensions, unclustered_dimensions, points_in_cluster, 
-    cluster_radius, center_seed, unclustered_subspace_range):
+    cluster_radius, center_seed, unclustered_subspace_range, purity):
     # Create a local copy of the center_seed since we will be manipulating
     # the values
     center_vector = []
@@ -166,15 +170,24 @@ def GenerateSubspaceCluster(cluster, clustered_dimensions, unclustered_dimension
     #Add some dummy centers for the unclustered dimensions
     for i in range(0, unclustered_dimensions):
         center_vector.append(0)
-    # Cluster_radius corresponds to total Euclidean distance from the center.
-    # Therefore we compute the individual deviation for each dimension (assuming the deviation in each
-    # dimension is uniform)
-    deviation_squared = math.pow(cluster_radius,2)
-    deviation_divided_by_number_of_clusterable_dimensions = deviation_squared / clustered_dimensions
-    final_deviation_per_dimension = math.sqrt(deviation_divided_by_number_of_clusterable_dimensions) 
 
-    clustered_vectors, labels_true = make_blobs(n_samples=points_in_cluster, centers=center_vector,
-        cluster_std=final_deviation_per_dimension, random_state=1)
+    # # Cluster_radius corresponds to total Euclidean distance from the center.
+    # # Therefore we compute the individual deviation for each dimension (assuming the deviation in each
+    # # dimension is uniform)
+    # deviation_squared = math.pow(cluster_radius,2)
+    # deviation_divided_by_number_of_clusterable_dimensions = deviation_squared / clustered_dimensions
+    # final_deviation_per_dimension = math.sqrt(deviation_divided_by_number_of_clusterable_dimensions)
+
+    # Calculate the amount of 'impure' points - points that are clustered on some dimensions
+    # of the subspace cluster, but in other dimensions are random. Such points correspond
+    # to 'noisy' points or even certain inactive compounds that exhibit some features of the
+    # active, but don't exhibit other features.
+    num_pure_points = int((purity) * points_in_cluster)
+    num_impure_points = points_in_cluster - num_pure_points
+
+    # First generate the pure points in the cluster
+    clustered_vectors, labels_true = make_blobs(n_samples=num_pure_points, centers=center_vector,
+        cluster_std=cluster_radius, random_state=1)
     
     pre_random_permutation_cluster = []
 
@@ -188,6 +201,30 @@ def GenerateSubspaceCluster(cluster, clustered_dimensions, unclustered_dimension
         # Add this final vector to the list of points    
         pre_random_permutation_cluster.append(clustered_vectors[i])
 
+    # Now generate the impure center seed.
+    # Randomly choose the number of dimensions deviating from pure points
+    # Must be atleast 2 so we get some impurity
+    num_impure_dimensions = random.randint(2,clustered_dimensions)
+    # Now, generate random center seeds just for the impure dimensions
+    for i in range (0, num_impure_dimensions):
+        random_number_in_range = random.randint(0,unclustered_subspace_range)
+        center_vector[i] = random_number_in_range
+
+    # Now actually generate the impure points
+    clustered_vectors, labels_true = make_blobs(n_samples=num_impure_points, centers=center_vector,
+        cluster_std=cluster_radius, random_state=1)
+
+    # Now add random data for the unclustered dimensions, just as before
+    for i in range(0, len(clustered_vectors)):
+        for k in range(clustered_dimensions,(clustered_dimensions + unclustered_dimensions)):
+
+            random_number_in_range = random.randint(0,unclustered_subspace_range)
+            clustered_vectors[i,k] = random_number_in_range
+
+        # Add this final vector to the list of points    
+        pre_random_permutation_cluster.append(clustered_vectors[i])
+
+
     # Shuffle the cluster's dimensions so that we have some variety
     random_permutation = np.arange(clustered_dimensions + unclustered_dimensions)
     np.random.shuffle(random_permutation)
@@ -200,11 +237,26 @@ def GenerateSubspaceCluster(cluster, clustered_dimensions, unclustered_dimension
             random_permutation)
         cluster.append(permuted_data_point)
 
-    #Return the cluster for good measure
+    # Return the cluster for good measure
     return cluster
 
 # Perform the permutation on the arr, and deposit contents into newarr
 def PerformPermutationMapping(arr,newarr,permutation):
     for j in range(0,len(arr)):
         newarr.append(arr[permutation[j]])
+
+# The deviation per dimension is only defined on a per dimensional basis, so we
+# use the deviation per dimension along with the number of dimensions to calculate
+# the total Euclidean distance from the cluster center, where the cluster center
+# is w.l.o.g. the origin in our point space.
+def ComputeClusterRadiusFromDeviation(deviation_per_dimension, num_dimensions):
+    "This helper method computes the total cluster radius of each dimension of the cluster \
+    deviates by amount 'deviation_per_dimension'"
+
+    deviation_vector = np.array([1,num_dimensions])
+    deviation_vector.fill(deviation_per_dimension)
+    # A simple dot product will calculate the Euclidean distance
+    final_deviation = np.dot(deviation_vector, deviation_vector)
+
+    return final_deviation
 

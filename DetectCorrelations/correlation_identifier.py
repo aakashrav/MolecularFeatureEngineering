@@ -64,7 +64,7 @@ def get_top_features( feature_matrix, num_features ):
 
 
 def identify_correlated_features( feature_matrix, \
-    num_features, threshold = .30 ):
+    num_features, threshold = .80 ):
     "This function takes as input the feature_matrix, and returns a subset of features that are \
     highly representative of all the features. This subset will be in the form of a vector containing \
     the indices of the subset of features. \
