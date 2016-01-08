@@ -63,7 +63,6 @@ def get_top_features( feature_matrix, num_features ):
     print(log_reg.fit(TRAINING_DATA, TRAINING_RESULTS))
 
 
-# TODO: Implement on the next version(?)
 def identify_correlated_features( feature_matrix, \
     num_features, threshold = .30 ):
     "This function takes as input the feature_matrix, and returns a subset of features that are \
@@ -88,16 +87,21 @@ def identify_correlated_features( feature_matrix, \
     for row in neighbor_matrix:
         deg = len(filter(lambda x: x == 1, row))
         # We subtract -1 since a feature is always perfectly correlated to itself
-        degs.append(deg - 1) 
+        degree_vector.append(deg - 1) 
     
     if degree_vector == []:
         max_degree_feature = 0
     else:
         max_degree_feature = max(degree_vector)
         index_of_max_feature = degree_vector.index(max_degree_feature)
-    
+
     # Keep track of all features that have some sort of correlation
     features_with_neighbors = [True]*len(degree_vector)
+
+    # This vector will keep track of features that have been removed from consideration,
+    # because they were heavily correlated with other features. It's usage will become
+    # clear later.
+    unecessary_features = []
             
     # While there are correlated features, we choose the feature with highest degree, 
     # the one with the most neighbors, as a representant of some 'neighbor class'. We
@@ -119,6 +123,8 @@ def identify_correlated_features( feature_matrix, \
                 for k in range(0,len(cv_matrix)):
                     if features_with_neighbors[k] and (cv_matrix[k][j]>=threshold):
                         degree_vector[k] -= 1
+                # Add the feature to the list of unecessary features
+                unecessary_features.append(j)
 
         # Next, we finally remove all neighbors of i, since we already chose i as one of our features
         # and we don't want correlated features 
@@ -131,19 +137,27 @@ def identify_correlated_features( feature_matrix, \
 
         # Then move on to the next feature with neighbors, until we have chosen all of them
         max_degree_feature = max(degree_vector)
-        index_of_max_feature = degrees.index(max_degree_feature)
+        index_of_max_feature = degree_vector.index(max_degree_feature)
 
-        # Only keep the representants of each 'neighbor class' found from the previous
-        # method. All other features are not significant.
+    # Only keep the representants of each 'neighbor class' found from the previous
+    # method, as well as features that are not correlated heavily with any other features.
+    all_features = np.arange(len(feature_matrix[0]))
+    non_redundant_features = np.delete(all_features, unecessary_features, 0)
+    significant_features.extend(non_redundant_features)
+
+    # Return the requested amount of significant features
+    if (len(significant_features) < num_features):
         return significant_features
+    else:
+        return significant_features[1:num_features]
 
 def get_neighbor_matrix(covariance_matrix, threshold):
     "Returns a matrix M, where M(i,j)=M(j,i)=1 if cov(feature i, feature j)>=threshold, \
     and M(i,j)=M(j,i)=0 otherwise."
     
-     neighbor_matrix = numpy.zeros(shape=(len(covariance_matrix),len(covariance_matrix)))
+    neighbor_matrix = np.zeros(shape=(len(covariance_matrix),len(covariance_matrix)))
 
-     for i in range(0, len(covariance_matrix)):
+    for i in range(0, len(covariance_matrix)):
         for j in range(0, len(covariance_matrix[i])):
             if covariance_matrix[i][j] >= threshold:
                 neighbor_matrix[i][j] =1

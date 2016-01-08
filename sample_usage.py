@@ -61,11 +61,15 @@ def main():
     # Splice the matrix so we don't count the final characteristic feature
     # (1 or 0 ). We limit the amount of features we want to be the top 100.
     # This amount can be changed to fit our needs.
-    key_indices_actives = correlation_identifier.identify_uniform_features( \
+
+    # key_indices_actives = correlation_identifier.identify_uniform_features( \
+    #     np.array(actives_feature_matrix)[:,0:len(actives_feature_matrix[0])-1], 100)
+
+    key_indices_actives = correlation_identifier.identify_correlated_features( \
         np.array(actives_feature_matrix)[:,0:len(actives_feature_matrix[0])-1], 100)
 
-    # print("Key features for the active features:")
-    # print(key_indices_actives)
+    print("Key features for the active features:")
+    print(key_indices_actives)
 
     non_correlated_active_matrix = np.array(actives_feature_matrix)[:,key_indices_actives]
     print("Non correlated feature matrix for the actives")
