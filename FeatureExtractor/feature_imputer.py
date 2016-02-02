@@ -20,8 +20,9 @@ def FinalImpute( fragment_feature_matrix ):
     as a last result where even after the imputation of the prior method, we \
     still have that some features for some molecules are still NaN. \
     The only way this may happen is in the unlikely case that all fragments \
-    for a particular molecule have a feature as NaN. As unlikely as \
-    this is the data we get from PADEL is quite messy and therefore this method is a necessary evil."
+    for a particular molecule have a feature as NaN, and therefore the first imputation \
+    was unsuccessful. As unlikely as this occurence is, the data we get from PADEL is \
+    quite messy and therefore this method is a necessary evil."
 
     nan_row_indices = []
 

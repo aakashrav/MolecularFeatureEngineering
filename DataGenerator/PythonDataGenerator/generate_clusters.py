@@ -2,6 +2,7 @@ import numpy as np
 import math
 import csv
 import random
+import math
 from sklearn.datasets.samples_generator import make_blobs
 
 # class DataPointClass:
@@ -150,12 +151,24 @@ def GenerateSeveralClusters(clusters, clustered_dimensions, unclustered_dimensio
         # Generate a new center for the next cluster, we will shift the center by our
         # at least our min_inter_cluster_distance but at most our max_shifting_range
         for k in range(0, len(center_seed)):
-            random_shift = random.randint(min_inter_cluster_distance, max_shifting_range)
+
+            # Sometimes user specifies an dimensional distance above the max shifting range.
+            # To avoid errors, if this is the case then we just use the max shifting range
+            if (min_inter_cluster_distance > max_shifting_range):
+                random_shift = max_shifting_range
+            else:
+                random_shift = random.randint(min_inter_cluster_distance, max_shifting_range)
 
             # Randomly choose positive or negative shift
             pos_or_neg = random.randint(0,1)
             if pos_or_neg == 1:
                 random_shift *= -1
+
+            # If the shift would cause a negative center seed value, 
+            # we keep it positive by making the shift positive again
+            if ( (center_seed[k] + random_shift) < 0):
+                random_shift *= -1
+
             center_seed[k]+=random_shift
 
     
@@ -255,8 +268,9 @@ def ComputeClusterRadiusFromDeviation(deviation_per_dimension, num_dimensions):
 
     deviation_vector = np.array([1,num_dimensions])
     deviation_vector.fill(deviation_per_dimension)
-    # A simple dot product will calculate the Euclidean distance
-    final_deviation = np.dot(deviation_vector, deviation_vector)
+    # A simple dot product, and square root will calculate the Euclidean distance
+    final_deviation = math.ceil(math.sqrt(np.dot(deviation_vector, deviation_vector)))
+    # final_deviation = np.dot(deviation_vector, deviation_vector)
 
     return final_deviation
 
