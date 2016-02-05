@@ -35,9 +35,8 @@ def compute_feature_median(non_imputed_feature_matrix, descriptor_indice, molecu
     for molecule_i in unique_molecules:
         # Get indices of all other fragments that belong to the same molecule
         molecule_fragment_indices = np.where(molecule_keys == molecule_i)
-        fragments_for_molecule = non_imputed_feature_matrix[molecule_fragment_indices,:]
+        fragments_for_molecule = non_imputed_feature_matrix[molecule_fragment_indices]
         # Get the values for this specific descriptor
-        # print(fragments_for_molecule)
         descriptor_values = fragments_for_molecule[:,descriptor_indice]
         # If there doesn't exist any nan descriptor values for fragments of this molecule
         # we add it to the global average array.
@@ -45,7 +44,7 @@ def compute_feature_median(non_imputed_feature_matrix, descriptor_indice, molecu
             continue
         else:
             global_descriptor_average_array.append(np.mean(descriptor_values))
-
+    
     # If descriptor is defined for no molecule, it is a degenerate descriptor,
     # So we return np.nan, else we return the median of the averages
     if (len(global_descriptor_average_array) == 0):
@@ -88,10 +87,10 @@ def standard_feature_impute(non_imputed_feature_matrix):
     # Keep track of degenerate features
     degenerate_features = []
 
-    # Cache globally imputed descriptors, initialize the array with NaN
+     # Cache globally imputed descriptors
     global_median_cache = np.empty([1,non_imputed_feature_matrix.shape[1]], dtype=np.float)
 
-    for descriptor in range(0,len(global_median_cache)-1):
+    for descriptor in range(0,non_imputed_feature_matrix.shape[1]-1):
         global_descriptor_median = compute_feature_median(non_imputed_feature_matrix, descriptor,
                 molecule_keys)
         if (global_descriptor_median==np.nan):
@@ -99,7 +98,7 @@ def standard_feature_impute(non_imputed_feature_matrix):
             np.delete(global_median_cache, descriptor,0)
             degenerate_features.append(descriptor)
         else:
-            global_median_cache[descriptor] = global_descriptor_median
+            global_median_cache[0,descriptor] = global_descriptor_median
     
     # Now loop through the fragments and impute
     for fragment in range(0, len(non_imputed_feature_matrix)-1):
@@ -126,13 +125,13 @@ def load_matrix(descriptor_file, molecules_to_fragments_file,
         found_fragments = []
         
         if (descriptors is not None):
-            non_imputed_feature_matrix = np.empty((0, descriptors.shape[1]), np.float)
+            non_imputed_feature_matrix = np.empty((0, descriptors.shape[1]+1), np.float)
         else:
             non_imputed_feature_matrix = None
 
         # Add all fragment data for each molecule in the array
         # 'molecule_smiles', and return a matrix of found values
-        for molecule_index in range(0, len(molecule_smiles)):
+        for molecule_index in range(0, len(molecule_smiles)-1):
 
             # Sometimes the desired SMILE may not have any fragment data, so we just continue
             # And notify the user that no fragments were found for this SMILES
@@ -190,13 +189,16 @@ def load_matrix(descriptor_file, molecules_to_fragments_file,
                             continue;
                         try:
                             ix_f = descriptors_map[f]
+                            print("Descriptors Found: ")
+                            print(descriptors[ix_f])
                             # Append the current fragment to the feature matrix
-                            # non_imputed_feature_matrix = np.append(non_imputed_feature_matrix,
-                            #                                     [np.append(descriptors[ix_f, :], 0)], axis=0)
-                            non_imputed_feature_matrix = np.vstack((non_imputed_feature_matrix,
-                                                                descriptors[ix_f, :]))
+                            # non_imputed_feature_matrix = np.vstack((non_imputed_feature_matrix,
+                            #                                     descriptors[ix_f, :]))
+                            non_imputed_feature_matrix = np.append(non_imputed_feature_matrix,
+                                                         [np.append(descriptors[ix_f, :], 0)], axis=0)
                             found_fragments.append(f)
                         except KeyError:
+                            print("Key error")
                             # print("Fragment: " + f + " for molecule " + molecule_smiles[molecule_index] + " NOT found")
                             continue
 
