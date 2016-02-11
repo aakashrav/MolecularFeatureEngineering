@@ -2,8 +2,6 @@ import generate_clusters
 
 def main():
 
-    # Define list of subspace clusters we want
-    clusters = []
     # Number of clustered dimensions
     num_clustered_dimensions = 3
     # Number of unclustered dimensions
@@ -11,9 +9,9 @@ def main():
     # Amount of clusters 
     amount_of_clusters = 11
     # Points per cluster
-    amount_of_points = [20,4,5,23,18,10,23,5,10,21,30]
+    amount_of_points = [22,42,5,23,18,10,43,5,12,21,30]
     # Radius (or deviation from the center) in each dimension
-    deviation_per_dimension = 2
+    deviation_per_dimension = 10
     #  Range of noise for the unclustered dimensions
     unclustered_noise_range = 100
     # The minimum distance between two clusters
@@ -24,7 +22,7 @@ def main():
     # and the rest are some noise points
     purity = .95
 
-    generate_clusters.GenerateSeveralClusters(clusters, num_unclustered_dimensions, num_unclustered_dimensions,
+    clusters = generate_clusters.GenerateSeveralClusters(num_unclustered_dimensions, num_unclustered_dimensions,
         amount_of_clusters, amount_of_points, deviation_per_dimension, unclustered_noise_range,
         distance_ratio_between_clusters, max_shifting_range, purity)
     
@@ -32,7 +30,7 @@ def main():
     labelled_clusters = generate_clusters.LabelDataWithKeys(clusters)
     
     # Flush the laballed clusters
-    generate_clusters.FlushData("labelled_clusters.csv",labelled_clusters)
+    generate_clusters.FlushData("labelled_clusters2.csv",labelled_clusters)
 
     # Add class data about the point (the molecule of the point, its activity, etc.)
     # We would like a ratio of 60% active clusters and 40% inactive clusters
@@ -41,6 +39,7 @@ def main():
 
     # Flush the data points
     generate_clusters.FlushClassData("fragment_data_points.csv", data_with_classes)
+
 
 if __name__ == '__main__':
     main()
