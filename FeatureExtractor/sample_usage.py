@@ -20,7 +20,7 @@ DATASET_DIRECTORY = '/../SDFActivesInactivesDataset/'
 FRAGMENTS_DIRECTORY = '/../fragments/'
 DESCRIPTORS_DIRECTORY = '/../descriptors/'
 ELKI_CSV_FILE = '/Users/AakashRavi/Desktop/Aakash/Education/ChemicalInformatics/ELKI/subclutest.csv'
-REAL=0
+REAL=1
 
 
 # DATASET_NUMBER = '03'
