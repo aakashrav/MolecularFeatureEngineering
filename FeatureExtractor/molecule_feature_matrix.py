@@ -183,7 +183,7 @@ def _actives_feature_impute(feature_matrix):
         return None
 
     # Keep track of indices corresponding to the molecule of each fragment- just the first column
-    molecule_keys = feature_matrix[:,0]
+    molecule_keys = feature_matrix[1:,0]
     # Keep track of degenerate features
     degenerate_features = []
 
@@ -191,14 +191,14 @@ def _actives_feature_impute(feature_matrix):
     global_median_cache = np.empty([1,feature_matrix.shape[1]], dtype=np.float)
 
     for descriptor in range(0,feature_matrix.shape[1]):
-        global_descriptor_median = _compute_feature_median(feature_matrix, descriptor,
+        global_descriptor_median = _compute_feature_median(feature_matrix[1:,:], descriptor,
                 molecule_keys)
         if (np.isnan(global_descriptor_median)):
             degenerate_features.append(descriptor)
         global_median_cache[0,descriptor] = global_descriptor_median
     
     # Now loop through the fragments and impute
-    for fragment in range(0, len(feature_matrix)):
+    for fragment in range(1, len(feature_matrix)):
         # Obtain all descriptors that have non-numerical values for this fragment
         nan_descriptors = np.where(np.isnan(feature_matrix[fragment]) == True)
         for j in nan_descriptors:
@@ -213,7 +213,7 @@ def _actives_feature_impute(feature_matrix):
     #Then remove all descriptors that have the same value for all fragments, they are also degenerate
     all_constant_features = []
     for j in range(non_degenerate_feature_matrix_one.shape[1]):
-        feature_column = non_degenerate_feature_matrix_one[:,j]
+        feature_column = non_degenerate_feature_matrix_one[1:,j]
         # if not(any(feature_column)):
         #     all_zero_features.append(j)
         if (np.array_equal(feature_column,[feature_column[0]] * len(feature_column))):
@@ -224,7 +224,7 @@ def _actives_feature_impute(feature_matrix):
 
     # Identify the significant features via the correlation identifier
     significant_features = \
-        correlation_identifier.identify_correlated_features(non_degenerate_feature_matrix_two, NUM_FEATURES)
+        correlation_identifier.identify_correlated_features(non_degenerate_feature_matrix_two[1:,:], NUM_FEATURES)
     
     # Identify the redundant features (those that aren't in the significant features)
     all_features = np.arange(feature_matrix.shape[1])
@@ -236,7 +236,11 @@ def _actives_feature_impute(feature_matrix):
 
     # Remove existing dataset files and flush new actives data
     with open("actives_matrix.csv",'w+') as f_handle:
-        np.savetxt(f_handle, non_degenerate_feature_matrix_three, delimiter=',',fmt='%5.5f')
+        np.savetxt(f_handle, non_degenerate_feature_matrix_three[1:], delimiter=',',fmt='%5.5f')
+
+    # Update degenerate features
+    all_features = np.arange(feature_matrix.shape[1])
+    degenerate_features = [i for i in all_features if i not in non_degenerate_feature_matrix_three[0]]
 
     return [global_median_cache, degenerate_features]
 
@@ -421,6 +425,11 @@ def _load_matrix_sdf(descriptor_file, molecules_to_fragments_file,
         
         if (descriptors is not None):
             non_imputed_feature_matrix = np.empty((0, descriptors.shape[1]+1), np.float)
+            # Append the descriptor number columns
+            descriptor_numbers = np.arange(descriptors.shape[1]+1)
+            non_imputed_feature_matrix = np.append(non_imputed_feature_matrix,
+                                                        descriptor_numbers, axis=0)
+
         else:
             non_imputed_feature_matrix = None
 
@@ -454,6 +463,10 @@ def _load_matrix_sdf(descriptor_file, molecules_to_fragments_file,
                             
                         if (non_imputed_feature_matrix is None):
                             non_imputed_feature_matrix = np.empty((0, len(line)), np.float)
+                            # Append the descriptor number columns
+                            descriptor_numbers = np.arange(len(line))
+                            non_imputed_feature_matrix = np.vstack((non_imputed_feature_matrix, \
+                                descriptor_numbers))
                         
                         # The fragment found is not already added to the matrix
                         if (name in fragments) and (name not in found_fragments):
@@ -573,7 +586,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
                                 all_descriptors = np.arange(global_median_cache.shape[1])
                                 non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
                                 with open("inactives_matrix.csv",'a') as f_handle:
-                                    np.savetxt(f_handle, inactives_feature_matrix[:,non_degenerate_descriptors], delimiter=',')
+                                    np.savetxt(f_handle, inactives_feature_matrix[:,non_degenerate_descriptors], delimiter=',', fmt='%5.5f')
                                 FLUSH_COUNT=0
                             
                             inactives_feature_matrix[FLUSH_COUNT]= molecule_descriptor_row
@@ -600,7 +613,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
                                 all_descriptors = np.arange(global_median_cache.shape[1])
                                 non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
                                 with open("inactives_matrix.csv",'a') as f_handle:
-                                    np.savetxt(f_handle, inactives_feature_matrix[:,non_degenerate_descriptors], delimiter=',')
+                                    np.savetxt(f_handle, inactives_feature_matrix[:,non_degenerate_descriptors], delimiter=',', fmt='%5.5f')
                                 FLUSH_COUNT=0
 
                             inactives_feature_matrix[FLUSH_COUNT] = np.append(current_fragment, 0)
@@ -615,7 +628,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
         all_descriptors = np.arange(global_median_cache.shape[1])
         non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
         with open("inactives_matrix.csv",'a') as f_handle:
-            np.savetxt(f_handle, inactives_feature_matrix[:,non_degenerate_descriptors], delimiter=',')
+            np.savetxt(f_handle, inactives_feature_matrix[:,non_degenerate_descriptors], delimiter=',', fmt='%5.5f')
 
 
 
