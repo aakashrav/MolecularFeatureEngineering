@@ -236,7 +236,7 @@ def _actives_feature_impute(feature_matrix):
 
     # Remove existing dataset files and flush new actives data
     with open("actives_matrix.csv",'w+') as f_handle:
-        np.savetxt(f_handle, non_degenerate_feature_matrix_three, delimiter=',',fmt='%5.2f')
+        np.savetxt(f_handle, non_degenerate_feature_matrix_three, delimiter=',',fmt='%5.5f')
 
     return [global_median_cache, degenerate_features]
 
@@ -362,7 +362,7 @@ def _read_descriptor_file(descriptor_file_name):
 def _flush_metadata(global_median_cache, degenerate_features):
     # Flush new metadata
     with open("global_median_cache.csv", 'w+') as f_handle:
-        np.savetxt(f_handle, global_median_cache, delimiter=',', fmt='%5.2f')
+        np.savetxt(f_handle, global_median_cache, delimiter=',', fmt='%5.5f')
     with open("degenerate_features.csv",'w+') as f_handle:
         np.savetxt(f_handle, degenerate_features, delimiter=',', fmt='%d')
 
