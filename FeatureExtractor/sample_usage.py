@@ -20,7 +20,6 @@ DATASET_DIRECTORY = '/../SDFActivesInactivesDataset/'
 FRAGMENTS_DIRECTORY = '/../fragments/'
 DESCRIPTORS_DIRECTORY = '/../descriptors/'
 ELKI_CSV_FILE = '/Users/AakashRavi/Desktop/Aakash/Education/ChemicalInformatics/ELKI/subclutest.csv'
-REAL=1
 
 
 # DATASET_NUMBER = '03'
@@ -28,35 +27,8 @@ REAL=1
 # FRAGMENTS_DIRECTORY = '../'
 # DESCRIPTORS_DIRECTORY = '../'
 # ELKI_CSV_FILE = '/Users/AakashRavi/Desktop/Aakash/Education/ChemicalInformatics/ELKI/subclutest.csv'
-# REAL=1
 
 def main():
-
-    ####------ NON-SDF VERSION ----#
-    # dataset_file = os.path.dirname(os.path.realpath(__file__)) + \
-    # '/' + DATASET_DIRECTORY + DATASET_NUMBER + '/'
-
-    # fragments_file = os.path.dirname(os.path.realpath(__file__)) + \
-    # '/' + FRAGMENTS_DIRECTORY + '5HT1A_Agonist-fragments.json'
-
-    # descriptors_file = os.path.dirname(os.path.realpath(__file__)) + \
-    # '/' + DESCRIPTORS_DIRECTORY + '5HT1A_Agonist-fragments.csv'
-
-    #  # First fetch the desired set of actives and inactives
-    # actives = obtain_molecules.get_molecules(dataset_file + 'known-ligands.smi')
-    # inactives = obtain_molecules.get_molecules(dataset_file + 'known-decoys.smi')
-
-    #  # Fetch the features for all our actives and inactives, fully imputed
-    # if REAL==0:
-    #     molecule_feature_matrix.retrieve_features(descriptors_file, \
-    #         fragments_file ,actives[0:3], inactives, output_details=False)
-    # else:
-    #     molecule_feature_matrix.retrieve_features(descriptors_file, \
-    #         fragments_file ,actives, inactives, output_details=False)
-
-    ####------ NON-SDF VERSION ----#
-
-    ####------ SDF VERSION ---- ##
 
     actives_dataset_file = os.path.dirname(os.path.realpath(__file__)) + \
         DATASET_DIRECTORY + "Hydrogen-Bonds_2/actives_1"
@@ -75,14 +47,8 @@ def main():
     inactives = obtain_molecules.get_sdf_molecules(inactives_dataset_file)
     
     # Fetch the features for all our actives and inactives, fully imputed
-    if REAL==0:
-        molecule_feature_matrix.retrieve_sdf_features(descriptors_file, \
-            fragments_file ,actives[0:3], inactives, output_details=False)
-    else:
-        molecule_feature_matrix.retrieve_sdf_features(descriptors_file, \
-            fragments_file ,actives, inactives, output_details=False)
-
-    ####------ SDF VERSION ----##
+    molecule_feature_matrix.retrieve_sdf_features(descriptors_file, \
+        fragments_file ,actives, inactives, output_details=False)
     
     # # Print the active feature matrix
     # print("Feature matrix for the actives:")
