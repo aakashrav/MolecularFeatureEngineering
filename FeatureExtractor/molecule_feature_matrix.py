@@ -167,10 +167,10 @@ def _flush_metadata(global_median_cache, used_features):
     # Save the fragments to molecules mapping dictionaries in pickle files
     with open("actives_fragment_molecule_mapping.pkl", 'wb+') as f_handle:
         pickle.dump(actives_fragment_to_molecule_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
-    print(actives_fragment_to_molecule_mapping)
+    # print(actives_fragment_to_molecule_mapping)
     with open("inactives_fragment_molecule_mapping.pkl", 'wb+') as f_handle:
         pickle.dump(inactives_fragment_to_molecule_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
-    print(inactives_fragment_to_molecule_mapping)
+    # print(inactives_fragment_to_molecule_mapping)
 
 def _load_matrix_sdf(descriptor_file, molecules_to_fragments_file,
     molecule_sdfs, output_details=0,
@@ -186,8 +186,9 @@ def _load_matrix_sdf(descriptor_file, molecules_to_fragments_file,
         
         if (descriptors is not None):
             non_imputed_feature_matrix = np.empty((0, descriptors.shape[1]+1), np.float)
+
             # Append the descriptor number columns
-            descriptor_numbers = np.arange(descriptors.shape[1]+1)
+            descriptor_numbers = np.arange(descriptors.shape[1]+1).reshape((1, descriptors.shape[1]+1))
             non_imputed_feature_matrix = np.append(non_imputed_feature_matrix,
                                                         descriptor_numbers, axis=0)
 
