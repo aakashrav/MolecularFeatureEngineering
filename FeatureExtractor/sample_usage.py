@@ -14,26 +14,21 @@ import json
 import numpy as np
 import obtain_molecules
 import molecule_feature_matrix
+import molecular_clusters
+import cluster_analysis
 
 DATASET_NUMBER = '03'
 DATASET_DIRECTORY = '/../SDFActivesInactivesDataset/'
 FRAGMENTS_DIRECTORY = '/../fragments/'
 DESCRIPTORS_DIRECTORY = '/../descriptors/'
 
-
-# DATASET_NUMBER = '03'
-# DATASET_DIRECTORY = '/../SDFActivesInactivesDataset/'
-# FRAGMENTS_DIRECTORY = '../'
-# DESCRIPTORS_DIRECTORY = '../'
-# ELKI_CSV_FILE = '/Users/AakashRavi/Desktop/Aakash/Education/ChemicalInformatics/ELKI/subclutest.csv'
-
 def main():
 
     actives_dataset_file = os.path.dirname(os.path.realpath(__file__)) + \
-        DATASET_DIRECTORY + "Hydrogen-Bonds_2/actives_1"
+        DATASET_DIRECTORY + "IC-50_8/actives"
 
     inactives_dataset_file = os.path.dirname(os.path.realpath(__file__)) + \
-        DATASET_DIRECTORY + "Hydrogen-Bonds_2/inactives"
+        DATASET_DIRECTORY + "IC-50_8/inactives"
 
     descriptors_file = os.path.dirname(os.path.realpath(__file__)) + \
     '/' + DESCRIPTORS_DIRECTORY + 'features.csv'
@@ -45,18 +40,22 @@ def main():
     actives = obtain_molecules.get_sdf_molecules(actives_dataset_file)
     inactives = obtain_molecules.get_sdf_molecules(inactives_dataset_file)
     
-    # Fetch the features for all our actives and inactives, fully imputed
+    print "Starting molecular feature matrix creation.. "
+    # Retrieve the molecular feature matrix corresponding to our dataset and 
+    # flush it to file
     molecule_feature_matrix.retrieve_sdf_features(descriptors_file, \
         fragments_file ,actives, inactives, output_details=False)
-    
-    # # Print the active feature matrix
-    # print("Feature matrix for the actives:")
-    # print(actives_feature_matrix.shape)
-    # for i in range(0,len(actives_feature_matrix)):
-    #     for j in range(0, len(actives_feature_matrix[0])):
-    #         if actives_feature_matrix[i][j] == np.nan:
-    #             print(actives_feature_matrix[i][j])
-    #         # print(actives_feature_matrix[i])
+    print "Finished molecular feature matrix creation.. "
+
+    print "Starting search of molecular clusters"
+    # Find the clusters using ELKI
+    molecular_clusters.main()
+    print "Finished search of molecular clusters"
+
+    print "Starting analysis and pruning of found clusters"
+    # Analyze the clusters and output the most pure and diverse ones
+    cluster_analysis.main()
+    print "Finished analysis and pruning of clusters! Clusters available in data directory"
 
 if __name__ == '__main__':
     main()

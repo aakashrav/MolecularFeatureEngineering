@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import config
+import molecule_feature_matrix
+import csv
+import os
 # from sklearn import linear_model
 
 __author__="Aakash Ravi"
@@ -78,6 +82,13 @@ def identify_correlated_features( feature_matrix, \
         print("ERROR: empty feature matrix, couldn't identify \
             uniform features")
         return []
+    
+    DATA_DIRECTORY = config.DATA_DIRECTORY
+    if molecule_feature_matrix.DEBUG:
+        with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv')) as f_handle:
+            reader = csv.reader(f_handle)
+            # Gets the first line
+            all_descriptor_names = next(reader)
 
     cv_matrix = np.cov(feature_matrix, None, rowvar=0)
 
@@ -102,7 +113,9 @@ def identify_correlated_features( feature_matrix, \
     # because they were heavily correlated with other features. It's usage will become
     # clear later.
     unecessary_features = []
-            
+    
+    if molecule_feature_matrix.DEBUG:
+        print "Correlated feature removing details: "
     # While there are correlated features, we choose the feature with highest degree, 
     # the one with the most neighbors, as a representant of some 'neighbor class'. We
     # then delete all features that are correlated with this representant (if it wasn't)
@@ -110,6 +123,11 @@ def identify_correlated_features( feature_matrix, \
     significant_features = []
     while(max_degree_feature > 0):
         significant_features.append(index_of_max_feature)
+        
+        if molecule_feature_matrix.DEBUG:
+            neighborhood_filename = os.path.join(DATA_DIRECTORY,all_descriptor_names[index_of_max_feature] + "_Neighborhood")
+            with open(neighborhood_filename,'w+') as f_handle:
+                f_handle.write("Neighborhood for " + all_descriptor_names[index_of_max_feature] + "\n")
 
         # We start to clean up the neighbor matrix by making sure all neighbors of our 
         # chosen representative no longer count as neighbors for other feaures since
@@ -125,6 +143,9 @@ def identify_correlated_features( feature_matrix, \
                         degree_vector[k] -= 1
                 # Add the feature to the list of unecessary features
                 unecessary_features.append(j)
+                if molecule_feature_matrix.DEBUG:
+                    with open(neighborhood_filename,'a') as f_handle:
+                        f_handle.write(all_descriptor_names[j]+",")
 
         # Next, we finally remove all neighbors of i, since we already chose i as one of our features
         # and we don't want correlated features 
