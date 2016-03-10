@@ -75,10 +75,12 @@ def _actives_feature_impute(feature_matrix):
     # Delete the molecule_index feature, which has already been placed in molecule_keys for
     # further usage
     feature_matrix = np.delete(feature_matrix, 0, 1)
+    # Keep track of all the features for further usage
+    all_features = np.arange(feature_matrix.shape[1])
     # Keep track of degenerate features
     degenerate_features = []
 
-     # Cache globally imputed descriptors
+    # Cache globally imputed descriptors
     global_median_cache = np.empty([1,feature_matrix.shape[1]], dtype=np.float)
 
     for descriptor in range(0,feature_matrix.shape[1]):
@@ -88,6 +90,21 @@ def _actives_feature_impute(feature_matrix):
             degenerate_features.append(descriptor)
         global_median_cache[0,descriptor] = global_descriptor_median
     
+    # Remove pre computed significant features
+    print "Actives imputation: starting out with %d features" % (feature_matrix.shape[1])
+    significant_features = np.genfromtxt('significant_features',delimiter=',')
+    redundant_features = [i for i in all_features if i not in significant_features]
+
+    feature_matrix = np.delete(feature_matrix, redundant_features, 1)
+    print "Actives imputation: removed %d features with covariance neighborhoods, now have %d features" % (len(redundant_features), len(significant_features))
+    # Remove the redundant features from the degenerate features, since they have already
+    # been removed
+    for feature in redundant_features:
+        try:
+            degenerate_features = np.delete(degenerate_features,feature,1)
+        except IndexError:
+            continue
+    
     # Now loop through the fragments and impute
     for fragment in range(1, len(feature_matrix)):
         # Obtain all descriptors that have non-numerical values for this fragment
@@ -95,7 +112,6 @@ def _actives_feature_impute(feature_matrix):
         for j in nan_descriptors:
             feature_matrix[fragment, j] = global_median_cache[0,j]
 
-    print "Actives imputation: starting out with %d features" % (feature_matrix.shape[1])
     # First remove all degenerate features
     non_degenerate_feature_matrix_one = np.delete(feature_matrix, degenerate_features, 1)
     print "Actives imputation: removed degenerate features, now have %d features" % (non_degenerate_feature_matrix_one.shape[1])
@@ -108,28 +124,14 @@ def _actives_feature_impute(feature_matrix):
             all_constant_features.append(j)
     
     non_degenerate_feature_matrix_two = np.delete(non_degenerate_feature_matrix_one, all_constant_features, 1)
-    print "Actives imputation: removed constant features, now have %d features" % (non_degenerate_feature_matrix_two.shape[1])
-
-    # Identify the significant features via the correlation identifier
-    significant_features = \
-        correlation_identifier.identify_correlated_features(non_degenerate_feature_matrix_two[1:,:], NUM_FEATURES)
-    
-    # Identify the redundant features (those that aren't in the significant features)
-    # all_features = np.arange(feature_matrix.shape[1])
-    all_features = np.arange(non_degenerate_feature_matrix_two.shape[1])
-    redundant_features = [i for i in all_features if i not in significant_features]
-
-    # Remove all redundant features
-    non_degenerate_feature_matrix_three = np.delete(non_degenerate_feature_matrix_two, redundant_features, 1)
-    print "Actives imputation: removed redundant_features according to covariance, now have %d features" % (non_degenerate_feature_matrix_three.shape[1])
+    print "Actives imputation: removed all constant valued features, now have %d features" % (non_degenerate_feature_matrix_two.shape[1])
 
     # Remove existing dataset files and flush new actives data
     with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'w+') as f_handle:
-        np.savetxt(f_handle, non_degenerate_feature_matrix_three[1:,:], delimiter=',',fmt='%5.5f')
+        np.savetxt(f_handle, non_degenerate_feature_matrix_two[1:,:], delimiter=',',fmt='%5.5f')
 
     # Update degenerate features
-    all_features = np.arange(feature_matrix.shape[1])
-    used_features = [ x-1 for x in non_degenerate_feature_matrix_three[0]]
+    used_features = [ x-1 for x in non_degenerate_feature_matrix_two[0]]
     degenerate_features = [i for i in all_features if i not in used_features]
     
     return [global_median_cache, degenerate_features, used_features]
