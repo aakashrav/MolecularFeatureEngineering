@@ -1,7 +1,6 @@
 import numpy as np
 import correlation_identifier
-
-NUM_FEATURES = 200
+import config
 
 def isfloat(x):
     try:
@@ -37,14 +36,28 @@ def _read_descriptor_file(descriptor_file_name):
 
     return descriptors
 
-def main():
-    feature_matrix = _read_descriptor_file("../features.csv")
-    significant_features = correlation_identifier.identify_correlated_features(feature_matrix, NUM_FEATURES)
-    with open('significant_features','wb+') as f_handle:
-    	print "Writing"
-        for feature in significant_features:
-        	f_handle.write("%s " % feature)
+def extract_features(NUM_FEATURES, covariance_threshold = .80):
+    feature_matrix = _read_descriptor_file(config.FRAGMENT_FEATURES_FILE)
+    all_features = np.arange(feature_matrix.shape[1])
+    # Keep track of the features
+    feature_matrix = np.vstack((all_features, feature_matrix))
 
+    #Remove all descriptors that have the same value for all fragments, they are degenerate
+    all_constant_features = []
+    for j in range(feature_matrix.shape[1]):
+        feature_column = feature_matrix[1:,j]
+        if (np.array_equal(feature_column,[feature_column[0]] * len(feature_column))):
+            all_constant_features.append(j)
+
+    significant_features = [feature for feature in all_features if feature not in all_constant_features]
+    np.delete(feature_matrix,all_constant_features,1)
+
+    correlation_representatives = correlation_identifier.identify_correlated_features(feature_matrix[1:], NUM_FEATURES,covariance_threshold)
+    feature_matrix = feature_matrix[:,correlation_representatives]
+    significant_features = feature_matrix[0]
+
+    with open(os.path.join(config.DATA_DIRECTORY,'significant_features'),'wb+') as f_handle:
+        np.savetxt(f_handle, significant_features, delimiter=",", fmt="%d")
 
 if __name__ == '__main__':
-	main()
+	extract_features(50)

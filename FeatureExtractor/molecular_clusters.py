@@ -22,8 +22,14 @@ def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE):
         # range_feature_val_array = np.subtract(max_feature_val_array,min_feature_val_array)
         percentile_value_array = [(.3 * max_feature) for max_feature in max_feature_val_array]
         # final_epsilon_array = np.add(min_feature_val_array,percentile_value_array)
-
+        
+        # Remove all zero values - we don't want an epsilon of zero to be calculated
+        percentile_value_array = [i for i in percentile_value_array if i != 0]
         epsilon = np.median(percentile_value_array)
+        # Sometimes median is 0, in which case we take the mean
+        if epsilon == 0:
+            epsilon = np.mean(percentile_value_array)
+        
         print "Computed epsilon for molecular matrix: %5.5f" % epsilon
         # Mu will be fairly constant, for now. 
         mu = 25

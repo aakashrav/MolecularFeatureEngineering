@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""The purpose of this module is to provide functions to retreive features of fragments 
+"""The purpose of this module is to provide functions to retrieve features of fragments 
 that are contained in the molecule, and impute the feature vectors so that they are not sparse, 
 i.e. there are no missing values
 """
@@ -13,18 +13,18 @@ import numpy as np
 import re
 import time
 from datetime import datetime
-import correlation_identifier
+import neighborhood_extractor
 import pickle
 import csv
 import config
 import shutil
 
-FLUSH_BUFFER_SIZE = 100
-DESCRIPTOR_TO_RAM = 1
-NUM_FEATURES = 50
+FLUSH_BUFFER_SIZE = config.FLUSH_BUFFER_SIZE
+DESCRIPTOR_TO_RAM = config.DESCRIPTOR_TO_RAM
+NUM_FEATURES = config.NUM_FEATURES
+COVARIANCE_THRESHOLD = config.COVARIANCE_THRESHOLD
 DATA_DIRECTORY = config.DATA_DIRECTORY
-
-DEBUG = True
+DEBUG = config.DEBUG
 
 fragment_number_name_mapping = {}
 actives_fragment_molecule_mapping = {}
@@ -90,9 +90,12 @@ def _actives_feature_impute(feature_matrix):
             degenerate_features.append(descriptor)
         global_median_cache[0,descriptor] = global_descriptor_median
     
-    # Remove pre computed significant features
+    # If we want, we can recompute the significant features before beginning imputation
+    if DESCRIPTOR_TO_RAM:
+        neighborhood_extractor.extract_features(NUM_FEATURES,COVARIANCE_THRESHOLD)
+
     print "Actives imputation: starting out with %d features" % (feature_matrix.shape[1])
-    significant_features = np.genfromtxt('significant_features',delimiter=',')
+    significant_features = np.genfromtxt(os.path.join(DATA_DIRECTORY,'significant_features'),delimiter=',')
     redundant_features = [i for i in all_features if i not in significant_features]
 
     feature_matrix = np.delete(feature_matrix, redundant_features, 1)
@@ -116,22 +119,12 @@ def _actives_feature_impute(feature_matrix):
     non_degenerate_feature_matrix_one = np.delete(feature_matrix, degenerate_features, 1)
     print "Actives imputation: removed degenerate features, now have %d features" % (non_degenerate_feature_matrix_one.shape[1])
 
-    #Then remove all descriptors that have the same value for all fragments, they are also degenerate
-    all_constant_features = []
-    for j in range(non_degenerate_feature_matrix_one.shape[1]):
-        feature_column = non_degenerate_feature_matrix_one[1:,j]
-        if (np.array_equal(feature_column,[feature_column[0]] * len(feature_column))):
-            all_constant_features.append(j)
-    
-    non_degenerate_feature_matrix_two = np.delete(non_degenerate_feature_matrix_one, all_constant_features, 1)
-    print "Actives imputation: removed all constant valued features, now have %d features" % (non_degenerate_feature_matrix_two.shape[1])
-
     # Remove existing dataset files and flush new actives data
     with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'w+') as f_handle:
-        np.savetxt(f_handle, non_degenerate_feature_matrix_two[1:,:], delimiter=',',fmt='%5.5f')
+        np.savetxt(f_handle, non_degenerate_feature_matrix_one[1:,:], delimiter=',',fmt='%5.5f')
 
     # Update degenerate features
-    used_features = [ x-1 for x in non_degenerate_feature_matrix_two[0]]
+    used_features = [ x-1 for x in non_degenerate_feature_matrix_one[0]]
     degenerate_features = [i for i in all_features if i not in used_features]
     
     return [global_median_cache, degenerate_features, used_features]
