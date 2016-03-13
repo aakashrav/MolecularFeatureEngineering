@@ -60,4 +60,4 @@ def extract_features(NUM_FEATURES, descriptor_matrix, covariance_threshold = .80
 
 if __name__ == '__main__':
     feature_matrix = _read_descriptor_file(config.FRAGMENT_FEATURES_FILE)
-	extract_features(50,feature_matrix)
+    extract_features(50,feature_matrix)
