@@ -64,7 +64,7 @@ def _compute_feature_median(non_imputed_feature_matrix, descriptor_indice, molec
     else:
         return np.median(global_descriptor_average_array)
 
-def _actives_feature_impute(feature_matrix):
+def _actives_feature_impute(feature_matrix, descriptor_matrix):
     
     if (feature_matrix is None):
         print("Empty matrix; no standard imputation done, continuing on..")
@@ -92,7 +92,7 @@ def _actives_feature_impute(feature_matrix):
     
     # If we want, we can recompute the significant features before beginning imputation
     if DESCRIPTOR_TO_RAM:
-        neighborhood_extractor.extract_features(NUM_FEATURES,COVARIANCE_THRESHOLD)
+        neighborhood_extractor.extract_features(NUM_FEATURES,COVARIANCE_THRESHOLD,descriptor_matrix)
 
     print "Actives imputation: starting out with %d features" % (feature_matrix.shape[1])
     significant_features = np.genfromtxt(os.path.join(DATA_DIRECTORY,'significant_features'),delimiter=',')
@@ -471,7 +471,7 @@ def retrieve_sdf_features(descriptor_file, sdf_molecules_to_fragments_file,
         descriptors_map = descriptors_map, descriptors=descriptors)
 
     # Impute the actives, keeping track of degenerate features and any global medians
-    global_median_cache,degenerate_features,used_features = _actives_feature_impute(non_imputed_feature_matrix)
+    global_median_cache,degenerate_features,used_features = _actives_feature_impute(non_imputed_feature_matrix,descriptors)
     
     # Load inactives matrix using the results from the actives imputation to impute the inactives matrix
     _inactives_load_impute_sdf(degenerate_features,
