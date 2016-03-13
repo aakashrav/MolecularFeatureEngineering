@@ -92,7 +92,7 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix):
     
     # If we want, we can recompute the significant features before beginning imputation
     if DESCRIPTOR_TO_RAM:
-        neighborhood_extractor.extract_features(NUM_FEATURES,COVARIANCE_THRESHOLD,descriptor_matrix)
+        neighborhood_extractor.extract_features(NUM_FEATURES,descriptor_matrix,COVARIANCE_THRESHOLD)
 
     print "Actives imputation: starting out with %d features" % (feature_matrix.shape[1])
     significant_features = np.genfromtxt(os.path.join(DATA_DIRECTORY,'significant_features'),delimiter=',')

@@ -36,8 +36,7 @@ def _read_descriptor_file(descriptor_file_name):
 
     return descriptors
 
-def extract_features(NUM_FEATURES, covariance_threshold = .80, descriptor_matrix):
-    # feature_matrix = _read_descriptor_file(config.FRAGMENT_FEATURES_FILE)
+def extract_features(NUM_FEATURES, descriptor_matrix, covariance_threshold = .80):
     all_features = np.arange(descriptor_matrix.shape[1])
     # Keep track of the features
     feature_matrix = np.vstack((all_features, descriptor_matrix))
@@ -60,4 +59,5 @@ def extract_features(NUM_FEATURES, covariance_threshold = .80, descriptor_matrix
         np.savetxt(f_handle, significant_features, delimiter=",", fmt="%d")
 
 if __name__ == '__main__':
-	extract_features(50)
+    feature_matrix = _read_descriptor_file(config.FRAGMENT_FEATURES_FILE)
+	extract_features(50,feature_matrix)
