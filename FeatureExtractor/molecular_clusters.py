@@ -29,12 +29,15 @@ def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE):
         # Sometimes median is 0, in which case we take the mean
         if epsilon == 0:
             epsilon = np.mean(percentile_value_array)
+
+        epsilon = 10 # FIX HERE
         
         print "Computed epsilon for molecular matrix: %5.5f" % epsilon
         # Mu will be fairly constant, for now. 
         mu = 25
         print "Computed mu for molecular matrix: %d" % mu
 
+        mu = 50 # FIX HERE
 
         result = subprocess.call(['sudo','java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
         	'FixedDBIDsFilter','-time','-algorithm','clustering.subspace.DiSH','-dish.epsilon',\

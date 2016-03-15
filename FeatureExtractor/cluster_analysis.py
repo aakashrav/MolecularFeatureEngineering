@@ -21,6 +21,9 @@ class Cluster:
         self.points = point_tuples_array
         self.num_points = len(point_tuples_array)
 
+    def get_points(self):
+        return self.points
+
     def set_id_points(self, point_id_array):
         self.point_ids = point_id_array
         #TODO THROW ERROR IF LENGTH OF THE ARRAY NOT THE SAME AS THE NUMBER OF POINTS
@@ -34,8 +37,6 @@ class Cluster:
     def get_subspace_mask(self):
         return self.subspace_mask
 
-    def get_points(self):
-        return self.points
 
     def get_num_points(self):
         return self.num_points
@@ -299,7 +300,7 @@ def main():
 
     clusters = prune_clusters(clusters, fragment_number_name_mapping, \
         active_fragment_molecule_mapping, inactive_fragment_molecule_mapping,\
-         diversity_threshold=20, percentage=False, purity_threshold=.7)
+         diversity_threshold=config.CLUSTER_DIVERSITY_THRESHOLD, percentage=config.CLUSTER_DIVERSITY_PERCENTAGE, purity_threshold=config.CLUSTER_PURITY_THRESHOLD)
     
     with open(os.path.join(DATA_DIRECTORY,'used_features.pkl'), 'rb') as f_handle:
         used_feature_mapping = pickle.load(f_handle)
