@@ -199,7 +199,7 @@ def identify_correlated_features( feature_matrix, \
     num_features, corrThreshold = .80):
     
     corrMatrix = np.cov(feature_matrix, None, rowvar=0)
-    degrees = countDegrees(corrMatrix,threshold)
+    degrees = countDegrees(corrMatrix,corrThreshold)
     chosen = [True]*len(degrees)
     isCorrelated = lambda i,j: corrMatrix[i][j] >= corrThreshold
           
