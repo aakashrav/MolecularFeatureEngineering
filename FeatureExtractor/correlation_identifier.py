@@ -196,7 +196,7 @@ def countDegrees(matrix,corrThreshold):
     return degs
 
 def identify_correlated_features( feature_matrix, \
-    num_features, threshold = .80):
+    num_features, corrThreshold = .80):
     
     corrMatrix = np.cov(feature_matrix, None, rowvar=0)
     degrees = countDegrees(corrMatrix,threshold)
