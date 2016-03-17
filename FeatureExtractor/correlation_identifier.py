@@ -197,6 +197,19 @@ def countDegrees(matrix,corrThreshold):
 
 def identify_correlated_features( feature_matrix, \
     num_features, corrThreshold = .80):
+
+    # Avoid degenerate cases when our dataset is sometimes empty
+    if feature_matrix == []:
+        print("ERROR: empty feature matrix, couldn't identify \
+            uniform features")
+        return []
+    
+    DATA_DIRECTORY = config.DATA_DIRECTORY
+    if molecule_feature_matrix.DEBUG:
+        with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv')) as f_handle:
+            reader = csv.reader(f_handle)
+            # Gets the first line
+            all_descriptor_names = next(reader)
     
     corrMatrix = np.cov(feature_matrix, None, rowvar=0)
     degrees = countDegrees(corrMatrix,corrThreshold)
@@ -209,10 +222,17 @@ def identify_correlated_features( feature_matrix, \
     else:
         m = max(degrees)
         i = degrees.index(m)
+
+    if molecule_feature_matrix.DEBUG:
+        neighborhood_filename = os.path.join(DATA_DIRECTORY,"Covariance Neighborhood")
             
     #while there are correlated features, we choose feature with highest degree as a representant and we
     #delete all features that are correlated with it (and weren't chosen yet)
     while(m > 0):
+        if molecule_feature_matrix.DEBUG:
+            with open(neighborhood_filename,'w+') as f_handle:
+                f_handle.write("\n\nNeighborhood for " + all_descriptor_names[index_of_max_feature] + "\n")
+
         for j in range(0,len(corrMatrix)):
             #for every neighbour of i...
             if (j != i) and chosen[j] and isCorrelated(i,j):
@@ -220,6 +240,10 @@ def identify_correlated_features( feature_matrix, \
                 for k in range(0,len(corrMatrix)):
                     if chosen[k] and isCorrelated(k,j):
                         degrees[k] -= 1
+                if molecule_feature_matrix.DEBUG:
+                    with open(neighborhood_filename,'a') as f_handle:
+                        f_handle.write(all_descriptor_names[j]+",")
+                        
         #"deletes" all neighbours of i
         for j in range(0,len(corrMatrix)):
             if (j != i) and chosen[j] and  isCorrelated(i,j):
