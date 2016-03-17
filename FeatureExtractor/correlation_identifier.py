@@ -231,7 +231,7 @@ def identify_correlated_features( feature_matrix, \
     while(m > 0):
         if molecule_feature_matrix.DEBUG:
             with open(neighborhood_filename,'w+') as f_handle:
-                f_handle.write("\n\nNeighborhood for " + all_descriptor_names[index_of_max_feature] + "\n")
+                f_handle.write("\n\nNeighborhood for " + all_descriptor_names[i] + "\n")
 
         for j in range(0,len(corrMatrix)):
             #for every neighbour of i...
@@ -243,7 +243,7 @@ def identify_correlated_features( feature_matrix, \
                 if molecule_feature_matrix.DEBUG:
                     with open(neighborhood_filename,'a') as f_handle:
                         f_handle.write(all_descriptor_names[j]+",")
-                        
+
         #"deletes" all neighbours of i
         for j in range(0,len(corrMatrix)):
             if (j != i) and chosen[j] and  isCorrelated(i,j):
