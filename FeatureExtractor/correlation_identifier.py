@@ -226,6 +226,9 @@ def identify_correlated_features( feature_matrix, \
                 degrees[j] = 0
                 chosen[j] = False
         
+        m = max(degrees)
+        i = degrees.index(m)
+        
     significant_descriptors = np.where(chosen == True)
     # Return the requested amount of significant features
     if (len(significant_features) <= num_features):
