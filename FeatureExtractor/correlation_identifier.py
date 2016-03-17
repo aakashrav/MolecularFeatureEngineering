@@ -191,7 +191,7 @@ def get_top_features( feature_matrix, num_features ):
 def countDegrees(matrix,corrThreshold):
     degs = []
     for row in matrix:
-        deg = len(filter(lambda x: x >= corrTreshold, row))
+        deg = len(filter(lambda x: x >= corrThreshold, row))
         degs.append(deg -1) #-1 is for the loop in every vertex
     return degs
 
