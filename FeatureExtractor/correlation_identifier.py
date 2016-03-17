@@ -206,9 +206,9 @@ def identify_correlated_features( feature_matrix, \
              
     if degrees == []:
         m = 0
-        else:
-            m = max(degrees)
-            i = degrees.index(m)
+    else:
+        m = max(degrees)
+        i = degrees.index(m)
             
     #while there are correlated features, we choose feature with highest degree as a representant and we
     #delete all features that are correlated with it (and weren't chosen yet)
