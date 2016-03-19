@@ -10,61 +10,61 @@ import os
 
 __author__="Aakash Ravi"
 
-def identify_uniform_features( feature_matrix, num_features ):
-    "This function takes in a matrix of size (n x m), where n is the \
-    number of fragments, and m the number of features. It then computes \
-    features which do not differ a lot in the data set. \
-    This is done by taking the diagonal values of the covariance \
-    matrix, which correspond to the variation of a certain feature \
-    and taking the square root, obtaining the standard deviation. \
-    We then divide the standard deviation by the mean of the feature, \
-    this way we have a normalized score that we can compare accross \
-    features. We can then use this score to identify the 'best' features- \
-    features with the lowest variance -  and return their indices. \
-    This score is also known as the 'Coefficient \
-    of Variance'"
+# def identify_uniform_features( feature_matrix, num_features ):
+#     "This function takes in a matrix of size (n x m), where n is the \
+#     number of fragments, and m the number of features. It then computes \
+#     features which do not differ a lot in the data set. \
+#     This is done by taking the diagonal values of the covariance \
+#     matrix, which correspond to the variation of a certain feature \
+#     and taking the square root, obtaining the standard deviation. \
+#     We then divide the standard deviation by the mean of the feature, \
+#     this way we have a normalized score that we can compare accross \
+#     features. We can then use this score to identify the 'best' features- \
+#     features with the lowest variance -  and return their indices. \
+#     This score is also known as the 'Coefficient \
+#     of Variance'"
     
-    # Avoid degenerate cases when our dataset is sometimes empty
-    if feature_matrix == []:
-        print("ERROR: empty feature matrix, couldn't identify \
-            uniform features")
-        return []
+#     # Avoid degenerate cases when our dataset is sometimes empty
+#     if feature_matrix == []:
+#         print("ERROR: empty feature matrix, couldn't identify \
+#             uniform features")
+#         return []
 
-    cv_matrix = np.cov(feature_matrix, None, rowvar=0)
+#     cv_matrix = np.cov(feature_matrix, None, rowvar=0)
 
-    # Take diagonal variance values and compute the standard deviation
-    d = np.diag(cv_matrix)
-    # Compute the standard deviation
-    std_deviation = np.sqrt(d)
-    # Divide by the mean for the feature
-    mean_features = np.mean(feature_matrix, axis=0)
-    # We need to take the absolute value of the mean since the mean may be
-    # negative. We only care about the ratio between the mean and standard
-    # deviation, so dividing by the absolute value suffices.
-    variance_score = np.divide(std_deviation,np.absolute(mean_features))
+#     # Take diagonal variance values and compute the standard deviation
+#     d = np.diag(cv_matrix)
+#     # Compute the standard deviation
+#     std_deviation = np.sqrt(d)
+#     # Divide by the mean for the feature
+#     mean_features = np.mean(feature_matrix, axis=0)
+#     # We need to take the absolute value of the mean since the mean may be
+#     # negative. We only care about the ratio between the mean and standard
+#     # deviation, so dividing by the absolute value suffices.
+#     variance_score = np.divide(std_deviation,np.absolute(mean_features))
     
-    # Take the features with the lowest scores -
-    # these correspond to features with the lowest variation
-    indices = np.argpartition(variance_score,num_features)[0:num_features]
+#     # Take the features with the lowest scores -
+#     # these correspond to features with the lowest variation
+#     indices = np.argpartition(variance_score,num_features)[0:num_features]
 
-    return indices
+#     return indices
 
-def get_top_features( feature_matrix, num_features ):
-    "This function performs performs logistic regression on our sample fragment \
-    data and finds coefficients for the features. Using these coefficients the \
-    function will return the most important features that correspond to the active \
-    molecules by choosing the features that correspond to the highest coefficient values."
+# def get_top_features( feature_matrix, num_features ):
+#     "This function performs performs logistic regression on our sample fragment \
+#     data and finds coefficients for the features. Using these coefficients the \
+#     function will return the most important features that correspond to the active \
+#     molecules by choosing the features that correspond to the highest coefficient values."
 
-    log_reg = linear_model.LogisticRegression(solver = 'liblinear')
-    TRAINING_DATA = np.array(feature_matrix)[0:len(feature_matrix)*.8,0:len(feature_matrix[0])-1]
-    TEST_DATA = np.array(feature_matrix)[len(feature_matrix)*.8:len(feature_matrix), \
-    0:len(feature_matrix[0])-1]
+#     log_reg = linear_model.LogisticRegression(solver = 'liblinear')
+#     TRAINING_DATA = np.array(feature_matrix)[0:len(feature_matrix)*.8,0:len(feature_matrix[0])-1]
+#     TEST_DATA = np.array(feature_matrix)[len(feature_matrix)*.8:len(feature_matrix), \
+#     0:len(feature_matrix[0])-1]
 
-    TRAINING_RESULTS = np.array(feature_matrix)[0:len(feature_matrix)*.8,len(feature_matrix[0])-1]
-    TEST_RESULTS = np.array(feature_matrix)[len(feature_matrix) *.8:len(feature_matrix), \
-    len(feature_matrix[0])-1]
+#     TRAINING_RESULTS = np.array(feature_matrix)[0:len(feature_matrix)*.8,len(feature_matrix[0])-1]
+#     TEST_RESULTS = np.array(feature_matrix)[len(feature_matrix) *.8:len(feature_matrix), \
+#     len(feature_matrix[0])-1]
     
-    print(log_reg.fit(TRAINING_DATA, TRAINING_RESULTS))
+#     print(log_reg.fit(TRAINING_DATA, TRAINING_RESULTS))
 
 
 # def identify_correlated_features( feature_matrix, \
@@ -187,16 +187,16 @@ def get_top_features( feature_matrix, num_features ):
 
 #     return neighbor_matrix
 
-# look on the correlation matrix as a matrix of neighbours and count degree for every feature
-def countDegrees(matrix,corrThreshold):
+# Look at the correlation matrix as a matrix of neighbours and count degrees for every feature
+def _count_degrees(matrix,corr_threshold):
     degs = []
     for row in matrix:
-        deg = len(filter(lambda x: x >= corrThreshold, row))
+        deg = len(filter(lambda x: x >= corr_threshold, row))
         degs.append(deg -1) #-1 is for the loop in every vertex
     return degs
 
 def identify_correlated_features( feature_matrix, \
-    num_features, corrThreshold = .80):
+    num_features, corr_threshold = .80):
 
     # Avoid degenerate cases when our dataset is sometimes empty
     if feature_matrix == []:
@@ -211,10 +211,10 @@ def identify_correlated_features( feature_matrix, \
             # Gets the first line
             all_descriptor_names = next(reader)
     
-    corrMatrix = np.cov(feature_matrix, None, rowvar=0)
-    degrees = countDegrees(corrMatrix,corrThreshold)
+    corr_matrix = np.cov(feature_matrix, None, rowvar=0)
+    degrees = _count_degrees(corr_matrix,corr_threshold)
     chosen = [True]*len(degrees)
-    isCorrelated = lambda i,j: corrMatrix[i][j] >= corrThreshold
+    isCorrelated = lambda i,j: corr_matrix[i][j] >= corr_threshold
           
              
     if degrees == []:
@@ -227,29 +227,27 @@ def identify_correlated_features( feature_matrix, \
         neighborhood_filename = os.path.join(DATA_DIRECTORY,"Covariance_Neighborhoods")
         open(neighborhood_filename,'w+')
             
-    #while there are correlated features, we choose feature with highest degree as a representant and we
-    #delete all features that are correlated with it (and weren't chosen yet)
-    iteration =0
+    # While there are still some correlated features, we choose feature with highest degree as a representitive and we
+    # remove all features that are correlated with it (and weren't chosen yet already)
     while(m > 0):
-        iteration+=1
-        print "Printing neighborhoods %s" % all_descriptor_names[i]
         if molecule_feature_matrix.DEBUG:
             with open(neighborhood_filename,'a') as f_handle:
                 f_handle.write("\n\nNeighborhood for " + all_descriptor_names[i] + "\n")
 
-        for j in range(0,len(corrMatrix)):
-            #for every neighbour of i...
+        for j in range(0,len(corr_matrix)):
+            # For every neighboro four chosen represantative
             if (j != i) and chosen[j] and isCorrelated(i,j):
-                #... reduce degree of all j's neighbours
-                for k in range(0,len(corrMatrix)):
+                # Reduce the degree of all of j's neighbors, since we are about to remove it
+                for k in range(0,len(corr_matrix)):
                     if chosen[k] and isCorrelated(k,j):
                         degrees[k] -= 1
                 if molecule_feature_matrix.DEBUG:
                     with open(neighborhood_filename,'a') as f_handle:
                         f_handle.write(all_descriptor_names[j]+",")
 
-        #"deletes" all neighbours of i
-        for j in range(0,len(corrMatrix)):
+        # Delete all neighbors of our chosen representative
+        # The neighbors can no longer be chosen features in further iterations
+        for j in range(0,len(corr_matrix)):
             if (j != i) and chosen[j] and  isCorrelated(i,j):
                 degrees[j] = 0
                 chosen[j] = False
@@ -259,10 +257,8 @@ def identify_correlated_features( feature_matrix, \
         if molecule_feature_matrix.DEBUG:
             with open(neighborhood_filename,'a') as f_handle:
                 f_handle.write('\n')
-        print "Number of iterations %d"  % iteration
         
     significant_features = np.where(np.array(chosen) == True)[0]
-    print "Significant Features %s" % significant_features
     # Return the requested amount of significant features
     if (len(significant_features) <= num_features):
         return significant_features

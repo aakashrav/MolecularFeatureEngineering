@@ -90,17 +90,17 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix):
             degenerate_features.append(descriptor)
         global_median_cache[0,descriptor] = global_descriptor_median
     
-    # If we want, we can recompute the significant features before beginning imputation
+    # Recompute the significant features before beginning imputation
     if DESCRIPTOR_TO_RAM:
         neighborhood_extractor.extract_features(NUM_FEATURES,descriptor_matrix,COVARIANCE_THRESHOLD)
 
     print "Actives imputation: starting out with %d features" % (feature_matrix.shape[1])
     significant_features = np.genfromtxt(os.path.join(DATA_DIRECTORY,'significant_features'),delimiter=',')
     redundant_features = [i for i in all_features if i not in significant_features]
-    print '%d - %d = %d' % (len(all_features),len(significant_features),len(redundant_features))
 
     feature_matrix = np.delete(feature_matrix, redundant_features, 1)
-    print "Actives imputation: removed %d features with covariance neighborhoods, now have %d features" % (len(redundant_features), len(significant_features))
+    print "Actives imputation: removed %d features with constant features and covariance neighborhoods, now have %d features, with the NUM_FEATURES \
+    parameters set to %d" % (len(redundant_features), len(significant_features), NUM_FEATURES)
     # Remove the redundant features from the degenerate features, since they have already
     # been removed
     for feature in redundant_features:
