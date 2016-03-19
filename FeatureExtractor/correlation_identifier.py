@@ -231,6 +231,7 @@ def identify_correlated_features( feature_matrix, \
     iteration =0
     while(m > 0):
         iteration+=1
+        print "Printing neighborhoods %s" % all_descriptor_names[i]
         if molecule_feature_matrix.DEBUG:
             with open(neighborhood_filename,'w+') as f_handle:
                 f_handle.write("\n\nNeighborhood for " + all_descriptor_names[i] + "\n")
