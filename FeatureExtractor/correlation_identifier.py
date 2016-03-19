@@ -118,7 +118,7 @@ def get_top_features( feature_matrix, num_features ):
 #         print "Correlated feature removing details: "
 
 #     if molecule_feature_matrix.DEBUG:
-#         neighborhood_filename = os.path.join(DATA_DIRECTORY,"Covariance Neighborhood")
+#         neighborhood_filename = os.path.join(DATA_DIRECTORY,"Covariance_Neighborhoods")
 #     # While there are correlated features, we choose the feature with highest degree, 
 #     # the one with the most neighbors, as a representant of some 'neighbor class'. We
 #     # then delete all features that are correlated with this representant (if it wasn't)
@@ -224,11 +224,13 @@ def identify_correlated_features( feature_matrix, \
         i = degrees.index(m)
 
     if molecule_feature_matrix.DEBUG:
-        neighborhood_filename = os.path.join(DATA_DIRECTORY,"Covariance Neighborhood")
+        neighborhood_filename = os.path.join(DATA_DIRECTORY,"Covariance_Neighborhoods")
             
     #while there are correlated features, we choose feature with highest degree as a representant and we
     #delete all features that are correlated with it (and weren't chosen yet)
+    iteration =0
     while(m > 0):
+        iteration+=1
         if molecule_feature_matrix.DEBUG:
             with open(neighborhood_filename,'w+') as f_handle:
                 f_handle.write("\n\nNeighborhood for " + all_descriptor_names[i] + "\n")
@@ -252,6 +254,7 @@ def identify_correlated_features( feature_matrix, \
         
         m = max(degrees)
         i = degrees.index(m)
+        print "Number of iterations %d"  % iteration
         
     significant_features = np.where(np.array(chosen) == True)[0]
     print "Significant Features %s" % significant_features
