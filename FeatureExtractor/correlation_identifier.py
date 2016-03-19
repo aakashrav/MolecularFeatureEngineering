@@ -268,7 +268,3 @@ def identify_correlated_features( feature_matrix, \
         return significant_features
     else:
         return significant_features[0:num_features-1]
-
-
-
-

@@ -97,6 +97,7 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix):
     print "Actives imputation: starting out with %d features" % (feature_matrix.shape[1])
     significant_features = np.genfromtxt(os.path.join(DATA_DIRECTORY,'significant_features'),delimiter=',')
     redundant_features = [i for i in all_features if i not in significant_features]
+    print '%d - %d = %d' % (len(all_features),len(significant_features),len(redundant_features))
 
     feature_matrix = np.delete(feature_matrix, redundant_features, 1)
     print "Actives imputation: removed %d features with covariance neighborhoods, now have %d features" % (len(redundant_features), len(significant_features))
