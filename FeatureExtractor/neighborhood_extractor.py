@@ -48,7 +48,8 @@ def extract_features(NUM_FEATURES, descriptor_matrix, covariance_threshold = .80
         feature_column = feature_matrix[1:,j]
         if (np.array_equal(feature_column,[feature_column[0]] * len(feature_column))):
             all_constant_features.append(j)
-
+    
+    print "All constant features %s\n" % (all_constant_features)
     significant_features = [feature for feature in all_features if feature not in all_constant_features]
     np.delete(feature_matrix,all_constant_features,1)
 
