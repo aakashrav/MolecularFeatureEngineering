@@ -17,24 +17,23 @@ import molecule_feature_matrix
 import molecular_clusters
 import cluster_analysis
 
-DATASET_NUMBER = '03'
-DATASET_DIRECTORY = '/../SDFActivesInactivesDataset/'
-FRAGMENTS_DIRECTORY = '/../fragments/'
+DATASET_NUMBER = '8'
+DATASET_DIRECTORY = '../MUV-JSON/'
 DESCRIPTORS_DIRECTORY = '/../descriptors/'
 
 def main():
 
-    actives_dataset_file = os.path.dirname(os.path.realpath(__file__)) + \
-        DATASET_DIRECTORY + "IC-50_8/actives"
-
-    inactives_dataset_file = os.path.dirname(os.path.realpath(__file__)) + \
-        DATASET_DIRECTORY + "IC-50_8/inactives"
+    actives_dataset_file = os.path.dirname(os.path.realpath(__file__)) +  "/" + \
+        DATASET_DIRECTORY + DATASET_NUMBER + "/" + DATASET_NUMBER + "_ligands.json"
+    
+    inactives_dataset_file = os.path.dirname(os.path.realpath(__file__)) + "/" + \
+       DATASET_DIRECTORY + DATASET_NUMBER + "/" + DATASET_NUMBER + "_decoys.json"
 
     descriptors_file = os.path.dirname(os.path.realpath(__file__)) + \
     '/' + DESCRIPTORS_DIRECTORY + 'features.csv'
 
-    fragments_file = os.path.dirname(os.path.realpath(__file__)) + \
-     '/' + FRAGMENTS_DIRECTORY + 'SDF_Fragments.json'
+    fragments_file = os.path.dirname(os.path.realpath(__file__)) + "/" + \
+       DATASET_DIRECTORY + DATASET_NUMBER + "/" + DATASET_NUMBER + "_fragments.json"
 
     # Fetch the SDF Actives and Inactives List
     actives = obtain_molecules.get_sdf_molecules(actives_dataset_file)

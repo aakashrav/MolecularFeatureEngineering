@@ -229,7 +229,8 @@ def _load_matrix_sdf(descriptor_file, molecules_to_fragments_file,
             try:
                 full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
                             if molecule["name"] == molecule_sdfs[molecule_index]]
-                # First index is actual fragments
+                # First index is actual fragments, since there 
+                # can exist only one key value pair for the molecule and its fragments
                 full_fragments = full_fragments[0]
                 fragments = [fragment["smiles"] for fragment in full_fragments]
 
@@ -345,7 +346,8 @@ def _inactives_load_impute_sdf(degenerate_features, \
             try:
                 full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
                             if molecule["name"] == molecule_sdfs[molecule_index]]
-                # First index is actual fragments
+                # First index is actual fragments, since there 
+                # can exist only one key value pair for the molecule and its fragments
                 full_fragments = full_fragments[0]
                 fragments = [fragment["smiles"] for fragment in full_fragments]
 

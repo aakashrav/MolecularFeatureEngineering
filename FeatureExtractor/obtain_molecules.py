@@ -26,20 +26,21 @@ import re
 def get_sdf_molecules( molecule_directory ):
     "This function retrieves the actives or inactives SDF Identifier numbers from the data file"
 
-    molecule_list = []
-
-    for subdir, dirs, files in os.walk(molecule_directory):
-        for file in files:
-            if file.endswith('.sdf'):
-                with open(os.path.join(molecule_directory,file),'r') as f_handle: 
-                    lines = f_handle.read().splitlines()
-                    molecule_sdf = lines[0]
-                molecule_list.append(molecule_sdf)
-                f_handle.close()
-            else:
-                continue
+    # for subdir, dirs, files in os.walk(molecule_directory):
+    #     for file in files:
+    #         if file.endswith('.sdf'):
+    #             with open(os.path.join(molecule_directory,file),'r') as f_handle: 
+    #                 lines = f_handle.read().splitlines()
+    #                 molecule_sdf = lines[0]
+    #             molecule_list.append(molecule_sdf)
+    #             f_handle.close()
+    #         else:
+    #             continue
+    
+    with open(molecule_directory,'r') as f_handle:
+        molecule_list = json.load(f_handle)
 
     return molecule_list
 
 if __name__ == '__main__':
-    get_sdf_molecules("../SDFActivesInactivesDataset/Hydrogen-Bonds_4/actives_1.json")
+    get_sdf_molecules("../MUV-JSON/8/8_decoys.json")
