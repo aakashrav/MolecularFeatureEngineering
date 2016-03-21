@@ -271,7 +271,7 @@ def compute_threshold_weighting(actives_fragment_molecule_mapping, inactives_fra
     
     # Num inactives -10 
     if (num_inactive_fragments - 10 >  num_active_fragments):
-        threshold_weighting = 1 + (math.log10(len(inactive_fragments) - len(active_fragments)))
+        threshold_weighting = 1 + (math.log10(num_inactive_fragments - num_active_fragments))
     else:
         threshold_weighting = 1
 
