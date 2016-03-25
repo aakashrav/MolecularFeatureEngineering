@@ -21,7 +21,7 @@ def main():
     # The maximum distance between two sequentially generated clusters
     max_shifting_range = 200
     # Purity of the cluster; that is, 95% of the cluster's points are pure,
-    # and the rest are some noise points
+    # and the rest are some noise points that don't really belong in the cluster
     purity = .95
 
     clusters = generate_clusters.GenerateSeveralClusters(num_unclustered_dimensions, num_unclustered_dimensions,
@@ -31,7 +31,7 @@ def main():
     # Label the data points in our clusters with identification keys
     labelled_clusters = generate_clusters.LabelDataWithKeys(clusters)
     
-    # Flush the laballed clusters
+    # Flush the labelled clusters
     generate_clusters.FlushData("labelled_clusters2.csv",labelled_clusters)
 
     # Add class data about the point (the molecule of the point, its activity, etc.)

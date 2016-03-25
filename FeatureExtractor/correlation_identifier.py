@@ -211,7 +211,6 @@ def identify_correlated_features( feature_matrix, \
             # Gets the first line
             all_descriptor_names = next(reader)
     
-    # corr_matrix = np.cov(feature_matrix, None, rowvar=0)
     corr_matrix = np.corrcoef(feature_matrix,None,rowvar=0)
     degrees = _count_degrees(corr_matrix,corr_threshold)
     chosen = [True]*len(degrees)

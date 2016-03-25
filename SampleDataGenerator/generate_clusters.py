@@ -45,7 +45,7 @@ def AddClassData(all_clusters, active_molecule_list, inactive_molecule_list,
     for i in range(0, num_active_clusters):
         current_active_cluster = all_clusters[i]
 
-        for j in range(0, len(current_active_cluster)):
+        for j in range(len(current_active_cluster)):
             random_molecule_index = random.randint(0,len(active_molecule_list)-1)
 
             class_vector = DataPointClass(current_active_cluster[j][0], \
@@ -58,7 +58,7 @@ def AddClassData(all_clusters, active_molecule_list, inactive_molecule_list,
     for i in range(num_active_clusters, len(all_clusters)):
         current_inactive_cluster = all_clusters[i]
 
-        for j in range(0, len(current_inactive_cluster)):
+        for j in range(len(current_inactive_cluster)):
             random_molecule_index = random.randint(0,len(inactive_molecule_list)-1)
 
             class_vector = DataPointClass(current_inactive_cluster[j][0], \
@@ -80,7 +80,7 @@ def FlushData(output_filename, data):
                 f_handle.write("Dimension " + str(i) + '\n')
     # Append the rest
     with open(output_filename,'a') as f_handle:
-        for i in range(0, len(data)):
+        for i in range(len(data)):
             np.savetxt(f_handle, data[i], delimiter=",", fmt="%f")
 
 # Method for flushing the key of a data point along with the specific molecule
@@ -93,7 +93,7 @@ def FlushClassData(output_filename, data):
         f_handle.write("key" + ',' + "molecule" + ',' + "active_flag" + '\n')
     # Append the rest
     with open(output_filename, 'a') as f_handle:
-        for i in range(0, len(data)):
+        for i in range(len(data)):
             f_handle.write(str(data[i].key) + "," + str(data[i].molecule) + "," + str(data[i].active_flag) + "\n")
 
 # Method for labelling each raw data point in each cluster with an identification key
@@ -101,14 +101,16 @@ def LabelDataWithKeys(clusters):
     labelled_clusters = []
     counter = 0
 
-    for i in range(0, clusters.shape[0]):
+    for i in range(clusters.shape[0]):
         current_cluster = clusters[i]
-        new_cluster = []
+        new_cluster = np.empty([current_cluster.shape[0],current_cluster.shape[1]+1],dtype=np.float)
 
-        for j in range(0, current_cluster.shape[0]):
+        for j in range(current_cluster.shape[0]):
             current_vector = current_cluster[j]
+            # Insert an identification key
             new_vector = np.insert(current_vector,0,counter)
-            new_cluster.append(new_vector)
+            # new_cluster.append(new_vector)
+            new_cluster[j] = new_vector
             counter = counter +1
 
         labelled_clusters.append(new_cluster)
@@ -132,10 +134,10 @@ def GenerateSeveralClusters(clustered_dimensions, unclustered_dimensions,
     cluster_radius = ComputeClusterRadiusFromDeviation(deviation_per_dimension, clustered_dimensions)
 
     # Compute the minimum physical distance between clusters, should be the radius of a cluster
-    # multiplied by the distance ration between clusters.
+    # multiplied by the distance ratio between clusters.
     min_inter_cluster_distance = distance_ratio_between_clusters * cluster_radius
 
-    for j in range(0, amount_of_clusters):
+    for j in range(amount_of_clusters):
         # Generate cluster with a specific center
         cluster = GenerateSubspaceCluster(clustered_dimensions, unclustered_dimensions,
             points_per_cluster[j], cluster_radius, center_seed, unclustered_subspace_range,
@@ -144,7 +146,7 @@ def GenerateSeveralClusters(clustered_dimensions, unclustered_dimensions,
         clusters.append(cluster)
         # Generate a new center for the next cluster, we will shift the center by our
         # at least our min_inter_cluster_distance but at most our max_shifting_range
-        for k in range(0, center_seed.shape[1]):
+        for k in range(center_seed.shape[1]):
 
             # Sometimes user specifies an dimensional distance above the max shifting range.
             # To avoid errors, if this is the case then we just use the max shifting range
@@ -193,7 +195,7 @@ def GenerateSubspaceCluster(clustered_dimensions, unclustered_dimensions, points
         clustered_vectors.shape[1]],dtype=np.float)
 
     # Now add random data for the unclustered dimensions
-    for i in range(0, num_pure_points):
+    for i in range(num_pure_points):
         for k in range(clustered_dimensions-1,(clustered_dimensions + unclustered_dimensions)):
             random_number_in_range = random.randint(0,unclustered_subspace_range)
             clustered_vectors[i,k] = random_number_in_range
@@ -207,7 +209,7 @@ def GenerateSubspaceCluster(clustered_dimensions, unclustered_dimensions, points
     # Must be atleast 2 so we get some impurity
     num_impure_dimensions = random.randint(2,clustered_dimensions)
     # Generate random center seeds just for the impure dimensions
-    for i in range (0, num_impure_dimensions):
+    for i in range (num_impure_dimensions):
         random_number_in_range = random.randint(0,unclustered_subspace_range)
         center_vector[i] = random_number_in_range
     # Generate the impure points
@@ -231,7 +233,7 @@ def GenerateSubspaceCluster(clustered_dimensions, unclustered_dimensions, points
 
     # Sort through the cluster and map the data points according to this permutation
     # of the dimensions
-    for i in range(0, pre_random_permutation_cluster.shape[0]):
+    for i in range(pre_random_permutation_cluster.shape[0]):
         permuted_data_point = []
         PerformPermutationMapping(pre_random_permutation_cluster[i],permuted_data_point, \
             random_permutation)
@@ -241,7 +243,7 @@ def GenerateSubspaceCluster(clustered_dimensions, unclustered_dimensions, points
 
 # Perform the permutation on the arr, and deposit contents into newarr
 def PerformPermutationMapping(arr,newarr,permutation):
-    for j in range(0,arr.shape[0]):
+    for j in range(arr.shape[0]):
         newarr.append(arr[permutation[j]])
 
 # The deviation per dimension is only defined on a per dimensional basis, so we
