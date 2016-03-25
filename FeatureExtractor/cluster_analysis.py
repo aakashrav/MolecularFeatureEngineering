@@ -37,10 +37,26 @@ class Cluster:
     def get_subspace_mask(self):
         return self.subspace_mask
 
-
     def get_num_points(self):
         return self.num_points
+    
+    def get_min_descriptor_values(self):
+        return self.min_descriptor_values
 
+    def set_min_descriptor_values(self, new_values):
+        self.min_descriptor_values = new_values
+
+    def get_max_descriptor_values(self):
+        return self.max_descriptor_values
+
+    def set_max_descriptor_values(self, new_values):
+        self.max_descriptor_values = new_values
+
+    def get_descriptor_averages(self):
+        return self.descriptor_averages
+    
+    def set_descriptor_averages(self, new_values):
+        self.descriptor_averages = new_values
 
 def compute_silhouette(point, cluster, other_clusters, point_index):
     
@@ -343,18 +359,26 @@ def main():
             cluster_points = np.array(cluster.get_points())
             cluster_points = cluster_points.reshape(len(cluster.get_points()), len(cluster.get_points()[0]))
 
-            cluster_median = np.median(cluster_points, axis=0)
+            cluster_mean = np.mean(cluster_points, axis=0)
+            cluster.set_descriptor_averages(cluster_mean)
             descriptor_max = np.amax(cluster_points,axis=0)
+            cluster.set_max_descriptor_values = descriptor_max
             descriptor_min = np.amin(cluster_points, axis=0)
+            cluster.set_min_descriptor_values = descriptor_min
 
             descriptor_count = 0
             for descriptor in all_descriptor_names[significant_features]:
-                f_handle.write("%s Median: %5.5f, Max: %5.5f, Min: %5.5f, Range: %5.5f\n\n" % \
-                    (descriptor, cluster_median[descriptor_count], descriptor_max[descriptor_count], \
+                f_handle.write("%s Mean: %5.5f, Max: %5.5f, Min: %5.5f, Range: %5.5f\n\n" % \
+                    (descriptor, cluster_mean[descriptor_count], descriptor_max[descriptor_count], \
                         descriptor_min[descriptor_count], descriptor_max[descriptor_count] - descriptor_min[descriptor_count]))
                 descriptor_count+=1
 
             cluster_count+=1
+    
+    # Flush the different cluster's centroids, which represent our model of the current molecular database
+    with open(os.path.join(DATA_DIRECTORY,'molecular_cluster_model'),'w+') as f_handle:
+        for cluster in clusters:
+            numpy.savetxt(f_handle, np.asarray(cluster.get_descriptor_averages), delimiter=",", fmt="%f")
 
     # silhouette_metric = calculate_clustering_metric("silhouette", active_clusters
 
