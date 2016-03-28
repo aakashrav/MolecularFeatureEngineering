@@ -1,6 +1,13 @@
+import os
 import generate_clusters
+import config
+import shutil
 
 def main():
+    
+    if os.path.exists(config.TEST_DATA_DIRECTORY):
+        shutil.rmtree(config.TEST_DATA_DIRECTORY)
+    os.makedirs(config.TEST_DATA_DIRECTORY)
 
     # Number of clustered dimensions
     num_clustered_dimensions = 3
@@ -11,7 +18,7 @@ def main():
     # Points per cluster , VERY DENSE CLUSTER
     # amount_of_points = [22,420,533,23,128,140,443,5,12,241,30]
     # Very light cluster
-    amount_of_points = [2,14,13,23,12,18,3,10,9,2,14]
+    amount_of_points = [10,14,13,23,12,18,10,10,10,10,14]
     # Radius (or deviation from the center) in each dimension
     deviation_per_dimension = 10
     #  Range of noise for the unclustered dimensions
@@ -32,15 +39,10 @@ def main():
     labelled_clusters = generate_clusters.LabelDataWithKeys(clusters)
     
     # Flush the labelled clusters
-    generate_clusters.FlushData("labelled_clusters2.csv",labelled_clusters)
-
-    # Add class data about the point (the molecule of the point, its activity, etc.)
-    # We would like a ratio of 60% active clusters and 40% inactive clusters
-    data_with_classes = generate_clusters.AddClassData(labelled_clusters, ["C15H20O4","Al2Be3O18Si6"], \
-        ["C6H10O7","C12H24O2"], .6)
-
-    # Flush the data points
-    generate_clusters.FlushClassData("fragment_data_points.csv", data_with_classes)
+    generate_clusters.FlushData(labelled_clusters)
+    
+    # Add molecular data with values for purity, diversity, etc. for a more realistic dataset
+    data_with_classes = generate_clusters.AddMolecularData(labelled_clusters, 10, 40, 7, .6, 4)
 
 
 if __name__ == '__main__':

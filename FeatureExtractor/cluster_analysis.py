@@ -8,6 +8,7 @@ import sys
 import molecule_feature_matrix
 import shutil
 import config
+import molecular_clusters
 
 _dish_clustering_parameters_method = {"silhouette":0, "calinsky":1}
 
@@ -208,7 +209,7 @@ def extract_clusters_from_file(filename):
 
 def prune_clusters(clusters, fragment_name_number_mapping, active_fragment_molecule_mapping, inactive_fragment_molecule_mapping, \
     diversity_threshold = 5, percentage = False, \
-    purity_threshold = .3):
+    purity_threshold = .3, test = False):
 
     print "Clusters before %d" % (len(clusters))
 
@@ -228,8 +229,12 @@ def prune_clusters(clusters, fragment_name_number_mapping, active_fragment_molec
         all_points = clusters[i].get_points()
         unique_active_molecules = []
         for j in range(len(all_points)):
-            point_fragment_id = clusters[i].get_id_points()[j]
-            fragment_name = fragment_name_number_mapping[point_fragment_id]
+            # In test versions we don't have the fragment name to number mapping
+            if not test:
+                point_fragment_id = clusters[i].get_id_points()[j]
+                fragment_name = fragment_name_number_mapping[point_fragment_id]
+            else:
+                fragment_name = clusters[i].get_id_points()[j]
 
             try:
                 molecules_of_fragment = active_fragment_molecule_mapping[fragment_name]
@@ -251,7 +256,12 @@ def prune_clusters(clusters, fragment_name_number_mapping, active_fragment_molec
         num_inactives_in_cluster = 0
         for j in range(len(all_points)):
             point_fragment_id = clusters[i].get_id_points()[j]
-            fragment_name = fragment_name_number_mapping[point_fragment_id]
+            
+            if not test:
+                point_fragment_id = clusters[i].get_id_points()[j]
+                fragment_name = fragment_name_number_mapping[point_fragment_id]
+            else:
+                fragment_name = clusters[i].get_id_points()[j]
 
             try:
                 molecules_of_fragment = active_fragment_molecule_mapping[fragment_name]
@@ -390,6 +400,32 @@ def main():
     # else:
     #     print "Silhouette: %d" % (silhouette_metric)
 
+def test_main():
+
+    DATA_DIRECTORY = config.TEST_DATA_DIRECTORY
+
+    molecular_clusters.find_clusters(os.path.join(DATA_DIRECTORY,"detected_clusters"),
+        os.path.join(DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),config.ELKI_EXECUTABLE,
+        epsilon = 50, mu=15)
+
+    clusters = extract_clusters_from_file(os.path.join(DATA_DIRECTORY,"detected_clusters"))
+
+    with open(os.path.join(DATA_DIRECTORY,"test_actives_fragment_molecule_mapping.pkl"), 'rb') as f_handle:
+        active_fragment_molecule_mapping = pickle.load(f_handle)
+    
+    with open(os.path.join(DATA_DIRECTORY,"test_inactives_fragment_molecule_mapping.pkl"),'rb') as f_handle:
+        inactive_fragment_molecule_mapping = pickle.load(f_handle)
+
+    clusters = prune_clusters(clusters, None, \
+        active_fragment_molecule_mapping, inactive_fragment_molecule_mapping,\
+         diversity_threshold=7, percentage=False, purity_threshold=.6,test=True)
+
+    print(len(clusters))
+    cluster_count = 1
+    for cluster in clusters:
+        print(cluster.get_id_points())
+
 if __name__ == "__main__":
-    main()
+    # main()
+    test_main()
         

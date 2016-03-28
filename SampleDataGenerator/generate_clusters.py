@@ -1,100 +1,87 @@
 import numpy as np
+import os
 import math
 import csv
 import random
 from sklearn.datasets.samples_generator import make_blobs
+import config
+import pickle
 
-# class DataPointClass:
-# int key - corresponds to the identification of this specific data point.
-# using this key, we can perform an Join on the list of data points to obtain
-# the coordinates of this point
-#
-# string molecule - the specific molecule that this data point belongs to
-#
-# boolean active_flag - 1 or 0 flag depending on whether this point's molecule
-# is an active or inactive
-class DataPointClass:
-    def __init__(self, init_key, init_molecule, active):
-        self.key = int(init_key)
-        self.molecule = init_molecule
-        self.active_flag = active
-
-# AddClassData
-# all_clusters- an array of clusters, each clusters itself an array of data points
-#
-# active_molecule_list - a list of active molecules to classify the data points within
-# the clusters into
-#
-# inactive_molecule_list - same principle as active_molecule_list but with inactive
-# molecules
-#
-# active_inactive_cluster_ratio - ratio of active vs inactive clusters that the method
-# should initialize. The closer to 1 the ratio the higher percentage of clusters
-# will be clusters of active fragments.
-def AddClassData(all_clusters, active_molecule_list, inactive_molecule_list, 
-    active_inactive_cluster_ratio):
+def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactive_molecules, 
+    diversity_threshold, purity_threshold, num_diverse_pure_clusters,
+    diversity_percentage = False, difficult_version = False):
+    if diversity_percentage:
+        diversity_threshold = diversity_threshold * number_of_active_molecules
+    current_diverse_pure_clusters = 0
     
-    # Use the ratio to figure out how many active clusters are needed out of all clusters
-    num_clusters = len(all_clusters)
-    num_active_clusters = int(math.floor(num_clusters * active_inactive_cluster_ratio))
-
-    data_points_with_classes = []
+    # Prevent parameter combinations that may lead to severe errors
+    if (num_diverse_pure_clusters > len(all_clusters)):
+            raise ValueError("Current num_diverse_clusters is greater than the actual number of existing clusters provided")
     
-    # Initialize active clusters, with the corresponding data points in this cluster
-    # being assigned to active molecules
-    for i in range(0, num_active_clusters):
-        current_active_cluster = all_clusters[i]
+    actives_fragments_to_molecule_mapping = {}
+    inactives_fragments_to_molecule_mapping = {}
+    # active_molecule_list = np.arange(0,number_of_active_molecules).reshape(1,number_of_active_molecules)
+    # inactive_molecule_list = np.arange(0,number_of_inactive_molecules).reshape(1,number_of_inactive_molecules)
 
-        for j in range(len(current_active_cluster)):
-            random_molecule_index = random.randint(0,len(active_molecule_list)-1)
+    for cluster in all_clusters:
+        already_assigned_fragments = []
+        num_points = len(cluster)
 
-            class_vector = DataPointClass(current_active_cluster[j][0], \
-                active_molecule_list[random_molecule_index], active=1)
-
-            data_points_with_classes.append(class_vector)
-
-    # Initialize inactive clusters; exactly the same as active clusters, except
-    # we use the remaining clusters from the list of all clusters
-    for i in range(num_active_clusters, len(all_clusters)):
-        current_inactive_cluster = all_clusters[i]
-
-        for j in range(len(current_inactive_cluster)):
-            random_molecule_index = random.randint(0,len(inactive_molecule_list)-1)
-
-            class_vector = DataPointClass(current_inactive_cluster[j][0], \
-                inactive_molecule_list[random_molecule_index], active=0)
+        if current_diverse_pure_clusters < num_diverse_pure_clusters:
+            # First deal with diversity
+            # Up to the user to make sure that each test cluster has enough points to
+            # even be able to be considered diverse.
+            max_fragments = np.min([num_points, diversity_threshold])
+            for i in range(max_fragments):
+                actives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_active_molecules]
+                already_assigned_fragments.append(i)
             
-            data_points_with_classes.append(class_vector)
+            # Then deal with purity
+            number_of_active_fragments_needed = int(np.ceil(purity_threshold * num_points))
+            for i in range(number_of_active_fragments_needed):
+                if i not in already_assigned_fragments:
+                    actives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_active_molecules]
+                    already_assigned_fragments.append(i)
 
-    return data_points_with_classes
-
-# Method for flushing the identification key of a data point, and the data point itself
-def FlushData(output_filename, data):
-    # Write the column name entries
-    with open(output_filename, 'w') as f_handle:
-        f_handle.write("key" + ',')
-        for i in range(1, len(data[0][0])):
-            if i < len(data[0][0])-1:
-                f_handle.write("Dimension " + str(i) + ',')
+            # Assign the rest to inactives
+            for i in range(max_fragments,num_points):
+                if i not in already_assigned_fragments:
+                    inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
+        
+        else:
+            # In difficult version the rest of the clusters all have only inactive fragments
+            if difficult_version:
+                for i in range(num_points):
+                    # Choose an active molecule at random, doesn't matter which one
+                    inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
+            
+            # Else in the easy version assign each cluster to actives or inactives randomly
             else:
-                f_handle.write("Dimension " + str(i) + '\n')
-    # Append the rest
-    with open(output_filename,'a') as f_handle:
-        for i in range(len(data)):
-            np.savetxt(f_handle, data[i], delimiter=",", fmt="%f")
+                active = np.random.randint(2)
+                if active:
+                    for i in range(num_points):
+                        # Choose an active molecule at random, doesn't matter which one
+                        actives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_active_molecules]
+                else:
+                    for i in range(num_points):
+                        # Choose an active molecule at random, doesn't matter which one
+                        inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
+    
+    with open(os.path.join(config.TEST_DATA_DIRECTORY,"test_actives_fragment_molecule_mapping.pkl"),'wb+') as f_handle:
+         pickle.dump(actives_fragments_to_molecule_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
+    
+    with open(os.path.join(config.TEST_DATA_DIRECTORY,"test_inactives_fragment_molecule_mapping.pkl"),'wb+') as f_handle:
+        pickle.dump(inactives_fragments_to_molecule_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
 
-# Method for flushing the key of a data point along with the specific molecule
-# and activity class that this data point belongs to. Can then do a Join with
-# the raw data points using the identification key and get all the information about
-# a specific point.
-def FlushClassData(output_filename, data):
-    # Write the first entry
-    with open(output_filename, 'w') as f_handle:
-        f_handle.write("key" + ',' + "molecule" + ',' + "active_flag" + '\n')
-    # Append the rest
-    with open(output_filename, 'a') as f_handle:
-        for i in range(len(data)):
-            f_handle.write(str(data[i].key) + "," + str(data[i].molecule) + "," + str(data[i].active_flag) + "\n")
+# Flush the clusters to file
+def FlushData(clusters):
+    # Create new file
+    open(os.path.join(config.TEST_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"), 'w+')
+    with open(os.path.join(config.TEST_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"), 'a') as f_handle:
+        for cluster in clusters:
+            # Flush everything except the identification key
+            new_cluster = np.delete(cluster, 0, 1)
+            np.savetxt(f_handle, new_cluster, delimiter=",", fmt="%f")
 
 # Method for labelling each raw data point in each cluster with an identification key
 def LabelDataWithKeys(clusters):
