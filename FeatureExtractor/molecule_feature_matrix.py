@@ -451,6 +451,23 @@ def _inactives_load_impute_sdf(degenerate_features, \
             with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'a') as f_handle:
                 np.savetxt(f_handle, inactives_feature_matrix[0:FLUSH_COUNT,non_degenerate_descriptors], delimiter=',', fmt='%5.5f')
 
+def normalize_features(molecule_feature_matrix):
+
+    normalized_feature_matrix = np.empty(molecule_feature_matrix.shape)
+
+    # Normalize the values of each fragment for each feature
+    for feature in range(molecule_feature_matrix.shape[1]):
+        # Get the minimum accross the feature values
+        max_feature = np.amax(molecule_feature_matrix[:,feature])
+        # Get the maximum accross the feature values
+        min_feature = np.amin(molecule_feature_matrix[:,feature])
+        # Normalize each fragment's feature value
+        for fragment in range(molecule_feature_matrix.shape[0]):
+            normalized_feature_matrix[fragment,feature] = (molecule_feature_matrix[fragment,feature] - min_feature) / (max_feature - min_feature)
+            
+    return normalized_feature_matrix
+
+
 def retrieve_sdf_features(descriptor_file, sdf_molecules_to_fragments_file,
     active_molecules, inactive_molecules, output_details=False):
     
@@ -485,4 +502,16 @@ def retrieve_sdf_features(descriptor_file, sdf_molecules_to_fragments_file,
     # Flush statistics on molecules
     _flush_metadata(global_median_cache, used_features)
 
+def main():
+    from numpy import random
+    feature_matrix = np.empty([11,10])
+    for i in range(feature_matrix.shape[0]):
+        cur_fragment = np.random.randint(0,200,size=feature_matrix.shape[1]).reshape(1,feature_matrix.shape[1])
+        feature_matrix[i] = cur_fragment
+
+    feature_matrix = normalize_features(feature_matrix)
+    print feature_matrix
+
+if __name__ == '__main__':
+    main()
     
