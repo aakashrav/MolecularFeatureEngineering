@@ -9,7 +9,7 @@ FRAGMENT_FEATURES_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.re
 
 # Parameters for creation of feature matrix
 FLUSH_BUFFER_SIZE = 100
-DESCRIPTOR_TO_RAM = 0
+DESCRIPTOR_TO_RAM = 1
 
 # Parameters for determining significant features using covariance neighborhoods
 NUM_FEATURES = 50
