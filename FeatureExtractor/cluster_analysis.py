@@ -415,7 +415,7 @@ def test_main():
 
     molecular_clusters.find_clusters(os.path.join(DATA_DIRECTORY,"detected_clusters"),
         os.path.join(DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),config.ELKI_EXECUTABLE,
-        epsilon = .4, mu=15)
+        epsilon = .3, mu=15)
 
     clusters = extract_clusters_from_file(os.path.join(DATA_DIRECTORY,"detected_clusters"))
 
@@ -429,8 +429,6 @@ def test_main():
         active_fragment_molecule_mapping, inactive_fragment_molecule_mapping,\
          diversity_threshold=7, percentage=False, purity_threshold=.6,test=True)
 
-    print(len(clusters))
-    cluster_count = 1
     for cluster in clusters:
         print(cluster.get_id_points())
 

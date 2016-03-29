@@ -120,9 +120,13 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix):
     non_degenerate_feature_matrix_one = np.delete(feature_matrix, degenerate_features, 1)
     print "Actives imputation: removed degenerate features, now have %d features" % (non_degenerate_feature_matrix_one.shape[1])
 
+    # Normalize the features so that they all contain values in range [0,1], enabling
+    # us to work in the high dimensional Euclidean space
+    normalized_feature_matrix = normalize_features(non_degenerate_feature_matrix_one[1:,:])
+
     # Remove existing dataset files and flush new actives data
     with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'w+') as f_handle:
-        np.savetxt(f_handle, non_degenerate_feature_matrix_one[1:,:], delimiter=',',fmt='%5.5f')
+        np.savetxt(f_handle, normalized_feature_matrix, delimiter=',',fmt='%5.5f')
 
     # Update degenerate features
     used_features = [ x-1 for x in non_degenerate_feature_matrix_one[0]]
@@ -397,7 +401,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
                             all_descriptors = np.arange(global_median_cache.shape[1])
                             non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
                             with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'a') as f_handle:
-                                np.savetxt(f_handle, inactives_feature_matrix[:,non_degenerate_descriptors], delimiter=',', fmt='%5.5f')
+                                np.savetxt(f_handle, normalize_features(inactives_feature_matrix[:,non_degenerate_descriptors]), delimiter=',', fmt='%5.5f')
                             FLUSH_COUNT=0
                             
                         inactives_feature_matrix[FLUSH_COUNT]= molecule_descriptor_row
@@ -430,7 +434,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
                                 all_descriptors = np.arange(global_median_cache.shape[1])
                                 non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
                                 with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'a') as f_handle:
-                                    np.savetxt(f_handle, inactives_feature_matrix[:,non_degenerate_descriptors], delimiter=',', fmt='%5.5f')
+                                    np.savetxt(f_handle, normalize_features(inactives_feature_matrix[:,non_degenerate_descriptors]), delimiter=',', fmt='%5.5f')
                                 FLUSH_COUNT=0
 
                             inactives_feature_matrix[FLUSH_COUNT] = current_fragment
@@ -449,7 +453,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
             all_descriptors = np.arange(global_median_cache.shape[1])
             non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
             with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'a') as f_handle:
-                np.savetxt(f_handle, inactives_feature_matrix[0:FLUSH_COUNT,non_degenerate_descriptors], delimiter=',', fmt='%5.5f')
+                np.savetxt(f_handle, normalize_features(inactives_feature_matrix[0:FLUSH_COUNT,non_degenerate_descriptors]), delimiter=',', fmt='%5.5f')
 
 def normalize_features(molecule_feature_matrix):
 

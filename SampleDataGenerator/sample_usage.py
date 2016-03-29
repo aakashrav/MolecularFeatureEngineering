@@ -42,7 +42,8 @@ def main():
     generate_clusters.FlushData(labelled_clusters)
     
     # Add molecular data with values for purity, diversity, etc. for a more realistic dataset
-    data_with_classes = generate_clusters.AddMolecularData(labelled_clusters, 10, 40, 7, .6, 4)
+    data_with_classes = generate_clusters.AddMolecularData(labelled_clusters, 10, 40, 7, .6, 2,diversity_percentage=False,difficult_version=True)
+    # data_with_classes = generate_clusters.AddMolecularData(labelled_clusters, 10, 40, .5, .6, 2,diversity_percentage=True,difficult_version=True)
 
 
 if __name__ == '__main__':

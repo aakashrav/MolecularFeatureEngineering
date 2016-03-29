@@ -11,7 +11,7 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
     diversity_threshold, purity_threshold, num_diverse_pure_clusters,
     diversity_percentage = False, difficult_version = False):
     if diversity_percentage:
-        diversity_threshold = diversity_threshold * number_of_active_molecules
+        diversity_threshold = int(diversity_threshold * number_of_active_molecules)
     current_diverse_pure_clusters = 0
     
     # Prevent parameter combinations that may lead to severe errors
@@ -22,50 +22,61 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
     inactives_fragments_to_molecule_mapping = {}
     # active_molecule_list = np.arange(0,number_of_active_molecules).reshape(1,number_of_active_molecules)
     # inactive_molecule_list = np.arange(0,number_of_inactive_molecules).reshape(1,number_of_inactive_molecules)
+    
+    with open(os.path.join(config.TEST_DATA_DIRECTORY,"generated_test_clusters"),'w+') as f_handle:
+        for cluster in all_clusters:
+            f_handle.write("Cluster: \n")
+            already_assigned_fragments = []
+            num_points = len(cluster)
 
-    for cluster in all_clusters:
-        already_assigned_fragments = []
-        num_points = len(cluster)
-
-        if current_diverse_pure_clusters < num_diverse_pure_clusters:
-            # First deal with diversity
-            # Up to the user to make sure that each test cluster has enough points to
-            # even be able to be considered diverse.
-            max_fragments = np.min([num_points, diversity_threshold])
-            for i in range(max_fragments):
-                actives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_active_molecules]
-                already_assigned_fragments.append(i)
-            
-            # Then deal with purity
-            number_of_active_fragments_needed = int(np.ceil(purity_threshold * num_points))
-            for i in range(number_of_active_fragments_needed):
-                if i not in already_assigned_fragments:
+            if current_diverse_pure_clusters < num_diverse_pure_clusters:
+                # First deal with diversity
+                # Up to the user to make sure that each test cluster has enough points to
+                # even be able to be considered diverse.
+                max_fragments = np.min([num_points, diversity_threshold])
+                for i in range(max_fragments):
                     actives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_active_molecules]
                     already_assigned_fragments.append(i)
-
-            # Assign the rest to inactives
-            for i in range(max_fragments,num_points):
-                if i not in already_assigned_fragments:
-                    inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
-        
-        else:
-            # In difficult version the rest of the clusters all have only inactive fragments
-            if difficult_version:
-                for i in range(num_points):
-                    # Choose an active molecule at random, doesn't matter which one
-                    inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
+                    f_handle.write("%d " % cluster[i][0])
             
-            # Else in the easy version assign each cluster to actives or inactives randomly
-            else:
-                active = np.random.randint(2)
-                if active:
-                    for i in range(num_points):
-                        # Choose an active molecule at random, doesn't matter which one
+                # Then deal with purity
+                number_of_active_fragments_needed = int(np.ceil(purity_threshold * num_points))
+                for i in range(number_of_active_fragments_needed):
+                    if i not in already_assigned_fragments:
                         actives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_active_molecules]
-                else:
-                    for i in range(num_points):
-                        # Choose an active molecule at random, doesn't matter which one
+                        already_assigned_fragments.append(i)
+                        f_handle.write("%d " % cluster[i][0])
+
+                # Assign the rest to inactives
+                for i in range(max_fragments,num_points):
+                    if i not in already_assigned_fragments:
                         inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
+                        f_handle.write("%d " % cluster[i][0])
+
+                current_diverse_pure_clusters+=1
+        
+            else:
+                # In difficult version the rest of the clusters all have only inactive fragments
+                if difficult_version:
+                    for i in range(num_points):
+                        # Choose an inactive molecule at random, doesn't matter which one
+                        inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
+                        f_handle.write("%d " % cluster[i][0])
+            
+                # Else in the easy version assign each cluster to actives or inactives randomly
+                else:
+                    active = np.random.randint(2)
+                    if active:
+                        for i in range(num_points):
+                            # Choose an active molecule at random, doesn't matter which one
+                            actives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_active_molecules]
+                            f_handle.write("%d " % cluster[i][0])
+                    else:
+                        for i in range(num_points):
+                            # Choose an inactive molecule at random, doesn't matter which one
+                            inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
+                            f_handle.write("%d " % cluster[i][0])
+            f_handle.write("\n")
     
     with open(os.path.join(config.TEST_DATA_DIRECTORY,"test_actives_fragment_molecule_mapping.pkl"),'wb+') as f_handle:
          pickle.dump(actives_fragments_to_molecule_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
