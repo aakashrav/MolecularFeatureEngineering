@@ -16,6 +16,7 @@ import obtain_molecules
 import molecule_feature_matrix
 import molecular_clusters
 import cluster_analysis
+import config
 
 DATASET_NUMBER = '8'
 DATASET_DIRECTORY = '../MUV-JSON/'
@@ -48,7 +49,9 @@ def main():
 
     print "Starting search of molecular clusters"
     # Find the clusters using ELKI
-    molecular_clusters.main()
+    molecular_clusters.find_clusters(CLUSTER_FILENAME = os.path.join(config.DATA_DIRECTORY,"detected_clusters"),
+        FEATURE_MATRIX_FILE = os.path.join(config.DATA_DIRECTORY,"molecular_feature_matrix.csv"),
+        config.ELKI_EXECUTABLE, epsilon=.1, mu=config.CLUSTER_DIVERSITY_THRESHOLD)
     print "Finished search of molecular clusters"
 
     print "Starting analysis and pruning of found clusters"
