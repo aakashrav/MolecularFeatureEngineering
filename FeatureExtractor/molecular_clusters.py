@@ -31,8 +31,8 @@ def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,epsilon=N
             if epsilon == 0:
                 epsilon = np.mean(percentile_value_array)
 
-            epsilon = 10 # FIX HERE
-            mu = 50 # FIX HERE
+            epsilon = .1 # FIX HERE
+            mu = feature_matrix.shape[0] * .004 # FIX HERE
         
         print "Computed epsilon for molecular matrix: %5.5f" % epsilon
         print "Computed mu for molecular matrix: %d" % mu
