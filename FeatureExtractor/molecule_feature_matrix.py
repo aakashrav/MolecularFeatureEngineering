@@ -458,19 +458,19 @@ def _inactives_load_impute_sdf(degenerate_features, \
 def normalize_features(molecule_feature_matrix):
 
     normalized_feature_matrix = np.empty(molecule_feature_matrix.shape)
-
+    divide_by_zero_counter = 0
     # Normalize the values of each fragment for each feature
     for feature in range(molecule_feature_matrix.shape[1]):
         # Get the minimum accross the feature values
         max_feature = np.amax(molecule_feature_matrix[:,feature])
         # Get the maximum accross the feature values
         min_feature = np.amin(molecule_feature_matrix[:,feature])
+        if max_feature == min_feature:
+            divide_by_zero_counter+=1
         # Normalize each fragment's feature value
         for fragment in range(molecule_feature_matrix.shape[0]):
-            if max_feature - min_feature == 0:
-                print "Dividing by zero!"
             normalized_feature_matrix[fragment,feature] = (molecule_feature_matrix[fragment,feature] - min_feature) / (max_feature - min_feature)
-            
+    print "Divide by zero: %d" % divide_by_zero_counter
     return normalized_feature_matrix
 
 
