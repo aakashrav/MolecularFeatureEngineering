@@ -529,7 +529,7 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
                 except StopIteration:
                     data_observations_left = False
                     continue
-                next_observation = np.asarray(x).astype(np.float)
+                next_observation = np.asarray(next_observation).astype(np.float)
 
                 # Normalize each feature's value
                 for feature in range(len(next_observation)):
