@@ -467,9 +467,12 @@ def normalize_features(molecule_feature_matrix):
         min_feature = np.amin(molecule_feature_matrix[:,feature])
         if max_feature == min_feature:
             divide_by_zero_counter+=1
+            print molecule_feature_matrix[:,feature]
+            input("Press Enter to continue...")
         # Normalize each fragment's feature value
         for fragment in range(molecule_feature_matrix.shape[0]):
             normalized_feature_matrix[fragment,feature] = (molecule_feature_matrix[fragment,feature] - min_feature) / (max_feature - min_feature)
+            
     print "Divide by zero: %d" % divide_by_zero_counter
     return normalized_feature_matrix
 
