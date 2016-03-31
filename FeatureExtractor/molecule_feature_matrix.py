@@ -533,10 +533,10 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
 
                 # Normalize each feature's value
                 for feature in range(len(next_observation)):
-                    if feature_max[feature] == feature_min[feature]:
-                        print("Divide by zero!")
-                        print "%d %d" % (feature_max[feature], feature_min[feature])
-                        input("Press Enter to continue...")
+                    # if feature_max[feature] == feature_min[feature]:
+                    #     print("Divide by zero!")
+                    #     print "%d %d" % (feature_max[feature], feature_min[feature])
+                    #     input("Press Enter to continue...")
                 
                     next_observation[feature] = (next_observation[feature] - feature_min[feature]) / (feature_max[feature] - feature_max[feature])
 
@@ -552,10 +552,10 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
                 max_feature = np.amax(molecule_feature_matrix[:,feature])
                 # Get the maximum accross the feature values
                 min_feature = np.amin(molecule_feature_matrix[:,feature])
-                if max_feature == min_feature:
-                    print("Divide by zero!")
-                    print molecule_feature_matrix[:,feature]
-                    input("Press Enter to continue...")
+                # if max_feature == min_feature:
+                #     print("Divide by zero!")
+                #     print molecule_feature_matrix[:,feature]
+                #     input("Press Enter to continue...")
                 # Normalize each fragment's feature value
                 for fragment in range(molecule_feature_matrix.shape[0]):
                     normalized_feature_matrix[fragment,feature] = (molecule_feature_matrix[fragment,feature] - min_feature) / (max_feature - min_feature)
