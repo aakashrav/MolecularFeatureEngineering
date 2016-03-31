@@ -405,13 +405,8 @@ def main():
 def test_main():
 
     DATA_DIRECTORY = config.TEST_DATA_DIRECTORY
-    
-    with open(os.path.join(DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),'r') as f_handle:
-        molecule_feature_matrix = genfromtxt(f_handle, delimiter=',')
-        print molecule_feature_matrix
-        molecule_feature_matrix = normalize_features(molecule_feature_matrix)
-        with open(os.path.join(DATA_DIRECTORY, "test_molecular_feature_matrix.csv"),'w+') as w_f_handle:
-            np.savetxt(w_f_handle, molecule_feature_matrix, delimiter=",", fmt='%f')
+
+    normalize_features(os.path.join(DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),DATA_DIRECTORY,None,None)
 
     molecular_clusters.find_clusters(os.path.join(DATA_DIRECTORY,"detected_clusters"),
         os.path.join(DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),config.ELKI_EXECUTABLE,

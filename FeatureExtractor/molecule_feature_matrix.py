@@ -5,7 +5,8 @@ that are contained in the molecule, and impute the feature vectors so that they 
 i.e. there are no missing values
 """
 
-__author__="Aakash Ravi"
+__author__= "Aakash Ravi"
+__email__= "aakash_ravi@hotmail.com"
 
 import os
 import json
@@ -25,6 +26,10 @@ NUM_FEATURES = config.NUM_FEATURES
 COVARIANCE_THRESHOLD = config.COVARIANCE_THRESHOLD
 DATA_DIRECTORY = config.DATA_DIRECTORY
 DEBUG = config.DEBUG
+
+# Store feature max and min for feature normalization
+feature_max = {}
+feature_min = {}
 
 fragment_number_name_mapping = {}
 actives_fragment_molecule_mapping = {}
@@ -122,11 +127,22 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix):
 
     # Normalize the features so that they all contain values in range [0,1], enabling
     # us to work in the high dimensional Euclidean space
-    normalized_feature_matrix = normalize_features(non_degenerate_feature_matrix_one[1:,:])
+    # normalized_feature_matrix = normalize_features(non_degenerate_feature_matrix_one[1:,:])
 
     # Remove existing dataset files and flush new actives data
     with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'w+') as f_handle:
-        np.savetxt(f_handle, normalized_feature_matrix, delimiter=',',fmt='%5.5f')
+        np.savetxt(f_handle, non_degenerate_feature_matrix_one[1:,:], delimiter=',',fmt='%5.5f')
+
+    # Store the feature max and min for feature normalization
+    for feature in range(non_degenerate_feature_matrix_one[1:,:].shape[1]):
+        # Get the maximum accross the feature values
+        max_feature = np.amax(non_degenerate_feature_matrix_one[1:,feature])
+        # Get the minimum accross the feature values
+        min_feature = np.amin(non_degenerate_feature_matrix_one[1:,feature])
+        
+        # Update the dictionaries holding the feature maximums and minimums for later use
+        feature_max[feature] = max_feature
+        feature_min[feature] = min_feature
 
     # Update degenerate features
     used_features = [ x-1 for x in non_degenerate_feature_matrix_one[0]]
@@ -400,9 +416,22 @@ def _inactives_load_impute_sdf(degenerate_features, \
                             # Flush only the non degenerate descriptors to file
                             all_descriptors = np.arange(global_median_cache.shape[1])
                             non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
+                            non_degenerate_inactives_feature_matrix = inactives_feature_matrix[:,non_degenerate_descriptors]
+
                             with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'a') as f_handle:
-                                np.savetxt(f_handle, normalize_features(inactives_feature_matrix[:,non_degenerate_descriptors]), delimiter=',', fmt='%5.5f')
+                                np.savetxt(f_handle, non_degenerate_inactives_feature_matrix, delimiter=',', fmt='%5.5f')
                             FLUSH_COUNT=0
+
+                            for feature in range(non_degenerate_inactives_feature_matrix.shape[1]):
+                                # Get the maximum accross the feature values
+                                max_feature = np.amax(non_degenerate_inactives_feature_matrix[:,feature])
+                                # Get the minimum accross the feature values
+                                min_feature = np.amin(non_degenerate_inactives_feature_matrix[:,feature])
+                                
+                                if (max_feature > feature_max[feature]):
+                                    feature_max[feature] = max_feature
+                                if (min_feature < feature_min[feature]):
+                                    feature_min[feature] = min_feature
                             
                         inactives_feature_matrix[FLUSH_COUNT]= molecule_descriptor_row
                         FLUSH_COUNT+=1
@@ -433,9 +462,23 @@ def _inactives_load_impute_sdf(degenerate_features, \
                                 # Flush only the non-degenerate descriptors to file
                                 all_descriptors = np.arange(global_median_cache.shape[1])
                                 non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
+                                non_degenerate_inactives_feature_matrix = inactives_feature_matrix[:,non_degenerate_descriptors]
+
                                 with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'a') as f_handle:
-                                    np.savetxt(f_handle, normalize_features(inactives_feature_matrix[:,non_degenerate_descriptors]), delimiter=',', fmt='%5.5f')
+                                    np.savetxt(f_handle, non_degenerate_inactives_feature_matrix, delimiter=',', fmt='%5.5f')
                                 FLUSH_COUNT=0
+                                
+                                for feature in range(non_degenerate_inactives_feature_matrix.shape[1]):
+                                    # Get the maximum accross the feature values
+                                    max_feature = np.amax(non_degenerate_inactives_feature_matrix[:,feature])
+                                    # Get the minimum accross the feature values
+                                    min_feature = np.amin(non_degenerate_inactives_feature_matrix[:,feature])
+                                
+                                    if (max_feature > feature_max[feature]):
+                                        feature_max[feature] = max_feature
+                                    if (min_feature < feature_min[feature]):
+                                        feature_min[feature] = min_feature
+
 
                             inactives_feature_matrix[FLUSH_COUNT] = current_fragment
                             FLUSH_COUNT+=1
@@ -452,29 +495,78 @@ def _inactives_load_impute_sdf(degenerate_features, \
         if (FLUSH_COUNT % FLUSH_BUFFER_SIZE != 0):
             all_descriptors = np.arange(global_median_cache.shape[1])
             non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
+            non_degenerate_inactives_feature_matrix = inactives_feature_matrix[:,non_degenerate_descriptors]
+
             with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'a') as f_handle:
-                np.savetxt(f_handle, normalize_features(inactives_feature_matrix[0:FLUSH_COUNT,non_degenerate_descriptors]), delimiter=',', fmt='%5.5f')
+                np.savetxt(f_handle, non_degenerate_inactives_feature_matrix[0:FLUSH_COUNT], delimiter=',', fmt='%5.5f')
 
-def normalize_features(molecule_feature_matrix):
+            for feature in range(non_degenerate_inactives_feature_matrix.shape[1]):
+                # Get the maximum accross the feature values
+                max_feature = np.amax(non_degenerate_inactives_feature_matrix[:,feature])
+                # Get the minimum accross the feature values
+                min_feature = np.amin(non_degenerate_inactives_feature_matrix[:,feature])
+                                
+                if (max_feature > feature_max[feature]):
+                    feature_max[feature] = max_feature
+                if (min_feature < feature_min[feature]):
+                    feature_min[feature] = min_feature
 
-    normalized_feature_matrix = np.empty(molecule_feature_matrix.shape)
-    divide_by_zero_counter = 0
-    # Normalize the values of each fragment for each feature
-    for feature in range(molecule_feature_matrix.shape[1]):
-        # Get the minimum accross the feature values
-        max_feature = np.amax(molecule_feature_matrix[:,feature])
-        # Get the maximum accross the feature values
-        min_feature = np.amin(molecule_feature_matrix[:,feature])
-        if max_feature == min_feature:
-            divide_by_zero_counter+=1
-            print molecule_feature_matrix[:,feature]
-            input("Press Enter to continue...")
-        # Normalize each fragment's feature value
-        for fragment in range(molecule_feature_matrix.shape[0]):
-            normalized_feature_matrix[fragment,feature] = (molecule_feature_matrix[fragment,feature] - min_feature) / (max_feature - min_feature)
+
+def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max=None, feature_min=None):
+    
+    # Remove any existing temp file
+    open(os.path.join(DATA_DIRECTORY,"temp_file"),'w+')
+    normalized_feature_matrix = None
+
+    with open(os.path.join(DATA_DIRECTORY,molecule_feature_matrix_file),'r') as f_handle:
+
+        if (feature_max is not None) and (feature_min is not None):
+            reader = csv.reader(f_handle)
+            data_observations_left = True
+            while(data_observations_left):
+                try:
+                    next_observation = next(reader)
+                except StopIteration:
+                    data_observations_left = False
+                    continue
+                next_observation = np.asarray(x).astype(np.float)
+
+                # Normalize each feature's value
+                for feature in range(len(next_observation)):
+                    if feature_max[feature] == feature_max[feature]:
+                        print("Divide by zero!")
+                        print molecule_feature_matrix[:,feature]
+                        input("Press Enter to continue...")
+                
+                    next_observation[feature] = (next_observation[feature] - min_feature[feature]) / (max_feature[feature] - min_feature[feature])
+
+                # Flush the new normalized vector into the new file
+                with open(os.path.join(DATA_DIRECTORY,"temp_file"),'a') as f_handle:
+                    np.savetxt(f_handle, next_observation, delimiter=',',fmt='%5.5f')
+        else:
+            molecule_feature_matrix = np.asarray(np.genfromtxt(molecule_feature_matrix_file, delimiter=',')).astype(np.float)
+            normalized_feature_matrix = np.empty(molecule_feature_matrix.shape)
+            # Normalize the values of each fragment for each feature
+            for feature in range(molecule_feature_matrix.shape[1]):
+                # Get the minimum accross the feature values
+                max_feature = np.amax(molecule_feature_matrix[:,feature])
+                # Get the maximum accross the feature values
+                min_feature = np.amin(molecule_feature_matrix[:,feature])
+                if max_feature == min_feature:
+                    print("Divide by zero!")
+                    print molecule_feature_matrix[:,feature]
+                    input("Press Enter to continue...")
+                # Normalize each fragment's feature value
+                for fragment in range(molecule_feature_matrix.shape[0]):
+                    normalized_feature_matrix[fragment,feature] = (molecule_feature_matrix[fragment,feature] - min_feature) / (max_feature - min_feature)
             
-    print "Divide by zero: %d" % divide_by_zero_counter
-    return normalized_feature_matrix
+        with open(os.path.join(DATA_DIRECTORY,"temp_file"),'w+') as f_handle:
+                np.savetxt(f_handle, normalized_feature_matrix, delimiter=',',fmt='%5.5f')
+
+    # Rename the temporary file as the original matrix, to be consistent
+    # TODO:FIND BETTER WORKAROUND FOR THIS
+    os.remove(os.path.join(DATA_DIRECTORY,molecule_feature_matrix_file))
+    os.rename(os.path.join(DATA_DIRECTORY,"temp_file"), molecule_feature_matrix_file)
 
 
 def retrieve_sdf_features(descriptor_file, sdf_molecules_to_fragments_file,
@@ -507,6 +599,9 @@ def retrieve_sdf_features(descriptor_file, sdf_molecules_to_fragments_file,
         global_median_cache, descriptor_file, sdf_molecules_to_fragments_file, \
         inactive_molecules, FRAGMENT_COUNT, output_details=1, \
         descriptors_map = descriptors_map, descriptors= descriptors)
+
+    # Normalize the features
+    normalize_features(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),DATA_DIRECTORY,feature_max,feature_min)
 
     # Flush statistics on molecules
     _flush_metadata(global_median_cache, used_features)
