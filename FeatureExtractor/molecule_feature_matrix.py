@@ -538,7 +538,7 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
                         print "%d %d" % (feature_max[feature], feature_min[feature])
                         input("Press Enter to continue...")
                 
-                    next_observation[feature] = (next_observation[feature] - min_feature[feature]) / (max_feature[feature] - min_feature[feature])
+                    next_observation[feature] = (next_observation[feature] - feature_min[feature]) / (feature_max[feature] - feature_max[feature])
 
                 # Flush the new normalized vector into the new file
                 with open(os.path.join(DATA_DIRECTORY,"temp_file"),'a') as f_handle:
