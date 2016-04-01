@@ -40,7 +40,7 @@ def _read_descriptor_file(descriptor_file_name):
 def extract_features(NUM_FEATURES, feature_matrix, covariance_threshold = .80, descriptors_map=None,
     active_fragments=None, inactive_fragments=None):
 
-    all_features = np.arange(descriptor_matrix.shape[1])
+    all_features = np.arange(feature_matrix.shape[1])
     # Keep track of the features
     feature_matrix = np.vstack((all_features, feature_matrix))
     

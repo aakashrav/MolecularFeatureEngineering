@@ -6,7 +6,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import config
 import subprocess
 
-def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,epsilon=None,mu=None):
+def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,epsilon=None,mu=None,
+    num_active_molecules,num_inactive_molecules):
     try:
         os.remove(CLUSTER_FILENAME)
     except OSError:
@@ -30,9 +31,15 @@ def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,epsilon=N
             # Sometimes median is 0, in which case we take the mean
             if epsilon == 0:
                 epsilon = np.mean(percentile_value_array)
-
+            
+            # Set epsilon
             epsilon = .1 # FIX HERE
-            mu = feature_matrix.shape[0] * .004 # FIX HERE
+
+            # Set mu
+            if config.CLUSTER_DIVERSITY_PERCENTAGE == True:
+                mu = config.CLUSTER_DIVERSITY_THRESHOLD * num_active_molecules
+            else:
+                mu = config.CLUSTER_DIVERSITY_THRESHOLD
         
         print "Computed epsilon for molecular matrix: %5.5f" % epsilon
         print "Computed mu for molecular matrix: %d" % mu
