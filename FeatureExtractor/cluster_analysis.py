@@ -410,7 +410,7 @@ def test_main():
 
     molecular_clusters.find_clusters(os.path.join(DATA_DIRECTORY,"detected_clusters"),
         os.path.join(DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),config.ELKI_EXECUTABLE,
-        epsilon = .3, mu=15)
+        num_active_molecules=10,num_inactive_molecules=40, epsilon = .3, mu=10)
 
     clusters = extract_clusters_from_file(os.path.join(DATA_DIRECTORY,"detected_clusters"))
 

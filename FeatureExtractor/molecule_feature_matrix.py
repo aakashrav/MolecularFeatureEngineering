@@ -535,7 +535,7 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
                 # Normalize each feature's value
                 for feature in range(len(next_observation)):
                     if feature_max[feature] == feature_min[feature]:
-                        print("Divide by zero!")
+                        print("Divide by zero, feature %d" % feature)
                         print "%d %d" % (feature_max[feature], feature_min[feature])
                         # For degenerate features, set all the observations to the same
                         # value in range [0,1] - in this case 1.
