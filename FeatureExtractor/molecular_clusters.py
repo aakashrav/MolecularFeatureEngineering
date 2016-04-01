@@ -6,8 +6,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import config
 import subprocess
 
-def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,epsilon=None,mu=None,
-    num_active_molecules,num_inactive_molecules):
+def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,
+    num_active_molecules,num_inactive_molecules,epsilon=None,mu=None):
     try:
         os.remove(CLUSTER_FILENAME)
     except OSError:

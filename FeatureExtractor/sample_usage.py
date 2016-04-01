@@ -51,7 +51,7 @@ def main():
     # Find the clusters using ELKI
     molecular_clusters.find_clusters(CLUSTER_FILENAME = os.path.join(config.DATA_DIRECTORY,"detected_clusters"),
         FEATURE_MATRIX_FILE = os.path.join(config.DATA_DIRECTORY,"molecular_feature_matrix.csv"),
-        ELKI_EXECUTABLE=config.ELKI_EXECUTABLE, epsilon=None, mu=None,len(actives),len(inactives))
+        ELKI_EXECUTABLE=config.ELKI_EXECUTABLE,len(actives),len(inactives),epsilon=None, mu=None)
     print "Finished search of molecular clusters"
 
     print "Starting analysis and pruning of found clusters"
