@@ -69,7 +69,8 @@ def _compute_feature_median(non_imputed_feature_matrix, descriptor_indice, molec
     else:
         return np.median(global_descriptor_average_array)
 
-def _actives_feature_impute(feature_matrix, descriptor_matrix):
+def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=None, active_fragments=None,
+    inactive_fragments=None):
     
     if (feature_matrix is None):
         print("Empty matrix; no standard imputation done, continuing on..")
@@ -97,7 +98,7 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix):
     
     # Recompute the significant features before beginning imputation
     if DESCRIPTOR_TO_RAM:
-        neighborhood_extractor.extract_features(NUM_FEATURES,descriptor_matrix,COVARIANCE_THRESHOLD)
+        neighborhood_extractor.extract_features(NUM_FEATURES,descriptor_matrix,COVARIANCE_THRESHOLD,descriptors_map,active_fragments,inactive_fragments)
 
     print "Actives imputation: starting out with %d features" % (feature_matrix.shape[1])
     significant_features = np.genfromtxt(os.path.join(DATA_DIRECTORY,'significant_features'),delimiter=',')
@@ -533,10 +534,13 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
 
                 # Normalize each feature's value
                 for feature in range(len(next_observation)):
-                    # if feature_max[feature] == feature_min[feature]:
-                    #     print("Divide by zero!")
-                    #     print "%d %d" % (feature_max[feature], feature_min[feature])
-                    #     input("Press Enter to continue...")
+                    if feature_max[feature] == feature_min[feature]:
+                        print("Divide by zero!")
+                        print "%d %d" % (feature_max[feature], feature_min[feature])
+                        # For degenerate features, set all the observations to the same
+                        # value in range [0,1] - in this case 1.
+                        next_observation[feature] = 1
+                        continue
                 
                     next_observation[feature] = (next_observation[feature] - feature_min[feature]) / (feature_max[feature] - feature_max[feature])
 
@@ -552,10 +556,15 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
                 max_feature = np.amax(molecule_feature_matrix[:,feature])
                 # Get the maximum accross the feature values
                 min_feature = np.amin(molecule_feature_matrix[:,feature])
-                # if max_feature == min_feature:
-                #     print("Divide by zero!")
-                #     print molecule_feature_matrix[:,feature]
-                #     input("Press Enter to continue...")
+                if max_feature == min_feature:
+                    print("Divide by zero!")
+                    print molecule_feature_matrix[:,feature]
+                    # For degenerate features, set all the observations to the same
+                    # value in range [0,1] - in this case 1.
+                    for fragment in range(molecule_feature_matrix.shape[0]):
+                        normalized_feature_matrix[fragment,feature] = 1
+                    continue
+
                 # Normalize each fragment's feature value
                 for fragment in range(molecule_feature_matrix.shape[0]):
                     normalized_feature_matrix[fragment,feature] = (molecule_feature_matrix[fragment,feature] - min_feature) / (max_feature - min_feature)
@@ -592,7 +601,7 @@ def retrieve_sdf_features(descriptor_file, sdf_molecules_to_fragments_file,
         descriptors_map = descriptors_map, descriptors=descriptors)
 
     # Impute the actives, keeping track of degenerate features and any global medians
-    global_median_cache,degenerate_features,used_features = _actives_feature_impute(non_imputed_feature_matrix,descriptors)
+    global_median_cache,degenerate_features,used_features = _actives_feature_impute(non_imputed_feature_matrix,descriptors,None,None,None)
     
     # Load inactives matrix using the results from the actives imputation to impute the inactives matrix
     _inactives_load_impute_sdf(degenerate_features,

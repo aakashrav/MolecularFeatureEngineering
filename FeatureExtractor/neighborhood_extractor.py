@@ -37,10 +37,14 @@ def _read_descriptor_file(descriptor_file_name):
 
     return descriptors
 
-def extract_features(NUM_FEATURES, descriptor_matrix, covariance_threshold = .80):
+def extract_features(NUM_FEATURES, feature_matrix, covariance_threshold = .80, descriptors_map=None,
+    active_fragments=None, inactive_fragments=None):
+
     all_features = np.arange(descriptor_matrix.shape[1])
     # Keep track of the features
-    feature_matrix = np.vstack((all_features, descriptor_matrix))
+    feature_matrix = np.vstack((all_features, feature_matrix))
+    
+    # all_fragments = active_fragments.extend(inactive_fragments)
 
     #Remove all descriptors that have the same value for all fragments, they are degenerate
     all_constant_features = []
