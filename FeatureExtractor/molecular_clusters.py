@@ -18,19 +18,19 @@ def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,
         feature_matrix = np.loadtxt(open(FEATURE_MATRIX_FILE,"rb"),delimiter=",",skiprows=0)
         
         if epsilon is None or mu is None:
-            # Compute appropriate parameters mu and epsilon
-            max_feature_val_array = feature_matrix.max(axis=0)
-            # min_feature_val_array = feature_matrix.min(axis=0)
-            # range_feature_val_array = np.subtract(max_feature_val_array,min_feature_val_array)
-            percentile_value_array = [(.3 * max_feature) for max_feature in max_feature_val_array]
-            # final_epsilon_array = np.add(min_feature_val_array,percentile_value_array)
+            # # Compute appropriate parameters mu and epsilon
+            # max_feature_val_array = feature_matrix.max(axis=0)
+            # # min_feature_val_array = feature_matrix.min(axis=0)
+            # # range_feature_val_array = np.subtract(max_feature_val_array,min_feature_val_array)
+            # percentile_value_array = [(.3 * max_feature) for max_feature in max_feature_val_array]
+            # # final_epsilon_array = np.add(min_feature_val_array,percentile_value_array)
         
-            # Remove all zero values - we don't want an epsilon of zero to be calculated
-            percentile_value_array = [i for i in percentile_value_array if i != 0]
-            epsilon = np.median(percentile_value_array)
-            # Sometimes median is 0, in which case we take the mean
-            if epsilon == 0:
-                epsilon = np.mean(percentile_value_array)
+            # # Remove all zero values - we don't want an epsilon of zero to be calculated
+            # percentile_value_array = [i for i in percentile_value_array if i != 0]
+            # epsilon = np.median(percentile_value_array)
+            # # Sometimes median is 0, in which case we take the mean
+            # if epsilon == 0:
+            #     epsilon = np.mean(percentile_value_array)
             
             # Set epsilon
             epsilon = .1 # FIX HERE
