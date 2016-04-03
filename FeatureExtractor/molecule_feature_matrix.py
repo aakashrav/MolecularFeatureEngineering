@@ -549,7 +549,7 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
                     np.savetxt(f_handle, next_observation, delimiter=',',fmt='%5.5f')
         else:
             molecule_feature_matrix = np.asarray(np.genfromtxt(molecule_feature_matrix_file, delimiter=',')).astype(np.float)
-            normalized_feature_matrix = np.empty(molecule_feature_matrix.shape)
+            normalized_feature_matrix = np.empty(molecule_feature_matrix.shape).reshape(molecule_feature_matrix.shape[0],molecule_feature_matrix.shape[1])
             # Normalize the values of each fragment for each feature
             for feature in range(molecule_feature_matrix.shape[1]):
                 # Get the minimum accross the feature values
