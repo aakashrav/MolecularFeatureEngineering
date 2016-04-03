@@ -569,7 +569,7 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
                 for fragment in range(molecule_feature_matrix.shape[0]):
                     normalized_feature_matrix[fragment,feature] = (molecule_feature_matrix[fragment,feature] - min_feature) / (max_feature - min_feature)
             
-        with open(os.path.join(DATA_DIRECTORY,"temp_file"),'w+') as f_handle:
+            with open(os.path.join(DATA_DIRECTORY,"temp_file"),'w+') as f_handle:
                 np.savetxt(f_handle, normalized_feature_matrix, delimiter=',',fmt='%5.5f')
 
     # Rename the temporary file as the original matrix, to be consistent
