@@ -1,14 +1,17 @@
 import numpy as np
-import os
 import math
 import csv
 import random
 from sklearn.datasets.samples_generator import make_blobs
 import config
 import pickle
+import os
+import config
+import shutil
+import sys
 
 def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactive_molecules, 
-    diversity_threshold, purity_threshold, num_diverse_pure_clusters,
+    diversity_threshold, purity_threshold, num_diverse_pure_clusters, DATA_DIRECTORY,
     diversity_percentage = False, difficult_version = False):
     if diversity_percentage:
         diversity_threshold = int(diversity_threshold * number_of_active_molecules)
@@ -23,11 +26,24 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
     # active_molecule_list = np.arange(0,number_of_active_molecules).reshape(1,number_of_active_molecules)
     # inactive_molecule_list = np.arange(0,number_of_inactive_molecules).reshape(1,number_of_inactive_molecules)
     
-    with open(os.path.join(config.TEST_DATA_DIRECTORY,"generated_test_clusters"),'w+') as f_handle:
+    with open(os.path.join(DATA_DIRECTORY,"generated_test_clusters.pkl"),'w+') as f_handle:
+
+        # Keep track of all metadata for future tests
+        generated_clusters = {}
+        generated_clusters["num_clusters"] = len(all_clusters)
+        generated_clusters["num_active_molecules"] = number_of_active_molecules
+        generated_clusters["num_inactive_molecules"] = number_of_inactive_molecules
+        generated_clusters["diversity"] = diversity_threshold
+        generated_clusters["purity"] = purity_threshold
+        generated_clusters["num_diverse_pure_clusters"] = num_diverse_pure_clusters
+        generated_clusters["clusters"] = []
+        generated_clusters["diverse_clusters"] = []
+        counter = 0
+
         for cluster in all_clusters:
-            f_handle.write("Cluster: \n")
             already_assigned_fragments = []
             num_points = len(cluster)
+            generated_clusters["clusters"].append = []
 
             if current_diverse_pure_clusters < num_diverse_pure_clusters:
                 # First deal with diversity
@@ -37,7 +53,7 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
                 for i in range(max_fragments):
                     actives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_active_molecules]
                     already_assigned_fragments.append(i)
-                    f_handle.write("%d " % cluster[i][0])
+                    generated_clusters["clusters"][counter].append(cluster[i][0])
             
                 # Then deal with purity
                 number_of_active_fragments_needed = int(np.ceil(purity_threshold * num_points))
@@ -45,15 +61,18 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
                     if i not in already_assigned_fragments:
                         actives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_active_molecules]
                         already_assigned_fragments.append(i)
-                        f_handle.write("%d " % cluster[i][0])
+                        generated_clusters["clusters"][counter].append(cluster[i][0])
 
                 # Assign the rest to inactives
                 for i in range(max_fragments,num_points):
                     if i not in already_assigned_fragments:
                         inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
-                        f_handle.write("%d " % cluster[i][0])
+                        generated_clusters["clusters"][counter].append(cluster[i][0])
+
 
                 current_diverse_pure_clusters+=1
+                
+                generated_clusters["diverse_clusters"].append(counter)
         
             else:
                 # In difficult version the rest of the clusters all have only inactive fragments
@@ -76,19 +95,21 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
                             # Choose an inactive molecule at random, doesn't matter which one
                             inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
                             f_handle.write("%d " % cluster[i][0])
-            f_handle.write("\n")
+            counter+=1
+
+        pickle.dump(generated_clusters,f_handle,pickle.HIGHEST_PROTOCOL)
     
-    with open(os.path.join(config.TEST_DATA_DIRECTORY,"test_actives_fragment_molecule_mapping.pkl"),'wb+') as f_handle:
+    with open(os.path.join(DATA_DIRECTORY,"test_actives_fragment_molecule_mapping.pkl"),'wb+') as f_handle:
          pickle.dump(actives_fragments_to_molecule_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
     
-    with open(os.path.join(config.TEST_DATA_DIRECTORY,"test_inactives_fragment_molecule_mapping.pkl"),'wb+') as f_handle:
+    with open(os.path.join(DATA_DIRECTORY,"test_inactives_fragment_molecule_mapping.pkl"),'wb+') as f_handle:
         pickle.dump(inactives_fragments_to_molecule_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
 
 # Flush the clusters to file
-def FlushData(clusters):
+def FlushData(clusters, DATA_DIRECTORY):
     # Create new file
-    open(os.path.join(config.TEST_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"), 'w+')
-    with open(os.path.join(config.TEST_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"), 'a') as f_handle:
+    open(os.path.join(DATA_DIRECTORY,"test_molecular_feature_matrix.csv"), 'w+')
+    with open(os.path.join(DATA_DIRECTORY,"test_molecular_feature_matrix.csv"), 'a') as f_handle:
         for cluster in clusters:
             # Flush everything except the identification key
             new_cluster = np.delete(cluster, 0, 1)
@@ -260,3 +281,57 @@ def ComputeClusterRadiusFromDeviation(deviation_per_dimension, num_dimensions):
 
     return final_deviation
 
+# Generates various test clusters according to the input parameters
+# First argument shall be output directory for the cluster feature matrix and the
+# cluster IDs and fragments
+# Second argument shall be number of clustered dimensions (must be less than 10)
+# Third argument shall be the intercluster distance
+# Fourth argument should be the density of the clusters (will roughly translate into number of points
+# per cluster, assuming a constant cluster deviation per dimension of 10)
+# Fifth argument shall be the actives vs inactives molecule ratio, should be less than 1, and will
+# be taken as a ratio out of 100 to reflect real scenarios
+# The number of clusters is set as  10 + N(0,2), 
+def main():
+    if not os.path.exists(config.TEST_DATA_DIRECTORY):
+        os.makedirs(config.TEST_DATA_DIRECTORY)
+    # Number of clustered dimensions
+    num_clustered_dimensions = int(sys.argv[2])
+    # Number of unclustered dimensions
+    num_unclustered_dimensions = 50 - num_clustered_dimensions
+    # The maximum distance between two sequentially generated clusters
+    max_shifting_range = int(sys.argv[3])
+    # The minimum distance between two clusters
+    # Argument needed due to backward compatibility, for now we will just keep it the same
+    # as maximum shifting range.
+    distance_ratio_between_clusters = max_shifting_range
+    # Amount of clusters 
+    amount_of_clusters = int(10 + np.random.normal(0, 2, 1)[0])
+    # Density, or points per cluster
+    amount_of_points = [int(sys.argv[4])] * amount_of_clusters 
+    # Radius (or deviation from the center) in each dimension
+    deviation_per_dimension = 10
+    #  Range of noise for the unclustered dimensions - shall be constant
+    unclustered_noise_range = 100
+    # Purity of the cluster; that is, 95% of the cluster's points are pure,
+    # and the rest are some noise points that don't really belong in the cluster
+    # Will add extra serendipity to our clustering and we will keep it constant
+    purity = .95
+
+    clusters = GenerateSeveralClusters(num_unclustered_dimensions, num_unclustered_dimensions,
+        amount_of_clusters, amount_of_points, deviation_per_dimension, unclustered_noise_range,
+        distance_ratio_between_clusters, max_shifting_range, purity)
+    
+    # Label the data points in our clusters with identification keys
+    labelled_clusters = LabelDataWithKeys(clusters)
+    
+    # Flush the labelled clusters
+    FlushData(labelled_clusters, sys.argv[1])
+    
+    num_active_molecules = int(int(float(sys.argv[5]) * 100))
+    num_inactive_molecules = 100 - num_active_molecules
+    # Add molecular data with values for purity, diversity, etc. for a more realistic dataset
+    data_with_classes = AddMolecularData(labelled_clusters, num_active_molecules, num_inactive_molecules, 7, .6, 4, sys.argv[1], diversity_percentage=False,difficult_version=True)
+    # data_with_classes = generate_clusters.AddMolecularData(labelled_clusters, 10, 40, .5, .6, 2,diversity_percentage=True,difficult_version=True)
+
+if __name__ == '__main__':
+    main()
