@@ -53,7 +53,7 @@ def extract_features(NUM_FEATURES, feature_matrix, covariance_threshold = .80, d
 
     all_constant_features = []
     for j in range(feature_matrix.shape[1]):
-        feature_column = feature_matrix[1:,j]
+        feature_column = feature_matrix[1:,j].tolist()
         # Count the number of occurences of each value in the feature array
         constant_feature_dictionary = {value:feature_column.count(value) for value in feature_column}
         for value,count in constant_feature_dictionary.iteritems():
