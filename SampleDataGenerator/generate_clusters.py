@@ -121,7 +121,7 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
             centroid/=num_points
             cluster_radius = 0
             for i in range(len(min_vals)):
-                max_distance = np.maximum(centroid[i] - min_vals[i],centroid[i]-max_vals[i])
+                max_distance = np.maximum(np.absolute(centroid[i] - min_vals[i]),np.absolute(centroid[i]-max_vals[i]))
                 cluster_radius+=max_distance**2
             cluter_radius = np.sqrt(cluster_radius) 
 
@@ -314,13 +314,13 @@ def ComputeClusterRadiusFromDeviation(deviation_per_dimension, num_dimensions):
     return final_deviation
 
 # Generates various test clusters according to the input parameters
-# First argument shall be output directory for the cluster feature matrix and the
+# First argument- shall be output directory for the cluster feature matrix and the
 # cluster IDs and fragments
-# Second argument shall be number of clustered dimensions (must be less than 10)
-# Third argument shall be the intercluster distance
-# Fourth argument should be the density of the clusters (will roughly translate into number of points
+# Second argument- shall be number of clustered dimensions (must be less than 10)
+# Third argument- shall be the intercluster distance
+# Fourth argument- shall be the density of the clusters (will roughly translate into number of points
 # per cluster, assuming a constant cluster deviation per dimension of 10)
-# Fifth argument shall be the actives vs inactives molecule ratio, should be less than 1, and will
+# Fifth argument- shall be the actives vs inactives molecule ratio, should be less than 1, and will
 # be taken as a ratio out of 100 to reflect real scenarios
 # The number of clusters is set as  10 + N(0,2), 
 def main():

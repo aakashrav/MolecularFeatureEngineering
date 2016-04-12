@@ -308,7 +308,7 @@ def compute_threshold_weighting(actives_fragment_molecule_mapping, inactives_fra
 def compute_cluster_centroid(cluster):
     centroid = [0] * len(cluster.get_points()[0])
     for fragment in cluster.get_points():
-        centroid = [centroid[i]+fragment[i] for i,val in enumerate(fragment)]
+        centroid = [centroid[i]+fragment_val for i,fragment_val in enumerate(fragment)]
     centroid = [x / len(cluster.get_points()) for x in centroid]
     return centroid
 
@@ -482,6 +482,7 @@ def dish_main():
 
             for index,cluster in enumerate(pruned_clusters):
                 cluster_centroid = compute_cluster_centroid(cluster)
+                
                 print("Cluster centroid %d" % len(cluster_centroid))
                 f_handle.write("Fragments: \n")
                 for fragment_id in cluster.get_id_points():

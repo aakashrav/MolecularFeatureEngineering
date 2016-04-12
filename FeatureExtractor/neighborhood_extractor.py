@@ -46,12 +46,23 @@ def extract_features(NUM_FEATURES, feature_matrix, covariance_threshold = .80, d
     
     # all_fragments = active_fragments.extend(inactive_fragments)
 
-    #Remove all descriptors that have the same value for all fragments, they are degenerate
+    # Remove all features that have the same value for all active fragments
+    # (up to some ratio)
+    # The lower the ratio the more strict we are about constant features
+    CONSTANT_FEATURE_REMOVAL_RATIO = .80
+
     all_constant_features = []
     for j in range(feature_matrix.shape[1]):
         feature_column = feature_matrix[1:,j]
-        if (np.array_equal(feature_column,[feature_column[0]] * len(feature_column))):
-            all_constant_features.append(j)
+        # Count the number of occurences of each value in the feature array
+        constant_feature_dictionary = {value:feature_column.count(value) for value in feature_column}
+        for value,count in constant_feature_dictionary.iteritems():
+            if count >= CONSTANT_FEATURE_REMOVAL_RATIO * len(feature_column):
+                all_constant_features.append(j)
+                break
+
+        # if (np.array_equal(feature_column,[feature_column[0]] * len(feature_column))):
+        #     all_constant_features.append(j)
     
     # First remove all the constant features
     non_constant_features = [feature for feature in all_features if feature not in all_constant_features]
