@@ -305,6 +305,35 @@ def compute_threshold_weighting(actives_fragment_molecule_mapping, inactives_fra
 
     return threshold_weighting
 
+def compute_cluster_centroid(cluster):
+    centroid = [0] * len(cluster.get_points()[0])
+    for fragment in cluster.get_points():
+        centroid = [centroid[i]+fragment[i] for i,val in enumerate(fragment)]
+    centroid = [x / len(cluster.get_points()) for x in centroid]
+    return centroid
+
+def compute_subspace_distance(centroid_one,centroid_two,subspace):
+    squared_distance = 0
+    for i in range(len(centroid_one)):
+        if subspace[i] == 1:
+            squared_distance+=(centroid_one[i] - centroid_two[i])**2
+
+    return np.sqrt(squared_distance)
+
+def compute_cluster_radius(cluster):
+    cluster_centroid = compute_cluster_centroid(cluster)
+    cluster_maximum_values = cluster.get_points()[0]
+    cluster_minimum_values = cluster.get_points()[0]
+    for i in range(len(cluster.get_points())):
+        cluster_minimum_values = np.minimum(cluster_minimum_values,cluster.get_points()[i])
+        cluster_maximum_values = np.maximum(cluster_maximum_values,cluster.get_points()[i])
+
+    cluster_radius = 0
+    for i in range(len(cluster_maximum_values)):
+        max_distance = np.maximum(np.absolute(cluster_centroid[i] - cluster_minimum_values[i]),np.absolute(cluster_centroid[i]-cluster_maximum_values[i]))
+        cluster_radius+=max_distance**2
+    
+    return np.sqrt(cluster_radius) 
 
 def main():
 
@@ -402,32 +431,80 @@ def main():
     # else:
     #     print "Silhouette: %d" % (silhouette_metric)
 
-def test_main():
+def dish_main():
 
     DATA_DIRECTORY = config.TEST_DATA_DIRECTORY
-
-    normalize_features(os.path.join(DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),DATA_DIRECTORY,None,None)
-
-    molecular_clusters.find_clusters(os.path.join(DATA_DIRECTORY,"detected_clusters"),
-        os.path.join(DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),config.ELKI_EXECUTABLE,
-        num_active_molecules=10,num_inactive_molecules=40, epsilon = .3, mu=10)
-
-    clusters = extract_clusters_from_file(os.path.join(DATA_DIRECTORY,"detected_clusters"))
-
-    with open(os.path.join(DATA_DIRECTORY,"test_actives_fragment_molecule_mapping.pkl"), 'rb') as f_handle:
-        active_fragment_molecule_mapping = pickle.load(f_handle)
     
-    with open(os.path.join(DATA_DIRECTORY,"test_inactives_fragment_molecule_mapping.pkl"),'rb') as f_handle:
-        inactive_fragment_molecule_mapping = pickle.load(f_handle)
+    # Process each genereated test clusters and dump evaluation metrics
+    for subdir in os.listdir(DATA_DIRECTORY):
+        CURRENT_DATA_DIRECTORY = os.path.join(DATA_DIRECTORY,subdir)
 
-    clusters = prune_clusters(clusters, None, \
-        active_fragment_molecule_mapping, inactive_fragment_molecule_mapping,\
-         diversity_threshold=7, percentage=False, purity_threshold=.6,test=True)
+        with open(os.path.join(CURRENT_DATA_DIRECTORY,"generated_test_clusters.pkl"),'rb') as f_handle:
+            clusters_metadata = pickle.load(f_handle)
 
-    for cluster in clusters:
-        print(cluster.get_id_points())
+        normalize_features(os.path.join(CURRENT_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),CURRENT_DATA_DIRECTORY,None,None)
+
+        molecular_clusters.find_clusters(os.path.join(CURRENT_DATA_DIRECTORY,"detected_clusters"),
+            os.path.join(CURRENT_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),config.ELKI_EXECUTABLE,
+            num_active_molecules=clusters_metadata["num_active_molecules"],num_inactive_molecules=clusters_metadata["num_inactive_molecules"],
+             epsilon = .3, mu=7)
+        
+        # Get all the detected clusters
+        clusters = extract_clusters_from_file(os.path.join(CURRENT_DATA_DIRECTORY,"detected_clusters"))
+
+        with open(os.path.join(CURRENT_DATA_DIRECTORY,"test_actives_fragment_molecule_mapping.pkl"), 'rb') as f_handle:
+            active_fragment_molecule_mapping = pickle.load(f_handle)
+    
+        with open(os.path.join(CURRENT_DATA_DIRECTORY,"test_inactives_fragment_molecule_mapping.pkl"),'rb') as f_handle:
+            inactive_fragment_molecule_mapping = pickle.load(f_handle)
+
+        # Get the pruned clusters
+        pruned_clusters = prune_clusters(clusters, None, \
+            active_fragment_molecule_mapping, inactive_fragment_molecule_mapping,\
+            diversity_threshold=7, percentage=False, purity_threshold=.6,test=True)
+
+        with open(os.path.join(CURRENT_DATA_DIRECTORY,"TestStatistics"),'w+') as f_handle:
+            num_recovered_clusters = 0
+
+            f_handle.write("All detected clusters: \n")
+            for index,cluster in enumerate(clusters):
+                f_handle.write("%d " % index)
+            f_handle.write("\n")
+
+            f_handle.write("Degenerate detected clusters:\n")
+                
+            found_denerate_clusters = [index for index,cluster in enumerate(clusters) if cluster not in pruned_clusters]
+            for i in found_denerate_clusters:
+                f_handle.write("%d " % i)
+            f_handle.write("\n")
+
+            f_handle.write("Remaining significant detected clusters:\n")
+
+            for index,cluster in enumerate(pruned_clusters):
+                cluster_centroid = compute_cluster_centroid(cluster)
+                print("Cluster centroid %d" % len(cluster_centroid))
+                f_handle.write("Fragments: \n")
+                for fragment_id in cluster.get_id_points():
+                    f_handle.write("%d " % fragment_id)
+
+                f_handle.write("\n")
+
+                # Check if our detected cluster intersects with any generated clusters
+                intersects = False
+                for i in range(len(clusters_metadata["centroids"])):
+                    subspace_distance = compute_subspace_distance(cluster_centroid,clusters_metadata["centroids"][i],cluster.get_subspace_mask())
+                    combined_radii_magnitude = compute_cluster_radius(cluster) + clusters_metadata["cluster_radii"][i]
+                    if subspace_distance <= combined_radii_magnitude:
+                        intersects = True
+                        num_recovered_clusters+=1
+                        break
+
+                f_handle.write("Properly Recovered Cluster!\n")
+
+            f_handle.write("Score (ratio between recovered significant clusters and actual significant clusters) %.2f" % (num_recovered_clusters/clusters_metadata["num_diverse_pure_clusters"]))
 
 if __name__ == "__main__":
     # main()
-    test_main()
+    # test_main()
+    dish_main()
         

@@ -31,6 +31,8 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
         # Keep track of all metadata for future tests
         generated_clusters = {}
         generated_clusters["num_clusters"] = len(all_clusters)
+        generated_clusters["centroids"] = []
+        generated_clusters["cluster_radii"] = []
         generated_clusters["num_active_molecules"] = number_of_active_molecules
         generated_clusters["num_inactive_molecules"] = number_of_inactive_molecules
         generated_clusters["diversity"] = diversity_threshold
@@ -43,7 +45,10 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
         for cluster in all_clusters:
             already_assigned_fragments = []
             num_points = len(cluster)
-            generated_clusters["clusters"].append = []
+            generated_clusters["clusters"].append([])
+            centroid = [0] * len(cluster[0][1:])
+            min_vals = cluster[0][1:]
+            max_vals = cluster[0][1:]
 
             if current_diverse_pure_clusters < num_diverse_pure_clusters:
                 # First deal with diversity
@@ -54,6 +59,9 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
                     actives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_active_molecules]
                     already_assigned_fragments.append(i)
                     generated_clusters["clusters"][counter].append(cluster[i][0])
+                    centroid+=cluster[i][1:]
+                    min_vals = np.minimum(min_vals,cluster[i][1:])
+                    max_vals = np.maximum(max_vals,cluster[i][1:])
             
                 # Then deal with purity
                 number_of_active_fragments_needed = int(np.ceil(purity_threshold * num_points))
@@ -62,16 +70,21 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
                         actives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_active_molecules]
                         already_assigned_fragments.append(i)
                         generated_clusters["clusters"][counter].append(cluster[i][0])
+                        centroid+=cluster[i][1:]
+                        min_vals = np.minimum(min_vals,cluster[i][1:])
+                        max_vals = np.maximum(max_vals,cluster[i][1:])
 
                 # Assign the rest to inactives
                 for i in range(max_fragments,num_points):
                     if i not in already_assigned_fragments:
                         inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
                         generated_clusters["clusters"][counter].append(cluster[i][0])
+                        centroid+=cluster[i][1:]
+                        min_vals = np.minimum(min_vals,cluster[i][1:])
+                        max_vals = np.maximum(max_vals,cluster[i][1:])
 
 
                 current_diverse_pure_clusters+=1
-                
                 generated_clusters["diverse_clusters"].append(counter)
         
             else:
@@ -80,7 +93,10 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
                     for i in range(num_points):
                         # Choose an inactive molecule at random, doesn't matter which one
                         inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
-                        f_handle.write("%d " % cluster[i][0])
+                        generated_clusters["clusters"][counter].append(cluster[i][0])
+                        centroid+=cluster[i][1:]
+                        min_vals = np.minimum(min_vals,cluster[i][1:])
+                        max_vals = np.maximum(max_vals,cluster[i][1:])
             
                 # Else in the easy version assign each cluster to actives or inactives randomly
                 else:
@@ -89,12 +105,28 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
                         for i in range(num_points):
                             # Choose an active molecule at random, doesn't matter which one
                             actives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_active_molecules]
-                            f_handle.write("%d " % cluster[i][0])
+                            generated_clusters["clusters"][counter].append(cluster[i][0])
+                            centroid+=cluster[i][1:]
+                            min_vals = np.minimum(min_vals,cluster[i][1:])
+                            max_vals = np.maximum(max_vals,cluster[i][1:])
                     else:
                         for i in range(num_points):
                             # Choose an inactive molecule at random, doesn't matter which one
                             inactives_fragments_to_molecule_mapping[cluster[i][0]] = [i % number_of_inactive_molecules]
-                            f_handle.write("%d " % cluster[i][0])
+                            generated_clusters["clusters"][counter].append(cluster[i][0])
+                            centroid+=cluster[i][1:]
+                            min_vals = np.minimum(min_vals,cluster[i][1:])
+                            max_vals = np.maximum(max_vals,cluster[i][1:])
+
+            centroid/=num_points
+            cluster_radius = 0
+            for i in range(len(min_vals)):
+                max_distance = np.maximum(centroid[i] - min_vals[i],centroid[i]-max_vals[i])
+                cluster_radius+=max_distance**2
+            cluter_radius = np.sqrt(cluster_radius) 
+
+            generated_clusters["cluster_radii"].append(cluster_radius)
+            generated_clusters["centroids"].append(centroid)
             counter+=1
 
         pickle.dump(generated_clusters,f_handle,pickle.HIGHEST_PROTOCOL)
@@ -292,13 +324,12 @@ def ComputeClusterRadiusFromDeviation(deviation_per_dimension, num_dimensions):
 # be taken as a ratio out of 100 to reflect real scenarios
 # The number of clusters is set as  10 + N(0,2), 
 def main():
-    if not os.path.exists(config.TEST_DATA_DIRECTORY):
-        os.makedirs(config.TEST_DATA_DIRECTORY)
+
     # Number of clustered dimensions
     num_clustered_dimensions = int(sys.argv[2])
     # Number of unclustered dimensions
     num_unclustered_dimensions = 50 - num_clustered_dimensions
-    # The maximum distance between two sequentially generated clusters
+    # The maximum distance between two sequentially generated clusters (intercluster distance)
     max_shifting_range = int(sys.argv[3])
     # The minimum distance between two clusters
     # Argument needed due to backward compatibility, for now we will just keep it the same
@@ -327,9 +358,9 @@ def main():
     # Flush the labelled clusters
     FlushData(labelled_clusters, sys.argv[1])
     
-    num_active_molecules = int(int(float(sys.argv[5]) * 100))
+    num_active_molecules = int(float(sys.argv[5]) * 100)
     num_inactive_molecules = 100 - num_active_molecules
-    # Add molecular data with values for purity, diversity, etc. for a more realistic dataset
+    # Add molecular data with values for purity, diversity, etc. 
     data_with_classes = AddMolecularData(labelled_clusters, num_active_molecules, num_inactive_molecules, 7, .6, 4, sys.argv[1], diversity_percentage=False,difficult_version=True)
     # data_with_classes = generate_clusters.AddMolecularData(labelled_clusters, 10, 40, .5, .6, 2,diversity_percentage=True,difficult_version=True)
 

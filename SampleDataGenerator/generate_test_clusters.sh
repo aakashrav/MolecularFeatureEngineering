@@ -4,22 +4,16 @@ rm -rf $DATA_DIRECTORY || true
 mkdir $DATA_DIRECTORY
 
 TEST_DATA_COUNTER=0
-DIMENSIONS=2
-INTERCLUSTER_DISTANCE=100
-DENSITY=5
-# IMPORTANT: Please change these values simultaneously.
-# ACTIVES_INACTIVES_RATIO_INT = ACTIVES_INACTIVES_RATIO * 10
 ACTIVES_INACTIVES_RATIO=.1
-ACTIVES_INACTIVES_RATIO_INT=1
 
 # Grid testing of parameters
-while [ $DIMENSIONS -le 10 ] # Should be 10
+for DIMENSIONS in {2..10}
 do
-	while [ $INTERCLUSTER_DISTANCE -le 300 ] # Should be 300
+	for INTERCLUSTER_DISTANCE in {100..300}
 	do
-		while [ $DENSITY -le 20 ] # Should be 20
+		for DENSITY in {5..20}
 		do
-			while [ $ACTIVES_INACTIVES_RATIO_INT -le 5 ]
+			for ACTIVES_INACTIVES_RATIO_INT in {1..5}
 			do
 				CLUSTER_DIRECTORY=$DATA_DIRECTORY/$TEST_DATA_COUNTER
 				mkdir $CLUSTER_DIRECTORY
@@ -27,13 +21,13 @@ do
 
 				(( TEST_DATA_COUNTER += 1))
 				ACTIVES_INACTIVES_RATIO=`echo $ACTIVES_INACTIVES_RATIO + .1|bc`
-				(( ACTIVES_INACTIVES_RATIO_INT+=1 ))
+				echo "Generated a cluster!"
 			done
-			(( DENSITY+=5 ))
+			(( DENSITY+=4 ))
 		done
-		(( INTERCLUSTER_DISTANCE+=50 ))
+		(( INTERCLUSTER_DISTANCE+=49 ))
 	done
-	(( DIMENSIONS+=2 ))
+	(( DIMENSIONS+=1 ))
 done
 
 echo "Test cluster generation finished!"
