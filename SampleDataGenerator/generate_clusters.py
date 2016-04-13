@@ -292,7 +292,7 @@ def GenerateSubspaceCluster(clustered_dimensions, unclustered_dimensions, points
     # Create a list that keeps track of the clustered dimensions
     cluster_subspace_dimensions_old = []
     cluster_subspace_dimensions_old.extend(np.ones(clustered_dimensions).tolist())
-    cluster_subspace_dimensions_old.extend(np.zeroes(unclustered_dimensions).tolist())
+    cluster_subspace_dimensions_old.extend(np.zeros(unclustered_dimensions).tolist())
 
     cluster_subspace_dimensions_new = []
     # Sort through the cluster and map the data points according to this permutation
