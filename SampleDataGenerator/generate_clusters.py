@@ -309,7 +309,7 @@ def GenerateSubspaceCluster(clustered_dimensions, unclustered_dimensions, points
 
 # Perform the permutation on the arr, and deposit contents into newarr
 def PerformPermutationMapping(arr,newarr,permutation):
-    for j in range(arr.shape[0]):
+    for j in range(len(arr)):
         newarr.append(arr[permutation[j]])
 
 # The deviation per dimension is only defined on a per dimensional basis, so we
