@@ -11,7 +11,7 @@ import shutil
 import sys
 
 def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactive_molecules, 
-    diversity_threshold, purity_threshold, num_diverse_pure_clusters, DATA_DIRECTORY,
+    diversity_threshold, purity_threshold, num_diverse_pure_clusters, DATA_DIRECTORY, clustered_dimension_array,
     diversity_percentage = False, difficult_version = False):
     if diversity_percentage:
         diversity_threshold = int(diversity_threshold * number_of_active_molecules)
@@ -40,6 +40,7 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
         generated_clusters["num_diverse_pure_clusters"] = num_diverse_pure_clusters
         generated_clusters["clusters"] = []
         generated_clusters["diverse_clusters"] = []
+        generated_clusters["cluster_subspace_dimensions"] = clustered_dimension_array
         counter = 0
 
         for cluster in all_clusters:
@@ -121,7 +122,8 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
             centroid/=num_points
             cluster_radius = 0
             for i in range(len(min_vals)):
-                max_distance = np.maximum(np.absolute(centroid[i] - min_vals[i]),np.absolute(centroid[i]-max_vals[i]))
+                if clustered_dimension_array[counter][i] == 1:
+                    max_distance = np.maximum(np.absolute(centroid[i] - min_vals[i]),np.absolute(centroid[i]-max_vals[i]))
                 cluster_radius+=max_distance**2
             cluter_radius = np.sqrt(cluster_radius) 
 
@@ -188,11 +190,16 @@ def GenerateSeveralClusters(clustered_dimensions, unclustered_dimensions,
     # multiplied by the distance ratio between clusters.
     min_inter_cluster_distance = distance_ratio_between_clusters * cluster_radius
 
+    # Keep track of the dimensions of the subspace clusters
+    clustered_dimension_array = []
+
     for j in range(amount_of_clusters):
         # Generate cluster with a specific center
-        cluster = GenerateSubspaceCluster(clustered_dimensions, unclustered_dimensions,
+        [cluster,clustered_dimensions] = GenerateSubspaceCluster(clustered_dimensions, unclustered_dimensions,
             points_per_cluster[j], cluster_radius, center_seed, unclustered_subspace_range,
             purity)
+        clustered_dimension_array.append(clustered_dimensions)
+
         # Add this cluster to our list of clusters
         clusters.append(cluster)
         # Generate a new center for the next cluster, we will shift the center by our
@@ -218,7 +225,7 @@ def GenerateSeveralClusters(clustered_dimensions, unclustered_dimensions,
 
             center_seed[0,k]+=random_shift
 
-    return np.asarray(clusters)
+    return [np.asarray(clusters),clustered_dimension_array]
 
     
 # Generate a single subspace cluster using the center_vector seed and a radius
@@ -282,15 +289,23 @@ def GenerateSubspaceCluster(clustered_dimensions, unclustered_dimensions, points
     # Shuffle the cluster's dimensions so that we have some variety
     random_permutation = np.random.permutation(np.arange(clustered_dimensions + unclustered_dimensions))
 
+    # Create a list that keeps track of the clustered dimensions
+    cluster_subspace_dimensions_old = []
+    cluster_subspace_dimensions_old.extend(np.ones(clustered_dimensions).tolist())
+    cluster_subspace_dimensions_old.extend(np.zeroes(unclustered_dimensions).tolist())
+
+    cluster_subspace_dimensions_new = []
     # Sort through the cluster and map the data points according to this permutation
     # of the dimensions
+    PerformPermutationMapping(cluster_subspace_dimensions_old,cluster_subspace_dimensions_new, random_permutation)
+
     for i in range(pre_random_permutation_cluster.shape[0]):
         permuted_data_point = []
         PerformPermutationMapping(pre_random_permutation_cluster[i],permuted_data_point, \
             random_permutation)
         cluster[i] = permuted_data_point
 
-    return cluster
+    return [cluster,cluster_subspace_dimensions_new]
 
 # Perform the permutation on the arr, and deposit contents into newarr
 def PerformPermutationMapping(arr,newarr,permutation):
@@ -348,7 +363,7 @@ def main():
     # Will add extra serendipity to our clustering and we will keep it constant
     purity = .95
 
-    clusters = GenerateSeveralClusters(num_unclustered_dimensions, num_unclustered_dimensions,
+    [clusters,clustered_dimension_array] = GenerateSeveralClusters(num_unclustered_dimensions, num_unclustered_dimensions,
         amount_of_clusters, amount_of_points, deviation_per_dimension, unclustered_noise_range,
         distance_ratio_between_clusters, max_shifting_range, purity)
     
@@ -361,7 +376,7 @@ def main():
     num_active_molecules = int(float(sys.argv[5]) * 100)
     num_inactive_molecules = 100 - num_active_molecules
     # Add molecular data with values for purity, diversity, etc. 
-    data_with_classes = AddMolecularData(labelled_clusters, num_active_molecules, num_inactive_molecules, 7, .6, 4, sys.argv[1], diversity_percentage=False,difficult_version=True)
+    data_with_classes = AddMolecularData(labelled_clusters, num_active_molecules, num_inactive_molecules, 7, .6, 4, sys.argv[1], clustered_dimension_array, diversity_percentage=False,difficult_version=True)
     # data_with_classes = generate_clusters.AddMolecularData(labelled_clusters, 10, 40, .5, .6, 2,diversity_percentage=True,difficult_version=True)
 
 if __name__ == '__main__':

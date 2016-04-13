@@ -330,7 +330,8 @@ def compute_cluster_radius(cluster):
 
     cluster_radius = 0
     for i in range(len(cluster_maximum_values)):
-        max_distance = np.maximum(np.absolute(cluster_centroid[i] - cluster_minimum_values[i]),np.absolute(cluster_centroid[i]-cluster_maximum_values[i]))
+        if cluster.get_subspace_mask()[i] == 1:
+            max_distance = np.maximum(np.absolute(cluster_centroid[i] - cluster_minimum_values[i]),np.absolute(cluster_centroid[i]-cluster_maximum_values[i]))
         cluster_radius+=max_distance**2
     
     return np.sqrt(cluster_radius) 
@@ -493,6 +494,10 @@ def dish_main():
                 # Check if our detected cluster intersects with any generated clusters
                 intersects = False
                 for i in range(len(clusters_metadata["centroids"])):
+                    # If the subspace dimensions don't match, we continue
+                    if clusters_metadata["cluster_subspace_dimensions"][i] != cluster.get_subspace_mask():
+                        break
+
                     subspace_distance = compute_subspace_distance(cluster_centroid,clusters_metadata["centroids"][i],cluster.get_subspace_mask())
                     combined_radii_magnitude = compute_cluster_radius(cluster) + clusters_metadata["cluster_radii"][i]
                     if subspace_distance <= combined_radii_magnitude:
