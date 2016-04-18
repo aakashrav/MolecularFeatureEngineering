@@ -114,6 +114,10 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
             degenerate_features = np.delete(degenerate_features,feature,1)
         except IndexError:
             continue
+
+    # First remove all degenerate features
+    feature_matrix = np.delete(feature_matrix, degenerate_features, 1)
+    print "Actives imputation: removed degenerate features, now have %d features" % (feature_matrix.shape[1])
     
     # Now loop through the fragments and impute
     for fragment in range(1, len(feature_matrix)):
@@ -122,31 +126,23 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
         for j in nan_descriptors:
             feature_matrix[fragment, j] = global_median_cache[0,j]
 
-    # First remove all degenerate features
-    non_degenerate_feature_matrix_one = np.delete(feature_matrix, degenerate_features, 1)
-    print "Actives imputation: removed degenerate features, now have %d features" % (non_degenerate_feature_matrix_one.shape[1])
-
-    # Normalize the features so that they all contain values in range [0,1], enabling
-    # us to work in the high dimensional Euclidean space
-    # normalized_feature_matrix = normalize_features(non_degenerate_feature_matrix_one[1:,:])
-
     # Remove existing dataset files and flush new actives data
     with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'w+') as f_handle:
-        np.savetxt(f_handle, non_degenerate_feature_matrix_one[1:,:], delimiter=',',fmt='%5.5f')
+        np.savetxt(f_handle, feature_matrix[1:,:], delimiter=',',fmt='%5.5f')
 
     # Store the feature max and min for feature normalization
-    for feature in range(non_degenerate_feature_matrix_one[1:,:].shape[1]):
+    for feature in range(feature_matrix[1:,:].shape[1]):
         # Get the maximum accross the feature values
-        max_feature = np.amax(non_degenerate_feature_matrix_one[1:,feature])
+        max_feature = np.amax(feature_matrix[1:,feature])
         # Get the minimum accross the feature values
-        min_feature = np.amin(non_degenerate_feature_matrix_one[1:,feature])
+        min_feature = np.amin(feature_matrix[1:,feature])
         
         # Update the dictionaries holding the feature maximums and minimums for later use
         feature_max[feature] = max_feature
         feature_min[feature] = min_feature
 
     # Update degenerate features
-    used_features = [ x-1 for x in non_degenerate_feature_matrix_one[0]]
+    used_features = [ x-1 for x in feature_matrix[0]]
     degenerate_features = [i for i in all_features if i not in used_features]
     
     return [global_median_cache, degenerate_features, used_features]
@@ -518,6 +514,8 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
     # Remove any existing temp file
     open(os.path.join(DATA_DIRECTORY,"temp_file"),'w+')
     normalized_feature_matrix = None
+    max_feature_array = []
+    min_feature_array = []
 
     with open(os.path.join(DATA_DIRECTORY,molecule_feature_matrix_file),'r') as f_handle:
 
@@ -547,6 +545,9 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
                 # Flush the new normalized vector into the new file
                 with open(os.path.join(DATA_DIRECTORY,"temp_file"),'a') as f_handle:
                     np.savetxt(f_handle, next_observation, delimiter=',',fmt='%5.5f')
+            
+            max_feature_array = feature_max
+            min_feature_array = feature_min
         else:
             molecule_feature_matrix = np.asarray(np.genfromtxt(molecule_feature_matrix_file, delimiter=',')).astype(np.float)
             normalized_feature_matrix = np.empty(molecule_feature_matrix.shape).reshape(molecule_feature_matrix.shape[0],molecule_feature_matrix.shape[1])
@@ -569,6 +570,9 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
                 for fragment in range(molecule_feature_matrix.shape[0]):
                     normalized_feature_matrix[fragment,feature] = (molecule_feature_matrix[fragment,feature] - min_feature) / (max_feature - min_feature)
             
+                max_feature_array.append(max_feature)
+                min_feature_array.append(min_feature)
+
             with open(os.path.join(DATA_DIRECTORY,"temp_file"),'w+') as f_handle:
                 np.savetxt(f_handle, normalized_feature_matrix, delimiter=',',fmt='%5.5f')
 
@@ -576,6 +580,8 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
     # TODO:FIND BETTER WORKAROUND FOR THIS
     os.remove(os.path.join(DATA_DIRECTORY,molecule_feature_matrix_file))
     os.rename(os.path.join(DATA_DIRECTORY,"temp_file"), molecule_feature_matrix_file)
+    return [max_feature_array,min_feature_array]
+
 
 
 def retrieve_sdf_features(descriptor_file, sdf_molecules_to_fragments_file,
