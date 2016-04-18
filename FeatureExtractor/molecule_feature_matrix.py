@@ -20,6 +20,10 @@ import csv
 import config
 import shutil
 
+# For debugging divide by zero errors
+import warnings
+warnings.filterwarnings("error")
+
 FLUSH_BUFFER_SIZE = config.FLUSH_BUFFER_SIZE
 DESCRIPTOR_TO_RAM = config.DESCRIPTOR_TO_RAM
 NUM_FEATURES = config.NUM_FEATURES
@@ -520,7 +524,7 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
     for feature in range(len(feature_max)):
         if (feature_max[feature] == feature_min[feature]):
             print(feature)
-    
+
     with open(os.path.join(DATA_DIRECTORY,molecule_feature_matrix_file),'r') as f_handle:
 
         if (feature_max is not None) and (feature_min is not None):
@@ -544,7 +548,13 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
                     #     next_observation[feature] = 1
                     #     continue
                     
-                    next_observation[feature] = (next_observation[feature] - feature_min[feature]) / (feature_max[feature] - feature_max[feature])
+                    try:
+                        next_observation[feature] = (next_observation[feature] - feature_min[feature]) / (feature_max[feature] - feature_min[feature])
+                    except RuntimeWarning:
+                        print("Runtime warning:")
+                        print(feature_max[feature])
+                        print(feature_min[feature])
+                        print(feature)
 
                 # Flush the new normalized vector into the new file
                 with open(os.path.join(DATA_DIRECTORY,"temp_file"),'a') as f_handle:
