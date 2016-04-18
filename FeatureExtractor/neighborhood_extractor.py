@@ -60,6 +60,7 @@ def extract_features(NUM_FEATURES, feature_matrix, covariance_threshold = .80, d
             if count >= CONSTANT_FEATURE_REMOVAL_RATIO * len(feature_column):
                 all_constant_features.append(j)
                 break
+            print(feature_column)
 
         # if (np.array_equal(feature_column,[feature_column[0]] * len(feature_column))):
         #     all_constant_features.append(j)
