@@ -62,8 +62,8 @@ def extract_features(NUM_FEATURES, feature_matrix, covariance_threshold = .80, d
                 all_constant_features.append(j)
                 chosen=True
                 break
-        if not chosen:
-            print(feature_column)
+        # if not chosen:
+        #     print(feature_column)
 
         # if (np.array_equal(feature_column,[feature_column[0]] * len(feature_column))):
         #     all_constant_features.append(j)
