@@ -20,9 +20,9 @@ import csv
 import config
 import shutil
 
-# For debugging divide by zero errors
-import warnings
-warnings.filterwarnings("error")
+# # For debugging divide by zero errors
+# import warnings
+# warnings.filterwarnings("error")
 
 FLUSH_BUFFER_SIZE = config.FLUSH_BUFFER_SIZE
 DESCRIPTOR_TO_RAM = config.DESCRIPTOR_TO_RAM
