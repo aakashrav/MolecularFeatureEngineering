@@ -49,7 +49,7 @@ def extract_features(NUM_FEATURES, feature_matrix, covariance_threshold = .80, d
     # Remove all features that have the same value for all active fragments
     # (up to some ratio)
     # The lower the ratio the more strict we are about constant features
-    CONSTANT_FEATURE_REMOVAL_RATIO = .40
+    CONSTANT_FEATURE_REMOVAL_RATIO = .90
     
     all_constant_features = []
     for j in range(feature_matrix.shape[1]):
