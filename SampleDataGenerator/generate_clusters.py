@@ -12,7 +12,7 @@ import sys
 
 def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactive_molecules, 
     diversity_threshold, purity_threshold, num_diverse_pure_clusters, DATA_DIRECTORY, clustered_dimension_array,
-    diversity_percentage = False, difficult_version = False):
+    points_per_cluster, diversity_percentage = False, difficult_version = False):
     if diversity_percentage:
         diversity_threshold = int(diversity_threshold * number_of_active_molecules)
     current_diverse_pure_clusters = 0
@@ -41,6 +41,7 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
         generated_clusters["clusters"] = []
         generated_clusters["significant_clusters"] = []
         generated_clusters["cluster_subspace_dimensions"] = clustered_dimension_array
+        generated_clusters["points_per_cluster"] = points_per_cluster
         counter = 0
 
         for cluster in all_clusters:
@@ -127,6 +128,7 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
                     cluster_radius+=max_distance**2
             cluter_radius = np.sqrt(cluster_radius) 
 
+            generated_clusters["cluster_extreme_values"] = {"min":min_vals,"max":max_vals}
             generated_clusters["cluster_radii"].append(cluster_radius)
             generated_clusters["centroids"].append(centroid)
             counter+=1
@@ -173,13 +175,13 @@ def LabelDataWithKeys(clusters):
 # Generates several subspace clusters, using random seed values for the center
 def GenerateSeveralClusters(clustered_dimensions, unclustered_dimensions, 
     amount_of_clusters, points_per_cluster, deviation_per_dimension, unclustered_subspace_range,
-    distance_ratio_between_clusters, max_shifting_range, purity):
+    intercluster_distance, purity):
     
     clusters = []
 
     # Generate a starting cluster center, working as a seed to generate future clusters.
     center_seed = np.empty([1,clustered_dimensions], dtype=int)
-    random_center_seed = random.randint(0,max_shifting_range)
+    random_center_seed = random.randint(0,intercluster_distance)
     # Make sure that the clustered dimensions are quite close to eachother
     center_seed.fill(random_center_seed)
 
@@ -188,7 +190,7 @@ def GenerateSeveralClusters(clustered_dimensions, unclustered_dimensions,
 
     # Compute the minimum physical distance between clusters, should be the radius of a cluster
     # multiplied by the distance ratio between clusters.
-    min_inter_cluster_distance = distance_ratio_between_clusters * cluster_radius
+    # min_inter_cluster_distance = distance_ratio_between_clusters * cluster_radius
 
     # Keep track of the dimensions of the subspace clusters
     clustered_dimension_array = []
@@ -205,27 +207,27 @@ def GenerateSeveralClusters(clustered_dimensions, unclustered_dimensions,
         # Add this cluster to our list of clusters
         clusters.append(cluster)
         # Generate a new center for the next cluster, we will shift the center by our
-        # at least our min_inter_cluster_distance but at most our max_shifting_range
+        # our intercluster_distance
         for k in range(center_seed.shape[1]):
 
             # Sometimes user specifies an dimensional distance above the max shifting range.
             # To avoid errors, if this is the case then we just use the max shifting range
-            if (min_inter_cluster_distance > max_shifting_range):
-                random_shift = max_shifting_range
-            else:
-                random_shift = random.randint(min_inter_cluster_distance, max_shifting_range)
+            # if (min_inter_cluster_distance > max_shifting_range):
+            #     random_shift = max_shifting_range
+            # else:
+            cluster_shift = intercluster_distance
 
             # Randomly choose positive or negative shift
             pos_or_neg = random.randint(0,1)
             if pos_or_neg == 1:
-                random_shift *= -1
+                cluster_shift *= -1
 
             # If the shift would cause a negative center seed value, 
             # we keep it positive by making the shift positive again
-            if ( (center_seed[0,k] + random_shift) < 0):
-                random_shift *= -1
+            if ( (center_seed[0,k] + cluster_shift) < 0):
+                cluster_shift *= -1
 
-            center_seed[0,k]+=random_shift
+            center_seed[0,k]+=cluster_shift
 
     return [np.asarray(clusters),clustered_dimension_array]
 
@@ -318,41 +320,41 @@ def PerformPermutationMapping(arr,newarr,permutation):
 # the total Euclidean distance from the cluster center, where the cluster center
 # is w.l.o.g. the origin in our point space.
 def ComputeClusterRadiusFromDeviation(deviation_per_dimension, num_dimensions):
-    "This helper method computes the total cluster radius of each dimension of the cluster \
+    "This helper method computes the total cluster radius if each dimension of the cluster \
     deviates by amount 'deviation_per_dimension'"
 
     deviation_vector = np.array([1,num_dimensions])
     deviation_vector.fill(deviation_per_dimension)
 
     # A simple dot product, and square root will calculate the Euclidean distance
-    final_deviation = np.ceil(np.sqrt(np.dot(deviation_vector, deviation_vector)))
+    cluster_radius = np.ceil(np.sqrt(np.dot(deviation_vector, deviation_vector)))
 
-    return final_deviation
+    return cluster_radius
 
-# Generates various test clusters according to the input parameters
-# First argument- shall be output directory for the cluster feature matrix and the
-# cluster IDs and fragments
-# Second argument- shall be number of clustered dimensions (must be less than 10)
-# Third argument- shall be the intercluster distance
-# Fourth argument- shall be the density of the clusters (will roughly translate into number of points
-# per cluster, assuming a constant cluster deviation per dimension of 10)
-# Fifth argument- shall be the actives vs inactives molecule ratio, should be less than 1, and will
-# be taken as a ratio out of 100 to reflect real scenarios
-# The number of clusters is set as  10 + N(0,2), 
-
-#python generate_clusters.py ../TestFragmentDescriptorData/1 20 200 30 .4
+# python generate_clusters.py ../TestFragmentDescriptorData/1 3 300 30 .4
 def main():
+    "Generates various test clusters according to the input parameters \
+    First argument- shall be output directory for the cluster feature matrix and the \
+    cluster IDs and fragments \
+    Second argument- shall be number of clustered dimensions \
+    Third argument- shall be the intercluster distance \
+    Fourth argument- shall be the density of the clusters (will roughly translate into number of points \
+    per cluster, assuming a constant cluster deviation per dimension of 10) \
+    Fifth argument- shall be the actives vs inactives molecule ratio, should be less than 1, and will \
+    be taken as a ratio out of a 100 total molecules to reflect real scenarios \
+    The number of clusters is set as  10 + N(0,2)"
 
     # Number of clustered dimensions
     num_clustered_dimensions = int(sys.argv[2])
     # Number of unclustered dimensions
-    num_unclustered_dimensions = 50 - num_clustered_dimensions
+    # num_unclustered_dimensions = 50 - num_clustered_dimensions
+    num_unclustered_dimensions = 10 - num_clustered_dimensions
     # The maximum distance between two sequentially generated clusters (intercluster distance)
-    max_shifting_range = int(sys.argv[3])
+    intercluster_distance = int(sys.argv[3])
     # The minimum distance between two clusters
     # Argument needed due to backward compatibility, for now we will just keep it the same
     # as maximum shifting range.
-    distance_ratio_between_clusters = max_shifting_range
+    # distance_ratio_between_clusters = max_shifting_range
     # Amount of clusters 
     amount_of_clusters = int(10 + np.random.normal(0, 2, 1)[0])
     # Density, or points per cluster
@@ -361,14 +363,14 @@ def main():
     deviation_per_dimension = 10
     #  Range of noise for the unclustered dimensions - shall be constant
     unclustered_noise_range = 100
-    # Purity of the cluster; that is, 95% of the cluster's points are pure,
+    # Purity of the cluster; that is, purity = .95 ==> 95% of the cluster's points are pure,
     # and the rest are some noise points that don't really belong in the cluster
     # Will add extra serendipity to our clustering and we will keep it constant
-    purity = .95
+    purity = 1.0
 
     clusters,clustered_dimension_array = GenerateSeveralClusters(num_clustered_dimensions, num_unclustered_dimensions,
         amount_of_clusters, amount_of_points, deviation_per_dimension, unclustered_noise_range,
-        distance_ratio_between_clusters, max_shifting_range, purity)
+        intercluster_distance, purity)
     
     # Label the data points in our clusters with identification keys
     labelled_clusters = LabelDataWithKeys(clusters)
@@ -379,7 +381,7 @@ def main():
     num_active_molecules = int(float(sys.argv[5]) * 100)
     num_inactive_molecules = 100 - num_active_molecules
     # Add molecular data with values for purity, diversity, etc. 
-    data_with_classes = AddMolecularData(labelled_clusters, num_active_molecules, num_inactive_molecules, 7, .6, 4, sys.argv[1], clustered_dimension_array, diversity_percentage=False,difficult_version=True)
+    data_with_classes = AddMolecularData(labelled_clusters, num_active_molecules, num_inactive_molecules, 7, .6, 4, sys.argv[1], clustered_dimension_array, amount_of_points[0], diversity_percentage=False,difficult_version=True)
 
 if __name__ == '__main__':
     main()

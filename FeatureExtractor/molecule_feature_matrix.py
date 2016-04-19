@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""The purpose of this module is to provide functions to retrieve features of fragments 
-that are contained in the molecule, and impute the feature vectors so that they are not sparse, 
-i.e. there are no missing values
-"""
 
 __author__= "Aakash Ravi"
 __email__= "aakash_ravi@hotmail.com"
