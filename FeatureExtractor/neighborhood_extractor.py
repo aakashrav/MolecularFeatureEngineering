@@ -44,31 +44,7 @@ def extract_features(NUM_FEATURES, feature_matrix, covariance_threshold = .80, d
     # Keep track of the features
     feature_matrix = np.vstack((all_features, feature_matrix))
     
-    # all_fragments = active_fragments.extend(inactive_fragments)
-
-    # Remove all features that have the same value for all active fragments
-    # (up to some ratio)
-    # The lower the ratio the more strict we are about constant features
-    CONSTANT_FEATURE_REMOVAL_RATIO = .90
-    
-    all_constant_features = []
-    for j in range(feature_matrix.shape[1]):
-        feature_column = feature_matrix[1:,j].tolist()
-        # Count the number of occurences of each value in the feature array
-        for feature_value in feature_column:
-            feature_value_count = feature_column.count(feature_value)
-            if feature_value_count >= CONSTANT_FEATURE_REMOVAL_RATIO * len(feature_column):
-                all_constant_features.append(j)
-                break
-
-        # if (np.array_equal(feature_column,[feature_column[0]] * len(feature_column))):
-        #     all_constant_features.append(j)
-    
-    # First remove all the constant features
-    non_constant_features = [feature for feature in all_features if feature not in all_constant_features]
-    feature_matrix = feature_matrix[:,non_constant_features]
-    
-    # Then prune heavily correlated features
+    # Prune heavily correlated features
     correlation_representatives = correlation_identifier.identify_correlated_features(feature_matrix[1:], NUM_FEATURES,covariance_threshold)
     feature_matrix = feature_matrix[:,correlation_representatives]
     significant_features = feature_matrix[0]

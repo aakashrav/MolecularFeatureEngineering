@@ -15,6 +15,9 @@ import pickle
 import csv
 import config
 import shutil
+import sys
+import subprocess
+import obtain_molecules
 
 # # For debugging divide by zero errors
 # import warnings
@@ -101,7 +104,7 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
         neighborhood_extractor.extract_features(NUM_FEATURES,descriptor_matrix,COVARIANCE_THRESHOLD,descriptors_map,active_fragments,inactive_fragments)
 
     print "Actives imputation: starting out with %d features" % (feature_matrix.shape[1])
-    significant_features = np.genfromtxt(os.path.join(DATA_DIRECTORY,'significant_features'),delimiter=',')
+    significant_features = np.genfromtxt(os.path.join(config.DATA_DIRECTORY,'significant_features'),delimiter=',')
     redundant_features = [i for i in all_features if i not in significant_features]
 
     feature_matrix = np.delete(feature_matrix, redundant_features, 1)
@@ -517,9 +520,9 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
     max_feature_array = []
     min_feature_array = []
 
-    for feature in range(len(feature_max)):
-        if (feature_max[feature] == feature_min[feature]):
-            print(feature)
+    # for feature in range(len(feature_max)):
+    #     if (feature_max[feature] == feature_min[feature]):
+    #         print(feature)
 
     with open(os.path.join(DATA_DIRECTORY,molecule_feature_matrix_file),'r') as f_handle:
 
@@ -594,7 +597,7 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
 
 
 
-def retrieve_sdf_features(descriptor_file, sdf_molecules_to_fragments_file,
+def create_feature_matrix(descriptor_file, sdf_molecules_to_fragments_file,
     active_molecules, inactive_molecules, output_details=False):
     
     #TODO: description
@@ -632,14 +635,40 @@ def retrieve_sdf_features(descriptor_file, sdf_molecules_to_fragments_file,
     _flush_metadata(global_median_cache, used_features)
 
 def main():
-    from numpy import random
-    feature_matrix = np.empty([11,10])
-    for i in range(feature_matrix.shape[0]):
-        cur_fragment = np.random.randint(0,200,size=feature_matrix.shape[1]).reshape(1,feature_matrix.shape[1])
-        feature_matrix[i] = cur_fragment
+    DATASET_NUMBER = int(sys.argv[1])
 
-    feature_matrix = normalize_features(feature_matrix)
-    print feature_matrix
+    actives_dataset_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_ligands.json")
+    inactives_dataset_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_decoys.json")
+    features_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_features.csv")
+    fragments_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_fragments.json")
+    
+    os.environ["DATASET_NUMBER"] = str(DATASET_NUMBER)
+
+    result = subprocess.call(['bash', './data_preprocessing.sh'])
+
+    # Fetch the SDF Actives and Inactives List
+    with open(actives_dataset_file,'r') as f_handle:
+        actives = json.load(f_handle)
+    with open(inactives_dataset_file,'r') as f_handle:
+        inactives = json.load(f_handle)
+
+    print "Starting molecular feature matrix creation.. "
+    # Retrieve the molecular feature matrix corresponding to our dataset and 
+    # flush it to file
+    create_feature_matrix(features_file, fragments_file ,actives, inactives, output_details=False)
+    print "Finished molecular feature matrix creation.. "
+
+    print "Starting search of molecular clusters"
+    # Find the clusters using ELKI
+    molecular_clusters.find_clusters(CLUSTER_FILENAME = os.path.join(config.DATA_DIRECTORY,"detected_clusters"),
+        FEATURE_MATRIX_FILE = os.path.join(config.DATA_DIRECTORY,"molecular_feature_matrix.csv"),
+        ELKI_EXECUTABLE=config.ELKI_EXECUTABLE,num_active_molecules=len(actives),num_inactive_molecules=len(inactives),epsilon=None, mu=None)
+    print "Finished search of molecular clusters"
+
+    print "Starting analysis and pruning of found clusters"
+    # Analyze the clusters and output the most pure and diverse ones
+    cluster_analysis.main()
+    print "Finished analysis and pruning of clusters! Clusters available in data directory"
 
 if __name__ == '__main__':
     main()
