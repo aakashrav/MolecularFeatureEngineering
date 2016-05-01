@@ -18,6 +18,7 @@ import shutil
 import sys
 import subprocess
 import obtain_molecules
+import molecular_clusters
 
 # # For debugging divide by zero errors
 # import warnings
@@ -667,7 +668,7 @@ def main():
 
     print "Starting analysis and pruning of found clusters"
     # Analyze the clusters and output the most pure and diverse ones
-    cluster_analysis.main()
+    # cluster_analysis.main()
     print "Finished analysis and pruning of clusters! Clusters available in data directory"
 
 if __name__ == '__main__':
