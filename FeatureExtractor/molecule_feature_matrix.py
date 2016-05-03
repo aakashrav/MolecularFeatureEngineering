@@ -189,33 +189,28 @@ def _read_descriptor_file(descriptor_file_name):
 
 def _flush_metadata(global_median_cache, used_features):
 
-    # Flush new metadata
-    # Save the global median cache structure as CSV
-    with open(os.path.join(DATA_DIRECTORY,"global_median_cache.csv"), 'wb+') as f_handle:
-        np.savetxt(f_handle, global_median_cache, delimiter=',', fmt='%5.5f')
+    # Flush all the newly obtained metadata about the molecular feature matrix
 
-    # We create a mapping between the indices of all the descriptors
-    # to indices of the new descriptors that have no degenerate features
-    old_new_descriptor_mapping = {}
-    for i in range(len(used_features)):
-        old_new_descriptor_mapping[i] = used_features[i]
+    # Keep track of the values of the global median cache
+    with open(os.path.join(DATA_DIRECTORY,"global_median_cache.pkl"), 'wb+') as f_handle:
+        pickle.dump(global_median_cache, f_handle, pickle.HIGHEST_PROTOCOL)
+
+    # Keep track of which features are used in the final, fully imputed, molecular
+    # feature matrix.
     with open(os.path.join(DATA_DIRECTORY,"used_features.pkl"),'wb+') as f_handle:
-        pickle.dump(old_new_descriptor_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(used_features, f_handle, pickle.HIGHEST_PROTOCOL)
     
     # Save the fragment number to name mapping dictionaries in a pickle file
     with open(os.path.join(DATA_DIRECTORY,"fragment_number_name_mapping.pkl"), 'wb+') as f_handle:
         pickle.dump(fragment_number_name_mapping,f_handle, pickle.HIGHEST_PROTOCOL)
-    # print(fragment_number_name_mapping)
 
     # Save the fragments to molecules mapping(s) dictionar(ies) in a pickle file
     with open(os.path.join(DATA_DIRECTORY,"actives_fragment_molecule_mapping.pkl"), 'wb+') as f_handle:
         pickle.dump(actives_fragment_molecule_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
-    # print(actives_fragment_molecule_mapping)
 
     # Save the fragments to molecules mapping(s) dictionar(ies) in a pickle file
     with open(os.path.join(DATA_DIRECTORY,"inactives_fragment_molecule_mapping.pkl"), 'wb+') as f_handle:
         pickle.dump(inactives_fragment_molecule_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
-    # print(inactives_fragment_molecule_mapping)
 
 def _load_matrix_sdf(descriptor_file, molecules_to_fragments_file,
     molecule_sdfs, output_details=0,
@@ -596,8 +591,6 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
     os.rename(os.path.join(DATA_DIRECTORY,"temp_file"), molecule_feature_matrix_file)
     return [max_feature_array,min_feature_array]
 
-
-
 def create_feature_matrix(descriptor_file, sdf_molecules_to_fragments_file,
     active_molecules, inactive_molecules, output_details=False):
     
@@ -635,6 +628,92 @@ def create_feature_matrix(descriptor_file, sdf_molecules_to_fragments_file,
     # Flush statistics on molecules
     _flush_metadata(global_median_cache, used_features)
 
+def _compute_subspace_distance(point_1,point_2,subspace):
+    "A helper function that computes the distance between point 1 and point 2, when projected to the \
+    specified subspace."
+    
+    distance = 0
+    for i in range(len(point_1)):
+        if i in subspace:
+            distance+=((point_1[i] - point_2[i])**2)
+    
+    # Return the square root of the aggregated distance
+    return np.sqrt(distance)
+
+
+def get_molecule_activity_score(molecule_name, molecules_to_fragments_file, features_file):
+
+    descriptors_map, descriptors = _read_descriptor_file(descriptor_file)
+
+    molecules_to_fragments = json.load(molecules_to_fragments_file)
+    full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
+                        if molecule["name"] == molecule_name]
+
+    # First index is actual fragments, since there 
+    # can exist only one key value pair for the molecule and its fragments
+    full_fragments = full_fragments[0]
+    fragments = [fragment["smiles"] for fragment in full_fragments]
+
+    with open(os.path.join(config.DATA_DIRECTORY,'global_median_cache.pkl'),'r') as f_handle:
+        global_median_cache = pickle.load(f_handle)
+
+    with open(os.path.join(config.DATA_DIRECTORY,'used_features.pkl'),'r') as f_handle:
+        used_features = pickle.load(f_handle)
+
+    found_fragments = []
+    feature_matrix = np.empty((0,len(used_features)))
+
+    # Create the feature matrix for the fragments of this particular molecule
+    for f in fragments:
+        # If we already found the fragment, we continue on; will save us time and space
+        if f in found_fragments:
+            continue
+        else:
+            found_fragments.append(f)
+            
+            try:
+                ix_f = descriptors_map[f]
+                current_fragment = descriptors[ix_f]
+
+                # First, project the features of the current fragment into only the non-degenerate
+                # feature space as learned from the training set.
+                degenerate_features = [feature for feature in np.arange(len(current_fragment)) if feature not in used_features]
+                current_fragment = np.delete(current_fragment,degenerate_features,1)
+
+                # Debugging purposes
+                print(len(current_fragment))
+
+                # Obtain all descriptors that have non-numerical values for this fragment
+                nan_descriptors = np.where(np.isnan(current_fragment) == True)
+
+                # Impute these non-numerical values with the values from the global median cache
+                # which was again, obtained from the training set.
+                for j in nan_descriptors:
+                    current_fragment[j] = global_median_cache[0,j]
+
+                # Append this fragment to our feature matrix
+                np.vstack(feature_matrix,current_fragment)
+
+            except KeyError:
+                print("Key error")
+                continue
+
+    # For each fragment in our obtained feature matrix, find the minimum distance between any
+    # centroid of a significant cluster in our trained model. After finding such distance for every fragment
+    # in our feature matrix, take the average of the distances and output this as a score. 
+    MODEL_DIRECTORY = os.path.join(config.DATA_DIRECTORY,"ClustersModel")
+    with open(os.path.join(MODEL_DIRECTORY),"molecular_cluster_model.pkl") as f_handle:
+        molecular_cluster_model = pickle.load(f_handle)
+
+    distance_array = []
+    for i in range(feature_matrix.shape[0]):
+        distance_array.append(_compute_subspace_distance(feature_matrix[i],molecular_cluster_model['centroid'],molecular_cluster_model['subspace']))
+
+    # Return the average over all the computed distances as the score
+    return np.mean(np.asarray(distance_array))
+
+
+
 def main():
     DATASET_NUMBER = int(sys.argv[1])
 
@@ -668,7 +747,10 @@ def main():
 
     print "Starting analysis and pruning of found clusters"
     # Analyze the clusters and output the most pure and diverse ones
-    # cluster_analysis.main()
+    PURITY_THRESHOLD = .6
+    DIVERSITY_THRESHOLD = 20
+    DIVERSITY_PERCENTAGE = False
+    cluster_analysis.create_cluster_centroid_model(PURITY_THRESHOLD, DIVERSITY_THRESHOLD, DIVERSITY_PERCENTAGE)
     print "Finished analysis and pruning of clusters! Clusters available in data directory"
 
 if __name__ == '__main__':

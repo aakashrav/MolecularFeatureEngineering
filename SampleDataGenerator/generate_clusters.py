@@ -9,10 +9,15 @@ import os
 import config
 import shutil
 import sys
+import math
+
 
 def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactive_molecules, 
     diversity_threshold, purity_threshold, num_diverse_pure_clusters, DATA_DIRECTORY, clustered_dimension_array,
     points_per_cluster, diversity_percentage = False, difficult_version = False):
+    "Vast method that strives to make our generated clustering data as realistic as possible to real \
+    molecular data. This entails adding details about various details about the molecular feature space."
+
     if diversity_percentage:
         diversity_threshold = int(diversity_threshold * number_of_active_molecules)
     current_diverse_pure_clusters = 0
@@ -23,13 +28,12 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
     
     actives_fragments_to_molecule_mapping = {}
     inactives_fragments_to_molecule_mapping = {}
-    # active_molecule_list = np.arange(0,number_of_active_molecules).reshape(1,number_of_active_molecules)
-    # inactive_molecule_list = np.arange(0,number_of_inactive_molecules).reshape(1,number_of_inactive_molecules)
     
     with open(os.path.join(DATA_DIRECTORY,"generated_test_clusters.pkl"),'w+') as f_handle:
 
         # Keep track of all metadata for future tests
         generated_clusters = {}
+        generated_clusters["clusters"] = []
         generated_clusters["num_clusters"] = len(all_clusters)
         generated_clusters["centroids"] = []
         generated_clusters["cluster_radii"] = []
@@ -38,12 +42,11 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
         generated_clusters["diversity"] = diversity_threshold
         generated_clusters["purity"] = purity_threshold
         generated_clusters["num_diverse_pure_clusters"] = num_diverse_pure_clusters
-        generated_clusters["clusters"] = []
         generated_clusters["significant_clusters"] = []
         generated_clusters["cluster_subspace_dimensions"] = clustered_dimension_array
         generated_clusters["points_per_cluster"] = points_per_cluster
         counter = 0
-
+        
         for cluster in all_clusters:
             already_assigned_fragments = []
             num_points = len(cluster)
@@ -123,7 +126,7 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
             centroid/=num_points
             cluster_radius = 0
             for i in range(len(min_vals)):
-                if clustered_dimension_array[counter][i] == 1:
+                if clustered_dimension_array[counter][0,i] == 1:
                     max_distance = np.maximum(np.absolute(centroid[i] - min_vals[i]),np.absolute(centroid[i]-max_vals[i]))
                     cluster_radius+=max_distance**2
             cluter_radius = np.sqrt(cluster_radius) 
@@ -141,8 +144,8 @@ def AddMolecularData(all_clusters, number_of_active_molecules, number_of_inactiv
     with open(os.path.join(DATA_DIRECTORY,"test_inactives_fragment_molecule_mapping.pkl"),'wb+') as f_handle:
         pickle.dump(inactives_fragments_to_molecule_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
 
-# Flush the clusters to file
 def FlushData(clusters, DATA_DIRECTORY):
+    "Method for flushing the generated clusters to a file. This file will be located in DATA_DIRECTORY"
     # Create new file
     open(os.path.join(DATA_DIRECTORY,"test_molecular_feature_matrix.csv"), 'w+')
     with open(os.path.join(DATA_DIRECTORY,"test_molecular_feature_matrix.csv"), 'a') as f_handle:
@@ -151,8 +154,11 @@ def FlushData(clusters, DATA_DIRECTORY):
             new_cluster = np.delete(cluster, 0, 1)
             np.savetxt(f_handle, new_cluster, delimiter=",", fmt="%f")
 
-# Method for labelling each raw data point in each cluster with an identification key
+
 def LabelDataWithKeys(clusters):
+    "This method lables the raw data points of clusters with identification keys. This will help \
+    in idenitfying the points in each cluster when evaluating subspace clustering algorithm results."
+
     labelled_clusters = []
     counter = 0
 
@@ -172,216 +178,185 @@ def LabelDataWithKeys(clusters):
 
     return np.asarray(labelled_clusters)
 
-# Generates several subspace clusters, using random seed values for the center
-def GenerateSeveralClusters(clustered_dimensions, unclustered_dimensions, 
-    amount_of_clusters, points_per_cluster, deviation_per_dimension, unclustered_subspace_range,
-    intercluster_distance, purity):
+def checkIntersection(cluster_seed_one,cluster_seed_two,radius):
+    "Checks whether the first cluster center and the second cluster center intersect. \
+    We define intersect to mean dist(cluster_seed_one[i],cluster_seed_two[i]) <= 2*radius \
+    for any i = 0,...,num_clustered_dimensions"
+    
+    if (np.absolute(np.array(cluster_seed_one) - np.array(cluster_seed_two)) > 2*radius).any():
+        return False
+
+    return True
+
+
+
+def GenerateSeveralClusters(value_range, num_clusters, number_of_points, intercluster_distance, 
+    density, num_clustered_dimensions, total_number_dimensions):
+    "Main cluster generation module. value_range specifies the range of the values taken by the clusters. \
+    num_clusters is the number of clusters to be generated. \
+    number_of_points is the number of points per cluster. \
+    inter_cluster distance is the minimum distance between in one dimension between any two \
+    centroids of the generated clusters. \
+    density is the radius of the cluster. \
+    num_clustered_dimensions is the number of clustered subspace dimensions. \
+    total_number_dimensions is the total number of dimensions (clustered and unclustered dimensions)."
     
     clusters = []
+    # Keep track of the center seeds of the clusters - in other words, the centroids.
+    cluster_seeds = []
+    # Keep track of dimensionality of subspace clusters.
+    clustered_dimensions_array = []
+    # The vector corresponding to the density in each dimension of the clusters, will be used to 
+    # compute the radius using the vector norm
+    deviation_vector = np.empty(num_clustered_dimensions,dtype=float)
+    deviation_vector.fill(density)
+    # Compute radius using the vector norm
+    cluster_radius = math.sqrt(deviation_vector.dot(deviation_vector))
 
-    # Generate a starting cluster center, working as a seed to generate future clusters.
-    center_seed = np.empty([1,clustered_dimensions], dtype=int)
-    random_center_seed = random.randint(0,intercluster_distance)
-    # Make sure that the clustered dimensions are quite close to eachother
-    center_seed.fill(random_center_seed)
+    while(len(clusters)!=num_clusters):
+        # First seed will ge generated at the origin.
+        if(len(clusters) == 0):
+            current_center_seed = [0] * total_number_dimensions
+            temporary_seed = []
+            # Shuffle the seed's dimensions so that we have some variety
+            random_permutation = np.random.permutation(np.arange(total_number_dimensions))
+            PerformPermutationMapping(current_center_seed,temporary_seed,random_permutation)
+            # Initialize a dictionary that keeps track of how we map the dimensions
+            dimension_mapping = {index:val for index,val in enumerate(random_permutation)}
+        else:
+            # Try and shift the old center seed to obtain a new center seed
+            for i in range(num_clustered_dimensions):
+                current_center_seed[i] += intercluster_distance
+                temporary_seed = []
+                # Shuffle the seed's dimensions so that we have some variety
+                random_permutation = np.random.permutation(np.arange(total_number_dimensions))
+                PerformPermutationMapping(current_center_seed,temporary_seed,random_permutation)
+                # Initialize a dictionary that keeps track of how we map the dimensions
+                dimension_mapping = {index:val for index,val in enumerate(random_permutation)}
+                # Check if the newly generated seed intersects with any prior generated seeds.
+                intersects = False
+                for old_cluster_seed in cluster_seeds:
+                    # Check intersections with prior seeds
+                    if checkIntersection(temporary_seed,old_cluster_seed,density):
+                        intersects = True
+                        break
+                
+                # We found a non-intersecting seed
+                if not intersects:
+                    # Also need to make sure that we are still in the value range
+                    if (np.array(temporary_seed) <= value_range).all():
+                        break
+                # We've tried adding the intercluster_distance to all dimensions and still get 
+                # intersections, therefore we notify the user
+                if i==num_clustered_dimensions-1:
+                    raise ValueError('Current parameters lead to intersecting clusters, please input different parameters')
+        
+        # Keep track of the clustered dimensions metadata
+        clustered_dimensions = np.empty([1,total_number_dimensions]).reshape(1,total_number_dimensions)
+        for key,val in dimension_mapping.iteritems():
+            if val < num_clustered_dimensions:
+                clustered_dimensions[0,key] = 1
+            else:
+                clustered_dimensions[0,key] = 0
+        
+        clustered_dimensions_array.append(clustered_dimensions)
+        cluster_seeds.append(temporary_seed)
 
-    # Compute the cluster's radius
-    cluster_radius = ComputeClusterRadiusFromDeviation(deviation_per_dimension, clustered_dimensions)
+        # Get the vectors of the subspace cluster, taken from a Guassian blob distribution with the mean
+        # as the cluster centroid. Note that we use the six-sigma principle in order to generate a 
+        # reasonable standard deviation parameter.
+        clustered_vectors, labels_true = make_blobs(n_samples=number_of_points, centers=current_center_seed[0:num_clustered_dimensions],
+            cluster_std=density/6.00, random_state=1)
 
-    # Compute the minimum physical distance between clusters, should be the radius of a cluster
-    # multiplied by the distance ratio between clusters.
-    # min_inter_cluster_distance = distance_ratio_between_clusters * cluster_radius
+        # Initialize a new cluster - in all the dimensions.
+        cluster = np.empty([number_of_points,total_number_dimensions],dtype=np.float)
 
-    # Keep track of the dimensions of the subspace clusters
-    clustered_dimension_array = []
-
-    for j in range(amount_of_clusters):
-        # Generate cluster with a specific center, and also keep track of the subspace dimensions
-        # of the generated cluster
-        clustered_dimensions_mask = []
-        cluster = GenerateSubspaceCluster(clustered_dimensions, unclustered_dimensions,
-            points_per_cluster[j], cluster_radius, center_seed, unclustered_subspace_range,
-            purity,clustered_dimensions_mask)
-        clustered_dimension_array.append(clustered_dimensions_mask)
-
-        # Add this cluster to our list of clusters
+        # Fill in the unclustered dimensions of the generated vectors, and append to our created cluster
+        for i in range(number_of_points):
+            # Create new vector, with all the dimensions
+            new_vector = np.empty([1,total_number_dimensions],dtype=np.float).reshape(1,total_number_dimensions)
+            # Fill in the clustered dimensions
+            for j in range(num_clustered_dimensions):
+                new_vector[0,j] = clustered_vectors[i,j]
+            # Fill in the unclustered dimensions
+            for j in range(num_clustered_dimensions,total_number_dimensions):
+                new_vector[0,j] = np.random.uniform(0,value_range)
+            # Rearrange the dimensions according to our random permutation
+            temp_vector = np.copy(new_vector)
+            for j in range(total_number_dimensions):
+                new_vector[0,j] = temp_vector[0,dimension_mapping[j]]
+            # Finally, add the vector to our cluster
+            cluster[i] = new_vector
+      
         clusters.append(cluster)
-        # Generate a new center for the next cluster, we will shift the center by our
-        # our intercluster_distance
-        for k in range(center_seed.shape[1]):
 
-            # Sometimes user specifies an dimensional distance above the max shifting range.
-            # To avoid errors, if this is the case then we just use the max shifting range
-            # if (min_inter_cluster_distance > max_shifting_range):
-            #     random_shift = max_shifting_range
-            # else:
-            cluster_shift = intercluster_distance
-
-            # Randomly choose positive or negative shift
-            pos_or_neg = random.randint(0,1)
-            if pos_or_neg == 1:
-                cluster_shift *= -1
-
-            # If the shift would cause a negative center seed value, 
-            # we keep it positive by making the shift positive again
-            if ( (center_seed[0,k] + cluster_shift) < 0):
-                cluster_shift *= -1
-
-            center_seed[0,k]+=cluster_shift
-
-    return [np.asarray(clusters),clustered_dimension_array]
-
-    
-# Generate a single subspace cluster using the center_vector seed and a radius
-# for the cluster
-def GenerateSubspaceCluster(clustered_dimensions, unclustered_dimensions, points_in_cluster, 
-    cluster_radius, center_seed, unclustered_subspace_range, purity,clustered_dimensions_mask):
-
-    cluster = np.empty([points_in_cluster,clustered_dimensions+unclustered_dimensions],dtype=np.float)
-
-    unclustered_seed = np.zeros([1,unclustered_dimensions],dtype=int)
-    center_vector = np.append(center_seed, unclustered_seed)
-
-    # Calculate the amount of 'impure' points - points that are clustered on some dimensions
-    # of the subspace cluster, but in other dimensions are random. Such points correspond
-    # to 'noisy' points or even certain inactive compounds that exhibit some features of the
-    # active, but don't exhibit other features.
-    num_pure_points = int((purity) * points_in_cluster)
-    num_impure_points = points_in_cluster - num_pure_points
-
-    # First generate the pure points in the cluster
-    clustered_vectors, labels_true = make_blobs(n_samples=num_pure_points, centers=center_vector,
-        cluster_std=cluster_radius, random_state=1)
-    
-    pre_random_permutation_cluster = np.empty([num_pure_points + num_impure_points,\
-        clustered_vectors.shape[1]],dtype=np.float)
-
-    # Now add random data for the unclustered dimensions
-    for i in range(num_pure_points):
-        for k in range(clustered_dimensions-1,(clustered_dimensions + unclustered_dimensions)):
-            random_number_in_range = random.randint(0,unclustered_subspace_range)
-            clustered_vectors[i,k] = random_number_in_range
-
-        # Add this final vector to the list of points    
-        # pre_random_permutation_cluster.append(clustered_vectors[i])
-        pre_random_permutation_cluster[i] = clustered_vectors[i]
-
-    # Now generate the impure center seed.
-    # Randomly choose the number of dimensions deviating from pure points
-    # Must be atleast 2 so we get some impurity
-    num_impure_dimensions = random.randint(2,clustered_dimensions)
-    # Generate random center seeds just for the impure dimensions
-    for i in range (num_impure_dimensions):
-        random_number_in_range = random.randint(0,unclustered_subspace_range)
-        center_vector[i] = random_number_in_range
-    # Generate the impure points
-    clustered_vectors, labels_true = make_blobs(n_samples=num_impure_points, centers=center_vector,
-        cluster_std=cluster_radius, random_state=1)
-
-    # Now add random data for the unclustered dimensions, just as before
-    j = 0
-    for i in range(num_pure_points, (num_pure_points + num_impure_points)):
-        for k in range(clustered_dimensions-1,(clustered_dimensions + unclustered_dimensions)):
-            random_number_in_range = random.randint(0,unclustered_subspace_range)
-            clustered_vectors[j,k] = random_number_in_range
-
-        # Add this final vector to the list of points 
-        pre_random_permutation_cluster[i] = clustered_vectors[j]
-        j+=1
+    return [np.asarray(clusters),clustered_dimensions_array]
 
 
-    # Shuffle the cluster's dimensions so that we have some variety
-    random_permutation = np.random.permutation(np.arange(clustered_dimensions + unclustered_dimensions))
-
-    # Create a list that keeps track of the clustered dimensions
-    cluster_subspace_dimensions_old = []
-    cluster_subspace_dimensions_old.extend(np.ones(clustered_dimensions).tolist())
-    cluster_subspace_dimensions_old.extend(np.zeros(unclustered_dimensions).tolist())
-
-    # Sort through the cluster and map the data points according to this permutation
-    # of the dimensions
-    PerformPermutationMapping(cluster_subspace_dimensions_old,clustered_dimensions_mask, random_permutation)
-
-    for i in range(pre_random_permutation_cluster.shape[0]):
-        permuted_data_point = []
-        PerformPermutationMapping(pre_random_permutation_cluster[i],permuted_data_point, \
-            random_permutation)
-        cluster[i] = permuted_data_point
-    
-    return cluster
-
-# Perform the permutation on the arr, and deposit contents into newarr
 def PerformPermutationMapping(arr,newarr,permutation):
+    "Performs a mapping of arr into newarr according to the permutation parameter"
     for j in range(len(arr)):
         newarr.append(arr[permutation[j]])
 
-# The deviation per dimension is only defined on a per dimensional basis, so we
-# use the deviation per dimension along with the number of dimensions to calculate
-# the total Euclidean distance from the cluster center, where the cluster center
-# is w.l.o.g. the origin in our point space.
-def ComputeClusterRadiusFromDeviation(deviation_per_dimension, num_dimensions):
-    "This helper method computes the total cluster radius if each dimension of the cluster \
-    deviates by amount 'deviation_per_dimension'"
 
-    deviation_vector = np.array([1,num_dimensions])
-    deviation_vector.fill(deviation_per_dimension)
-
-    # A simple dot product, and square root will calculate the Euclidean distance
-    cluster_radius = np.ceil(np.sqrt(np.dot(deviation_vector, deviation_vector)))
-
-    return cluster_radius
-
-# python generate_clusters.py ../TestFragmentDescriptorData/1 3 300 30 .4
-def main():
-    "Generates various test clusters according to the input parameters \
-    First argument- shall be output directory for the cluster feature matrix and the \
-    cluster IDs and fragments \
-    Second argument- shall be number of clustered dimensions \
-    Third argument- shall be the intercluster distance \
-    Fourth argument- shall be the density of the clusters (will roughly translate into number of points \
-    per cluster, assuming a constant cluster deviation per dimension of 10) \
-    Fifth argument- shall be the actives vs inactives molecule ratio, should be less than 1, and will \
-    be taken as a ratio out of a 100 total molecules to reflect real scenarios \
-    The number of clusters is set as  10 + N(0,2)"
-
-    # Number of clustered dimensions
-    num_clustered_dimensions = int(sys.argv[2])
-    # Number of unclustered dimensions
-    # num_unclustered_dimensions = 50 - num_clustered_dimensions
-    num_unclustered_dimensions = 10 - num_clustered_dimensions
-    # The maximum distance between two sequentially generated clusters (intercluster distance)
-    intercluster_distance = int(sys.argv[3])
-    # The minimum distance between two clusters
-    # Argument needed due to backward compatibility, for now we will just keep it the same
-    # as maximum shifting range.
-    # distance_ratio_between_clusters = max_shifting_range
-    # Amount of clusters 
-    amount_of_clusters = int(10 + np.random.normal(0, 2, 1)[0])
-    # Density, or points per cluster
-    amount_of_points = [int(sys.argv[4])] * amount_of_clusters 
-    # Radius (or deviation from the center) in each dimension
-    deviation_per_dimension = 10
-    #  Range of noise for the unclustered dimensions - shall be constant
-    unclustered_noise_range = 100
-    # Purity of the cluster; that is, purity = .95 ==> 95% of the cluster's points are pure,
-    # and the rest are some noise points that don't really belong in the cluster
-    # Will add extra serendipity to our clustering and we will keep it constant
-    purity = 1.0
-
-    clusters,clustered_dimension_array = GenerateSeveralClusters(num_clustered_dimensions, num_unclustered_dimensions,
-        amount_of_clusters, amount_of_points, deviation_per_dimension, unclustered_noise_range,
-        intercluster_distance, purity)
+def generate_cluster_and_flush(ambient_space_range, amount_of_clusters, amount_of_points, intercluster_distance, \
+    density_per_dimension, num_clustered_dimensions, total_number_dimensions, num_active_molecules, DATA_DIRECTORY):
+    "Generates various test subspace clusters according to the input parameters \
+    Parameters:  range, points_per_cluster, ICD, density, num_clustered_dimensions,\
+     total_number_dimensions,num_active_molecules,amount_of_clusters,DATA_DIRECTORY"
+    
+    clusters,clustered_dimension_array = GenerateSeveralClusters(ambient_space_range,amount_of_clusters,amount_of_points,intercluster_distance,\
+        density_per_dimension,num_clustered_dimensions,total_number_dimensions)
     
     # Label the data points in our clusters with identification keys
     labelled_clusters = LabelDataWithKeys(clusters)
     
     # Flush the labelled clusters
-    FlushData(labelled_clusters, sys.argv[1])
+    FlushData(labelled_clusters, DATA_DIRECTORY)
     
-    num_active_molecules = int(float(sys.argv[5]) * 100)
     num_inactive_molecules = 100 - num_active_molecules
     # Add molecular data with values for purity, diversity, etc. 
-    data_with_classes = AddMolecularData(labelled_clusters, num_active_molecules, num_inactive_molecules, 7, .6, 4, sys.argv[1], clustered_dimension_array, amount_of_points[0], diversity_percentage=False,difficult_version=True)
+    data_with_classes = AddMolecularData(labelled_clusters, num_active_molecules, num_inactive_molecules, 7, .6, 2, DATA_DIRECTORY, clustered_dimension_array, amount_of_points, diversity_percentage=False,difficult_version=True)
+
+# python generate_clusters.py 250 10 25 5 10 50 20 5 ../TestFragmentDescriptorData/1
+def generate_test_clusters():
+    BASE_DIR = "../TestFragmentDescriptorData"
+
+    if os.path.exists(BASE_DIR):
+        shutil.rmtree(BASE_DIR)
+    os.makedirs(BASE_DIR)
+
+    CURRENT_CLUSTER = 0
+    DEFUNCT_PARAM_COUNT = 0
+
+    for CURRENT_ICD in [25,250,400,500]:
+        for CURRENT_DENSITY in [5,50,250,500]:
+            for CURRENT_EPSILON in [.005,.03,.05,.075,.1]:
+                for CURRENT_MU in [3,6,9]:
+
+                    CURRENT_DIR = os.path.join(BASE_DIR,str(CURRENT_CLUSTER))
+
+                    if os.path.exists(CURRENT_DIR):
+                        shutil.rmtree(CURRENT_DIR)
+                    os.makedirs(CURRENT_DIR)
+
+                    try:
+                        generate_cluster_and_flush(2500,5,10,CURRENT_ICD,CURRENT_DENSITY,10,50,20,CURRENT_DIR)
+                    except ValueError:
+                        print("Parameters: %f %f %f %f" % (CURRENT_ICD, CURRENT_DENSITY, CURRENT_EPSILON, CURRENT_MU))
+                        shutil.rmtree(CURRENT_DIR)
+                        DEFUNCT_PARAM_COUNT+=1
+                        continue
+
+                    parameters = {'icd':CURRENT_ICD,'density':CURRENT_DENSITY,'epsilon':CURRENT_EPSILON, 'mu':CURRENT_MU}
+
+                    with open(os.path.join(CURRENT_DIR,"parameters.pkl"),'wb+') as f_handle:
+                        pickle.dump(parameters, f_handle, pickle.HIGHEST_PROTOCOL)
+
+
+                    CURRENT_CLUSTER+=1
+
+    print "Amount of bad cluster parameters: %d" % DEFUNCT_PARAM_COUNT
 
 if __name__ == '__main__':
-    main()
+    generate_test_clusters()

@@ -11,6 +11,11 @@ import config
 import molecular_clusters
 from numpy import genfromtxt
 from molecule_feature_matrix import normalize_features
+import time
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
 
 _dish_clustering_parameters_method = {"silhouette":0, "calinsky":1}
 
@@ -124,6 +129,8 @@ def compute_silhouette(point, cluster, other_clusters, point_index):
 
 
 def calculate_clustering_metric(method,clusters):
+    "Clusters are given in GNUPlot mode by ELKI, this function extracts the clusters and returns an \
+    array of Cluster objects."
 
     try:
         choice = _dish_clustering_parameters_method[method.lower()]
@@ -336,11 +343,43 @@ def compute_cluster_radius(cluster):
     
     return np.sqrt(cluster_radius) 
 
-def main():
+def compute_cluster_extreme_values(cluster):
+    cluster_maximum_values = cluster.get_points()[0]
+    cluster_minimum_values = cluster.get_points()[0]
+    for i in range(len(cluster.get_points())):
+        cluster_minimum_values = np.minimum(cluster_minimum_values,cluster.get_points()[i])
+        cluster_maximum_values = np.maximum(cluster_maximum_values,cluster.get_points()[i])
+
+    return {"min":cluster_minimum_values,"max":cluster_maximum_values}
+
+def check_cube_intersection(cluster1extremes,cluster2extremes,cluster_subspace_mask):
+    counter=0
+    for i in range(len(cluster1extremes["min"])):
+        if i in cluster_subspace_mask:
+            if ((cluster1extremes["max"][i]>=cluster2extremes["min"][i]) and (cluster1extremes["max"][i]<=cluster2extremes["max"][i])) \
+            or ((cluster2extremes["max"][i]>=cluster1extremes["min"][i]) and (cluster2extremes["max"][i]<=cluster1extremes["max"][i])):
+                counter+=1
+            else:
+                break
+    if counter == len(cluster1extremes["min"])-1:
+        return True
+    else:
+        return False
+
+def check_subspace_dimensions_match(list,tuple):
+    print(tuple)
+    for i in range(len(tuple)):
+        if tuple[i] != list[0][i]:
+            return False
+    
+    return True
+
+
+def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversity_percentage):
 
     DATA_DIRECTORY = config.DATA_DIRECTORY
 
-    CLUSTER_DIRECTORY = os.path.join(DATA_DIRECTORY,"Clusters")
+    CLUSTER_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
     if os.path.exists(CLUSTER_DIRECTORY):
         shutil.rmtree(CLUSTER_DIRECTORY, ignore_errors=True)
     os.makedirs(CLUSTER_DIRECTORY)
@@ -358,69 +397,72 @@ def main():
 
     clusters = prune_clusters(clusters, fragment_number_name_mapping, \
         active_fragment_molecule_mapping, inactive_fragment_molecule_mapping,\
-         diversity_threshold=config.CLUSTER_DIVERSITY_THRESHOLD, percentage=config.CLUSTER_DIVERSITY_PERCENTAGE, purity_threshold=config.CLUSTER_PURITY_THRESHOLD)
-    
-    with open(os.path.join(DATA_DIRECTORY,'used_features.pkl'), 'rb') as f_handle:
-        used_feature_mapping = pickle.load(f_handle)
+         diversity_threshold=diversity_threshold, percentage=diversity_percentage, purity_threshold=purity_threshold)
 
-    # Read all the descriptor names           
-    with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv')) as f_handle:
-        reader = csv.reader(f_handle)
-        all_descriptor_names = next(reader)
-        all_descriptor_names = np.array(all_descriptor_names)
-    
-    cluster_count = 1
+    molecular_cluster_model = []
     for cluster in clusters:
-        with open(os.path.join(CLUSTER_DIRECTORY, "Cluster_" + str(cluster_count)), "w+") as f_handle:
+        molecular_cluster_model.append({'centroid':compute_cluster_centroid(cluster),'subspace':cluster.get_subspace_mask()})
+
+    with open(os.path.join(CLUSTER_DIRECTORY,'molecular_cluster_model.pkl'),'w+') as f_handle:
+        pickle.dump(molecular_cluster_model, f_handle, pickle.HIGHEST_PROTOCOL)
+
+
+    # with open(os.path.join(DATA_DIRECTORY,'used_features.pkl'), 'rb') as f_handle:
+    #     used_feature_mapping = pickle.load(f_handle)
+
+    # # Read all the descriptor names           
+    # with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv')) as f_handle:
+    #     reader = csv.reader(f_handle)
+    #     all_descriptor_names = next(reader)
+    #     all_descriptor_names = np.array(all_descriptor_names)
+    
+    # cluster_count = 1
+    # for cluster in clusters:
+    #     with open(os.path.join(CLUSTER_DIRECTORY, "Cluster_" + str(cluster_count)), "w+") as f_handle:
             
-            significant_indices = np.where(np.array(cluster.get_subspace_mask()) == 1)[0]
-            significant_features = [old_descriptor for new_descriptor,old_descriptor in used_feature_mapping.iteritems() \
-                                   if new_descriptor in significant_indices]
+    #         significant_indices = np.where(np.array(cluster.get_subspace_mask()) == 1)[0]
+    #         significant_features = [old_descriptor for new_descriptor,old_descriptor in used_feature_mapping.iteritems() \
+    #                                if new_descriptor in significant_indices]
 
               
-            f_handle.write("Cluster descriptors:\n")
-            if len(significant_features) == 0:
-                f_handle.write("Noise cluster - no descriptors")
-            else:
-                for descriptor in all_descriptor_names[significant_features]:
-                    f_handle.write("%s " % descriptor)
-            f_handle.write('\n\n')
+    #         f_handle.write("Cluster descriptors:\n")
+    #         if len(significant_features) == 0:
+    #             f_handle.write("Noise cluster - no descriptors")
+    #         else:
+    #             for descriptor in all_descriptor_names[significant_features]:
+    #                 f_handle.write("%s " % descriptor)
+    #         f_handle.write('\n\n')
             
-            with open(os.path.join(DATA_DIRECTORY,"fragment_number_name_mapping.pkl"), 'rb') as dict_handle:
-                fragment_number_name_mapping = pickle.load(dict_handle) 
-                f_handle.write("Cluster fragments: \n")
-                fragment_count = 0
-                for fragment_number in cluster.get_id_points():
-                    fragment_name = fragment_number_name_mapping[fragment_number]
-                    f_handle.write("Fragment %d: %s\n" % (fragment_count,fragment_name))
-                    fragment_count+=1
-                f_handle.write('\n\n')
+    #         with open(os.path.join(DATA_DIRECTORY,"fragment_number_name_mapping.pkl"), 'rb') as dict_handle:
+    #             fragment_number_name_mapping = pickle.load(dict_handle) 
+    #             f_handle.write("Cluster fragments: \n")
+    #             fragment_count = 0
+    #             for fragment_number in cluster.get_id_points():
+    #                 fragment_name = fragment_number_name_mapping[fragment_number]
+    #                 f_handle.write("Fragment %d: %s\n" % (fragment_count,fragment_name))
+    #                 fragment_count+=1
+    #             f_handle.write('\n\n')
 
 
-            f_handle.write("Descriptor details:\n")
-            cluster_points = np.array(cluster.get_points())
-            cluster_points = cluster_points.reshape(len(cluster.get_points()), len(cluster.get_points()[0]))
+    #         f_handle.write("Descriptor details:\n")
+    #         cluster_points = np.array(cluster.get_points())
+    #         cluster_points = cluster_points.reshape(len(cluster.get_points()), len(cluster.get_points()[0]))
 
-            cluster_mean = np.mean(cluster_points, axis=0)
-            cluster.set_descriptor_averages(cluster_mean)
-            descriptor_max = np.amax(cluster_points,axis=0)
-            cluster.set_max_descriptor_values = descriptor_max
-            descriptor_min = np.amin(cluster_points, axis=0)
-            cluster.set_min_descriptor_values = descriptor_min
+    #         cluster_mean = np.mean(cluster_points, axis=0)
+    #         cluster.set_descriptor_averages(cluster_mean)
+    #         descriptor_max = np.amax(cluster_points,axis=0)
+    #         cluster.set_max_descriptor_values = descriptor_max
+    #         descriptor_min = np.amin(cluster_points, axis=0)
+    #         cluster.set_min_descriptor_values = descriptor_min
 
-            descriptor_count = 0
-            for descriptor in all_descriptor_names[significant_features]:
-                f_handle.write("%s Mean: %5.5f, Max: %5.5f, Min: %5.5f, Range: %5.5f\n\n" % \
-                    (descriptor, cluster_mean[descriptor_count], descriptor_max[descriptor_count], \
-                        descriptor_min[descriptor_count], descriptor_max[descriptor_count] - descriptor_min[descriptor_count]))
-                descriptor_count+=1
+    #         descriptor_count = 0
+    #         for descriptor in all_descriptor_names[significant_features]:
+    #             f_handle.write("%s Mean: %5.5f, Max: %5.5f, Min: %5.5f, Range: %5.5f\n\n" % \
+    #                 (descriptor, cluster_mean[descriptor_count], descriptor_max[descriptor_count], \
+    #                     descriptor_min[descriptor_count], descriptor_max[descriptor_count] - descriptor_min[descriptor_count]))
+    #             descriptor_count+=1
 
-            cluster_count+=1
-    
-    # Flush the different cluster's centroids, which represent our model of the current molecular database
-    with open(os.path.join(DATA_DIRECTORY,'molecular_cluster_model'),'w+') as f_handle:
-        for cluster in clusters:
-            numpy.savetxt(f_handle, np.asarray(cluster.get_descriptor_averages), delimiter=",", fmt="%f")
+    #         cluster_count+=1
 
     # silhouette_metric = calculate_clustering_metric("silhouette", active_clusters
 
@@ -435,20 +477,43 @@ def main():
 def dish_main():
 
     DATA_DIRECTORY = config.TEST_DATA_DIRECTORY
+
+    with open('./final_clustering_score','w+') as f_handle:
+        f_handle.write("ICD,Density,Epsilon,Mu,Score\n")
     
     # Process each genereated test clusters and dump evaluation metrics
+    final_score = 0
+    dataset_counter = 0
+
+    # Keep track of which values acheived the highest and lowest scores, respectively.
+    maximum_score = 0
+    maximum_score_params = []
+    minimum_score = 1
+    minimum_score_params = []
+
+    scatterplot_x = []
+    scatterplot_y = []
+    scatterplot_scores = []
+
+
     for subdir in os.listdir(DATA_DIRECTORY):
         CURRENT_DATA_DIRECTORY = os.path.join(DATA_DIRECTORY,subdir)
 
         with open(os.path.join(CURRENT_DATA_DIRECTORY,"generated_test_clusters.pkl"),'rb') as f_handle:
             clusters_metadata = pickle.load(f_handle)
+        
+        with open(os.path.join(CURRENT_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),'r') as f_handle:
+            feature_matrix = genfromtxt(f_handle, delimiter=',')
 
-        normalize_features(os.path.join(CURRENT_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),CURRENT_DATA_DIRECTORY,None,None)
+        max_feature_vals, min_feature_vals = normalize_features(os.path.join(CURRENT_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),CURRENT_DATA_DIRECTORY,None,None)
+
+        with open(os.path.join(CURRENT_DATA_DIRECTORY,"parameters.pkl"),'r') as f_handle:
+            parameters = pickle.load(f_handle)
 
         molecular_clusters.find_clusters(os.path.join(CURRENT_DATA_DIRECTORY,"detected_clusters"),
             os.path.join(CURRENT_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),config.ELKI_EXECUTABLE,
             num_active_molecules=clusters_metadata["num_active_molecules"],num_inactive_molecules=clusters_metadata["num_inactive_molecules"],
-             epsilon = .3, mu=7)
+             epsilon = float(parameters["epsilon"]), mu=int(parameters["mu"]))
         
         # Get all the detected clusters
         clusters = extract_clusters_from_file(os.path.join(CURRENT_DATA_DIRECTORY,"detected_clusters"))
@@ -459,63 +524,94 @@ def dish_main():
         with open(os.path.join(CURRENT_DATA_DIRECTORY,"test_inactives_fragment_molecule_mapping.pkl"),'rb') as f_handle:
             inactive_fragment_molecule_mapping = pickle.load(f_handle)
 
-        # Get the pruned clusters
-        pruned_clusters = prune_clusters(clusters, None, \
-            active_fragment_molecule_mapping, inactive_fragment_molecule_mapping,\
-            diversity_threshold=7, percentage=False, purity_threshold=.6,test=True)
 
-        with open(os.path.join(CURRENT_DATA_DIRECTORY,"TestStatistics"),'w+') as f_handle:
-            num_recovered_clusters = 0
+        
+        print("Clusters detected %d" % len(clusters))
+        print("Clusters generated %d" % len(clusters_metadata["centroids"]))
 
-            f_handle.write("Number of generated clusters: %d\n" % clusters_metadata["num_clusters"])
+        detected_clusters = 0
+        generated_clusters = (len(clusters_metadata["centroids"]))
 
-            f_handle.write("All detected clusters: \n")
-            for index,cluster in enumerate(clusters):
-                f_handle.write("%d " % index)
-            f_handle.write("\n")
+        for cluster in clusters:
+            cluster_centroid = compute_cluster_centroid(cluster)
+            denormalized_cluster_centroid = []
+            for i in range(len(cluster_centroid)):
+                denormalized_cluster_centroid.append((cluster_centroid[i] * (max_feature_vals[i] - min_feature_vals[i])) + min_feature_vals[i])
+            cluster_centroid = denormalized_cluster_centroid
 
-            f_handle.write("Degenerate detected clusters:\n")
-                
-            found_denerate_clusters = [index for index,cluster in enumerate(clusters) if cluster not in pruned_clusters]
-            for i in found_denerate_clusters:
-                f_handle.write("%d " % i)
-            f_handle.write("\n")
+            intersecting_centroids = [index for index,val in enumerate(clusters_metadata["cluster_subspace_dimensions"]) if check_subspace_dimensions_match(val.tolist(),cluster.get_subspace_mask())]
+            if intersecting_centroids == []:
+                continue
+            nearest_centroid_distance = compute_subspace_distance(cluster_centroid, clusters_metadata["centroids"][intersecting_centroids[0]],cluster.get_subspace_mask())
+            minimum_centroid_index=intersecting_centroids[0]
+            for i in range(1,len(intersecting_centroids)):
 
-            f_handle.write("Remaining significant detected clusters:\n")
+                # Check that the clusters actually intersect (i.e. are not parallel clusters in the same subspace)
+                current_centroid_distance = compute_subspace_distance(cluster_centroid, clusters_metadata["centroids"][intersecting_centroids[i]],cluster.get_subspace_mask())
 
-            for index,cluster in enumerate(pruned_clusters):
-                cluster_centroid = compute_cluster_centroid(cluster)
-                
-                print("Cluster centroid %d" % len(cluster_centroid))
-                f_handle.write("Fragments: \n")
-                for fragment_id in cluster.get_id_points():
-                    f_handle.write("%d " % fragment_id)
+                if check_cube_intersection(compute_cluster_extreme_values(cluster),clusters_metadata["cluster_extreme_values"][intersecting_centroids[i]],cluster.get_subspace_mask()) and \
+                current_centroid_distance < nearest_centroid_distance:
+                    nearest_centroid_distance = current_centroid_distance
+                    minimum_centroid_index = intersecting_centroids[i]
 
-                f_handle.write("\n")
+            print("Detected a cluster! Centroid distance: %d", nearest_centroid_distance)
 
-                # Check if our detected cluster intersects with any generated clusters
-                intersects = False
-                for i in range(len(clusters_metadata["centroids"])):
-                    print clusters_metadata["cluster_subspace_dimensions"][i]
-                    print cluster.get_subspace_mask()
-                    
-                    # If the subspace dimensions don't match, we continue
-                    # if clusters_metadata["cluster_subspace_dimensions"][i] != cluster.get_subspace_mask():
-                        # break
+            del clusters_metadata["centroids"][minimum_centroid_index]
+            del clusters_metadata["cluster_subspace_dimensions"][minimum_centroid_index]
+            clusters_metadata["cluster_extreme_values"]["min"] = np.delete(clusters_metadata["cluster_extreme_values"]["min"], minimum_centroid_index)
+            clusters_metadata["cluster_extreme_values"]["max"] = np.delete(clusters_metadata["cluster_extreme_values"]["max"], minimum_centroid_index)
 
-                    subspace_distance = compute_subspace_distance(cluster_centroid,clusters_metadata["centroids"][i],cluster.get_subspace_mask())
-                    combined_radii_magnitude = compute_cluster_radius(cluster) + clusters_metadata["cluster_radii"][i]
-                    if subspace_distance <= combined_radii_magnitude:
-                        intersects = True
-                        num_recovered_clusters+=1
-                        if i in clusters_metadata["significant_clusters"]:
-                            f_handle.write("Properly Recovered Cluster!\n")
-                        break
+            detected_clusters+=1
 
-            f_handle.write("Score (ratio between recovered significant clusters and actual significant clusters) %.2f" % (num_recovered_clusters/clusters_metadata["num_diverse_pure_clusters"]))
+        final_score_current_set = float(detected_clusters/generated_clusters)
+
+        if final_score_current_set > maximum_score:
+            maximum_score = final_score_current_set
+            maximum_score_params = []
+            maximum_score_params.append({'icd':parameters["icd"],'density':parameters["density"],'epsilon':parameters["epsilon"],'mu':parameters["mu"]})
+        elif final_score_current_set == maximum_score:
+            maximum_score_params.append({'icd':parameters["icd"],'density':parameters["density"],'epsilon':parameters["epsilon"],'mu':parameters["mu"]})
+        elif final_score_current_set < minimum_score:
+            minimum_score = final_score_current_set
+            minimum_score_params = []
+            minimum_score_params.append({'icd':parameters["icd"],'density':parameters["density"],'epsilon':parameters["epsilon"],'mu':parameters["mu"]})
+        elif final_score_current_set == minimum_score:
+            minimum_score_params.append({'icd':parameters["icd"],'density':parameters["density"],'epsilon':parameters["epsilon"],'mu':parameters["mu"]})
+        else:
+            pass
+
+        print("Final score for current set of clusters %.2f" % final_score_current_set)
+
+        scatterplot_x.append(parameters['epsilon'])
+        scatterplot_y.append(parameters['mu'])
+        scatterplot_scores.append(final_score_current_set*100)
+
+        with open('./final_clustering_score','a') as f_handle:
+            f_handle.write("%f,%f,%f,%f,%f\n" % (parameters["icd"],parameters["density"],parameters["epsilon"],parameters["mu"],final_score_current_set))
+
+        final_score+=final_score_current_set
+        dataset_counter+=1
+    print("Final score over all datasets: %.2f" % (float(final_score)/dataset_counter))
+
+    with open('./final_clustering_score','a') as f_handle:
+            f_handle.write("\nMaximum score and corresponding parameters:\n")
+            for parameters in maximum_score_params:
+                f_handle.write("%f,%f,%f,%f, Score: %f\n" % (parameters["icd"],parameters["density"],parameters["epsilon"],parameters["mu"], maximum_score))
+
+            f_handle.write("\nMinimum score and corresponding parameters:\n")
+            for parameters in minimum_score_params:
+                f_handle.write("%f,%f,%f,%f, Score: %f\n" % (parameters["icd"],parameters["density"],parameters["epsilon"],parameters["mu"], minimum_score))
+
+    red_patch = mpatches.Patch(color='red', label='Score of 1')
+    blue_patch = mpatches.Patch(color='blue', label='Score of 0')
+    plt.legend(handles=[red_patch,blue_patch])
+
+
+    plt.scatter(np.asarray(scatterplot_x), np.asarray(scatterplot_y), c=np.asarray(scatterplot_scores))
+    plt.xlabel('Epsilon')
+    plt.ylabel('Mu')
+    plt.show()
 
 if __name__ == "__main__":
-    # main()
-    # test_main()
     dish_main()
         
