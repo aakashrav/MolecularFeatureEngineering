@@ -178,7 +178,7 @@ def LabelDataWithKeys(clusters):
 
     return np.asarray(labelled_clusters)
 
-def checkIntersection(cluster_seed_one,cluster_seed_two,radius):
+def CheckIntersection(cluster_seed_one,cluster_seed_two,radius):
     "Checks whether the first cluster center and the second cluster center intersect. \
     We define intersect to mean dist(cluster_seed_one[i],cluster_seed_two[i]) <= 2*radius \
     for any i = 0,...,num_clustered_dimensions"
@@ -214,7 +214,7 @@ def GenerateSeveralClusters(value_range, num_clusters, number_of_points, intercl
     cluster_radius = math.sqrt(deviation_vector.dot(deviation_vector))
 
     while(len(clusters)!=num_clusters):
-        # First seed will ge generated at the origin.
+        # First seed will be generated at the origin.
         if(len(clusters) == 0):
             current_center_seed = [0] * total_number_dimensions
             temporary_seed = []
@@ -237,7 +237,7 @@ def GenerateSeveralClusters(value_range, num_clusters, number_of_points, intercl
                 intersects = False
                 for old_cluster_seed in cluster_seeds:
                     # Check intersections with prior seeds
-                    if checkIntersection(temporary_seed,old_cluster_seed,density):
+                    if CheckIntersection(temporary_seed,old_cluster_seed,density):
                         intersects = True
                         break
                 
@@ -299,7 +299,7 @@ def PerformPermutationMapping(arr,newarr,permutation):
         newarr.append(arr[permutation[j]])
 
 
-def generate_cluster_and_flush(ambient_space_range, amount_of_clusters, amount_of_points, intercluster_distance, \
+def GenerateClusterAndFlush(ambient_space_range, amount_of_clusters, amount_of_points, intercluster_distance, \
     density_per_dimension, num_clustered_dimensions, total_number_dimensions, num_active_molecules, DATA_DIRECTORY):
     "Generates various test subspace clusters according to the input parameters \
     Parameters:  range, points_per_cluster, ICD, density, num_clustered_dimensions,\
@@ -319,7 +319,7 @@ def generate_cluster_and_flush(ambient_space_range, amount_of_clusters, amount_o
     data_with_classes = AddMolecularData(labelled_clusters, num_active_molecules, num_inactive_molecules, 7, .6, 2, DATA_DIRECTORY, clustered_dimension_array, amount_of_points, diversity_percentage=False,difficult_version=True)
 
 # python generate_clusters.py 250 10 25 5 10 50 20 5 ../TestFragmentDescriptorData/1
-def generate_test_clusters():
+def GenerateTestClusters():
     BASE_DIR = "../TestFragmentDescriptorData"
 
     if os.path.exists(BASE_DIR):
@@ -329,10 +329,10 @@ def generate_test_clusters():
     CURRENT_CLUSTER = 0
     DEFUNCT_PARAM_COUNT = 0
 
-    for CURRENT_ICD in [25,250,400,500]:
-        for CURRENT_DENSITY in [5,50,250,500]:
-            for CURRENT_EPSILON in [.005,.03,.05,.075,.1]:
-                for CURRENT_MU in [3,6,9]:
+    for CURRENT_ICD in [250,300,400,500]: #25
+        for CURRENT_DENSITY in [5,50,75,100]: # 250,500
+            for CURRENT_EPSILON in [.002,.02,.03,.04]:
+                for CURRENT_MU in [3,6,9,10]:
 
                     CURRENT_DIR = os.path.join(BASE_DIR,str(CURRENT_CLUSTER))
 
@@ -341,7 +341,7 @@ def generate_test_clusters():
                     os.makedirs(CURRENT_DIR)
 
                     try:
-                        generate_cluster_and_flush(2500,5,10,CURRENT_ICD,CURRENT_DENSITY,10,50,20,CURRENT_DIR)
+                        GenerateClusterAndFlush(2500,5,10,CURRENT_ICD,CURRENT_DENSITY,10,50,20,CURRENT_DIR)
                     except ValueError:
                         print("Parameters: %f %f %f %f" % (CURRENT_ICD, CURRENT_DENSITY, CURRENT_EPSILON, CURRENT_MU))
                         shutil.rmtree(CURRENT_DIR)
@@ -359,4 +359,4 @@ def generate_test_clusters():
     print "Amount of bad cluster parameters: %d" % DEFUNCT_PARAM_COUNT
 
 if __name__ == '__main__':
-    generate_test_clusters()
+    GenerateTestClusters()

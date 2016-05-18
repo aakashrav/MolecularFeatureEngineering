@@ -10,11 +10,11 @@ import shutil
 import config
 import molecular_clusters
 from numpy import genfromtxt
-from molecule_feature_matrix import normalize_features
 import time
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.mlab as mlab
 
 
 _dish_clustering_parameters_method = {"silhouette":0, "calinsky":1}
@@ -406,64 +406,6 @@ def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversi
     with open(os.path.join(CLUSTER_DIRECTORY,'molecular_cluster_model.pkl'),'w+') as f_handle:
         pickle.dump(molecular_cluster_model, f_handle, pickle.HIGHEST_PROTOCOL)
 
-
-    # with open(os.path.join(DATA_DIRECTORY,'used_features.pkl'), 'rb') as f_handle:
-    #     used_feature_mapping = pickle.load(f_handle)
-
-    # # Read all the descriptor names           
-    # with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv')) as f_handle:
-    #     reader = csv.reader(f_handle)
-    #     all_descriptor_names = next(reader)
-    #     all_descriptor_names = np.array(all_descriptor_names)
-    
-    # cluster_count = 1
-    # for cluster in clusters:
-    #     with open(os.path.join(CLUSTER_DIRECTORY, "Cluster_" + str(cluster_count)), "w+") as f_handle:
-            
-    #         significant_indices = np.where(np.array(cluster.get_subspace_mask()) == 1)[0]
-    #         significant_features = [old_descriptor for new_descriptor,old_descriptor in used_feature_mapping.iteritems() \
-    #                                if new_descriptor in significant_indices]
-
-              
-    #         f_handle.write("Cluster descriptors:\n")
-    #         if len(significant_features) == 0:
-    #             f_handle.write("Noise cluster - no descriptors")
-    #         else:
-    #             for descriptor in all_descriptor_names[significant_features]:
-    #                 f_handle.write("%s " % descriptor)
-    #         f_handle.write('\n\n')
-            
-    #         with open(os.path.join(DATA_DIRECTORY,"fragment_number_name_mapping.pkl"), 'rb') as dict_handle:
-    #             fragment_number_name_mapping = pickle.load(dict_handle) 
-    #             f_handle.write("Cluster fragments: \n")
-    #             fragment_count = 0
-    #             for fragment_number in cluster.get_id_points():
-    #                 fragment_name = fragment_number_name_mapping[fragment_number]
-    #                 f_handle.write("Fragment %d: %s\n" % (fragment_count,fragment_name))
-    #                 fragment_count+=1
-    #             f_handle.write('\n\n')
-
-
-    #         f_handle.write("Descriptor details:\n")
-    #         cluster_points = np.array(cluster.get_points())
-    #         cluster_points = cluster_points.reshape(len(cluster.get_points()), len(cluster.get_points()[0]))
-
-    #         cluster_mean = np.mean(cluster_points, axis=0)
-    #         cluster.set_descriptor_averages(cluster_mean)
-    #         descriptor_max = np.amax(cluster_points,axis=0)
-    #         cluster.set_max_descriptor_values = descriptor_max
-    #         descriptor_min = np.amin(cluster_points, axis=0)
-    #         cluster.set_min_descriptor_values = descriptor_min
-
-    #         descriptor_count = 0
-    #         for descriptor in all_descriptor_names[significant_features]:
-    #             f_handle.write("%s Mean: %5.5f, Max: %5.5f, Min: %5.5f, Range: %5.5f\n\n" % \
-    #                 (descriptor, cluster_mean[descriptor_count], descriptor_max[descriptor_count], \
-    #                     descriptor_min[descriptor_count], descriptor_max[descriptor_count] - descriptor_min[descriptor_count]))
-    #             descriptor_count+=1
-
-    #         cluster_count+=1
-
     # silhouette_metric = calculate_clustering_metric("silhouette", active_clusters
 
     # if (silhouette_metric == -2):
@@ -491,10 +433,18 @@ def dish_main():
     minimum_score = 1
     minimum_score_params = []
 
-    scatterplot_x = []
-    scatterplot_y = []
-    scatterplot_scores = []
+    PARAM_1 = "epsilon"
+    PARAM_2 = "mu"
 
+    scatterplot_x = [.002,.02,.03,.04]
+    scatterplot_y = [3,6,9,10]
+    scatterplot_scores = np.zeros((4,4))
+    scatterplot_scores_num = np.zeros((4,4))
+
+    dataset_scores = []
+
+    row_dict = {.002:0,.02:1,.03:2,.04:3}
+    col_dict = {3:0,6:1,9:2,10:3}
 
     for subdir in os.listdir(DATA_DIRECTORY):
         CURRENT_DATA_DIRECTORY = os.path.join(DATA_DIRECTORY,subdir)
@@ -505,7 +455,7 @@ def dish_main():
         with open(os.path.join(CURRENT_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),'r') as f_handle:
             feature_matrix = genfromtxt(f_handle, delimiter=',')
 
-        max_feature_vals, min_feature_vals = normalize_features(os.path.join(CURRENT_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),CURRENT_DATA_DIRECTORY,None,None)
+        max_feature_vals, min_feature_vals = molecule_feature_matrix.normalize_features(os.path.join(CURRENT_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),CURRENT_DATA_DIRECTORY,None,None)
 
         with open(os.path.join(CURRENT_DATA_DIRECTORY,"parameters.pkl"),'r') as f_handle:
             parameters = pickle.load(f_handle)
@@ -523,7 +473,6 @@ def dish_main():
     
         with open(os.path.join(CURRENT_DATA_DIRECTORY,"test_inactives_fragment_molecule_mapping.pkl"),'rb') as f_handle:
             inactive_fragment_molecule_mapping = pickle.load(f_handle)
-
 
         
         print("Clusters detected %d" % len(clusters))
@@ -581,17 +530,19 @@ def dish_main():
             pass
 
         print("Final score for current set of clusters %.2f" % final_score_current_set)
+        
+        scatterplot_scores_num[row_dict[parameters[PARAM_1]],col_dict[parameters[PARAM_2]]] +=1
+        scatterplot_scores[row_dict[parameters[PARAM_1]],col_dict[parameters[PARAM_2]]] += final_score_current_set
 
-        scatterplot_x.append(parameters['epsilon'])
-        scatterplot_y.append(parameters['mu'])
-        scatterplot_scores.append(final_score_current_set*100)
+        dataset_scores.append(final_score_current_set)
 
         with open('./final_clustering_score','a') as f_handle:
             f_handle.write("%f,%f,%f,%f,%f\n" % (parameters["icd"],parameters["density"],parameters["epsilon"],parameters["mu"],final_score_current_set))
 
-        final_score+=final_score_current_set
-        dataset_counter+=1
-    print("Final score over all datasets: %.2f" % (float(final_score)/dataset_counter))
+    print("Final mean score over all datasets: %.2f\n" % np.mean(dataset_scores))
+    print("Final variance score over all datasets %.2f\n" % np.var(dataset_scores))
+    print("Final maximum score over all datasets %.2f\n" % np.amax(dataset_scores))
+    print("Final minimum score over all datasets % .2f\n" % np.amin(dataset_scores))
 
     with open('./final_clustering_score','a') as f_handle:
             f_handle.write("\nMaximum score and corresponding parameters:\n")
@@ -602,16 +553,34 @@ def dish_main():
             for parameters in minimum_score_params:
                 f_handle.write("%f,%f,%f,%f, Score: %f\n" % (parameters["icd"],parameters["density"],parameters["epsilon"],parameters["mu"], minimum_score))
 
-    red_patch = mpatches.Patch(color='red', label='Score of 1')
-    blue_patch = mpatches.Patch(color='blue', label='Score of 0')
-    plt.legend(handles=[red_patch,blue_patch])
+    # Take the average
+    scatterplot_scores = scatterplot_scores/scatterplot_scores_num
 
+    #setup the 2D grid with Numpy
+    x, y = np.meshgrid(scatterplot_x, scatterplot_y)
 
-    plt.scatter(np.asarray(scatterplot_x), np.asarray(scatterplot_y), c=np.asarray(scatterplot_scores))
     plt.xlabel('Epsilon')
-    plt.ylabel('Mu')
+    plt.ylabel('NumPoints')
+
+    #now just plug the data into pcolormesh, it's that easy!
+    plt.pcolormesh(x, y, scatterplot_scores)
+    plt.colorbar() #need a colorbar to show the intensity scale
+    plt.show() #boom
+
+    plt.clf()
+
+    # The histogram of the data
+    n, bins, patches = plt.hist(dataset_scores, 50, normed=1, facecolor='green', alpha=0.75)
+
+    plt.xlabel('Score')
+    plt.ylabel('Datasets')
+    plt.title('Histogram of the number of datasets achieving each score')
+    plt.axis([np.amin(dataset_scores), np.amax(dataset_scores),0,len(dataset_scores)/4])
+    plt.grid(True)
+
     plt.show()
 
 if __name__ == "__main__":
     dish_main()
+    # create_cluster_centroid_model(.6, 20, False)
         

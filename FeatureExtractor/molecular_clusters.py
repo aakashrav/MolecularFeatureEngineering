@@ -1,48 +1,31 @@
 import sys
 import os
 import numpy as np
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-# from MolecularFeatureEngineering import config
 import config
 import subprocess
 
 def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,
-    num_active_molecules,num_inactive_molecules,epsilon=None,mu=None):
-    try:
-        os.remove(CLUSTER_FILENAME)
-    except OSError:
-        pass
+    num_active_molecules,num_inactive_molecules):
 
     with open(CLUSTER_FILENAME,'w+') as f_handle:
         
         feature_matrix = np.loadtxt(open(FEATURE_MATRIX_FILE,"rb"),delimiter=",",skiprows=0)
         
-        if epsilon is None or mu is None:
-            # # Compute appropriate parameters mu and epsilon
-            # max_feature_val_array = feature_matrix.max(axis=0)
-            # # min_feature_val_array = feature_matrix.min(axis=0)
-            # # range_feature_val_array = np.subtract(max_feature_val_array,min_feature_val_array)
-            # percentile_value_array = [(.3 * max_feature) for max_feature in max_feature_val_array]
-            # # final_epsilon_array = np.add(min_feature_val_array,percentile_value_array)
-        
-            # # Remove all zero values - we don't want an epsilon of zero to be calculated
-            # percentile_value_array = [i for i in percentile_value_array if i != 0]
-            # epsilon = np.median(percentile_value_array)
-            # # Sometimes median is 0, in which case we take the mean
-            # if epsilon == 0:
-            #     epsilon = np.mean(percentile_value_array)
-            
-            # Set epsilon
-            epsilon = .1 # FIX HERE
+        # Calculate epsilon and mu for this specific dataset.
+        # Epsilon will be the median of the standard deviations of each of the columns in the 
+        # feature matrix.
+        standard_deviations_columns = [np.std(feature_matrix[:,i]) for i in range(feature_matrix.shape[1])]
+        epsilon = np.median(standard_deviations_columns)
 
-            # Set mu
-            if config.CLUSTER_DIVERSITY_PERCENTAGE == True:
-                mu = config.CLUSTER_DIVERSITY_THRESHOLD * num_active_molecules
-            else:
-                mu = config.CLUSTER_DIVERSITY_THRESHOLD
+        # Mu will be the number of active molecules divided by the amount of binding sites
+        # For now set binding sites to 5, TODO: Customize this number
+        num_binding_sites = 5
+        mu = int(np.ceil(num_active_molecules/num_binding_sites))
         
         print "Computed epsilon for molecular matrix: %5.5f" % epsilon
         print "Computed mu for molecular matrix: %d" % mu
+        
+        # Call DiSH via ELKI
         result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
         	'FixedDBIDsFilter','-time','-algorithm','clustering.subspace.DiSH','-dish.epsilon',\
         	str(epsilon),'-dish.mu',str(mu),'-out',CLUSTER_FILENAME])

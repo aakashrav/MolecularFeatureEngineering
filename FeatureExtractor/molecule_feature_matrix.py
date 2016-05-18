@@ -19,10 +19,9 @@ import sys
 import subprocess
 import obtain_molecules
 import molecular_clusters
-
-# # For debugging divide by zero errors
-# import warnings
-# warnings.filterwarnings("error")
+import cluster_analysis
+import remove_constant_features
+from rdkit.ML.Scoring import Scoring
 
 FLUSH_BUFFER_SIZE = config.FLUSH_BUFFER_SIZE
 DESCRIPTOR_TO_RAM = config.DESCRIPTOR_TO_RAM
@@ -78,7 +77,7 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
     
     if (feature_matrix is None):
         print("Empty matrix; no standard imputation done, continuing on..")
-        return None
+        return [None,None,None]
 
     # Keep track of indices corresponding to the molecule of each fragment- just the first column
     molecule_keys = feature_matrix[1:,0]
@@ -212,121 +211,124 @@ def _flush_metadata(global_median_cache, used_features):
     with open(os.path.join(DATA_DIRECTORY,"inactives_fragment_molecule_mapping.pkl"), 'wb+') as f_handle:
         pickle.dump(inactives_fragment_molecule_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
 
-def _load_matrix_sdf(descriptor_file, molecules_to_fragments_file,
-    molecule_sdfs, output_details=0,
+# def _load_matrix_sdf(descriptor_file, molecules_to_fragments_file,
+#     molecule_sdfs, output_details=0,
+#     descriptors_map=None, descriptors=None):
+def _load_matrix_sdf(descriptor_file, molecules_to_fragments,output_details=0,
     descriptors_map=None, descriptors=None):
 
-    with open(molecules_to_fragments_file, 'r') as input_stream:
+    # Keep a list of already found fragments for metadata storage
+    found_fragments = []
+    
+    if (descriptors is not None):
+        non_imputed_feature_matrix = np.empty((0, descriptors.shape[1]+1), np.float)
 
-        molecules_to_fragments = json.load(input_stream)
+        # Append the descriptor number columns
+        descriptor_numbers = np.arange(descriptors.shape[1]+1).reshape((1, descriptors.shape[1]+1))
+        non_imputed_feature_matrix = np.append(non_imputed_feature_matrix,
+                                                    descriptor_numbers, axis=0)
 
-        # Keep a list of already found fragments for metadata storage
-        found_fragments = []
-        
-        if (descriptors is not None):
-            non_imputed_feature_matrix = np.empty((0, descriptors.shape[1]+1), np.float)
+    else:
+        non_imputed_feature_matrix = None
 
-            # Append the descriptor number columns
-            descriptor_numbers = np.arange(descriptors.shape[1]+1).reshape((1, descriptors.shape[1]+1))
-            non_imputed_feature_matrix = np.append(non_imputed_feature_matrix,
-                                                        descriptor_numbers, axis=0)
+    FRAGMENT_COUNT = 0
 
-        else:
-            non_imputed_feature_matrix = None
+    # Add all fragment data for each molecule in the array
+    # 'molecule_sfds', and return a matrix of found values
+    # for molecule_index in range(0, len(molecule_sdfs)):
+    for molecule in molecules_to_fragments:
 
-        FRAGMENT_COUNT = 0
+        # Sometimes the desired SMILE may not have any fragment data, so we just continue
+        # And notify the user that no fragments were found for this SMILES
+        # try:
+        #     # full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments] 
+        #     #             # if molecule["name"] == molecule_sdfs[molecule_index]]
 
-        # Add all fragment data for each molecule in the array
-        # 'molecule_sfds', and return a matrix of found values
-        for molecule_index in range(0, len(molecule_sdfs)):
+        #     # First index is actual fragments, since there 
+        #     # can exist only one key value pair for the molecule and its fragments
+        #     full_fragments = full_fragments[0]
+        #     fragments = [fragment["smiles"] for fragment in full_fragments]
 
-            # Sometimes the desired SMILE may not have any fragment data, so we just continue
-            # And notify the user that no fragments were found for this SMILES
-            try:
-                full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
-                            if molecule["name"] == molecule_sdfs[molecule_index]]
-                # First index is actual fragments, since there 
-                # can exist only one key value pair for the molecule and its fragments
-                full_fragments = full_fragments[0]
-                fragments = [fragment["smiles"] for fragment in full_fragments]
+        #     # if output_details:
+        #     #     print("Starting analysis of {} ...".format(molecule_sdfs[molecule_index]))
+        # except KeyError:
+        #     print("Fragments not available for molecule ", molecule_sdfs[molecule_index])
+        #     continue
 
-                # if output_details:
-                #     print("Starting analysis of {} ...".format(molecule_sdfs[molecule_index]))
-            except KeyError:
-                print("Fragments not available for molecule ", molecule_sdfs[molecule_index])
-                continue
+        full_fragments = molecule["fragments"]
+        fragments = [fragment["smiles"] for fragment in full_fragments]
 
-            with open(descriptor_file,'r') as input_stream:
-                # Use the descriptors file on disk
-                if (descriptors_map is None):
-                    header = input_stream.readline().rstrip().split(',')
+        with open(descriptor_file,'r') as input_stream:
+            # Use the descriptors file on disk
+            if (descriptors_map is None):
+                header = input_stream.readline().rstrip().split(',')
 
-                    if DEBUG:
-                        with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv'),'wb+') as f_handle:
-                            csv.writer(f_handle).writerow(header)
+                if DEBUG:
+                    with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv'),'wb+') as f_handle:
+                        csv.writer(f_handle).writerow(header)
 
-                    for line in input_stream:
-                        line = line.rstrip().split(',')
-                        name = line[0][1:-1]
-                            
-                        if (non_imputed_feature_matrix is None):
-                            non_imputed_feature_matrix = np.empty((0, len(line)), np.float)
-                            # Append the descriptor number columns
-                            descriptor_numbers = np.arange(len(line))
-                            non_imputed_feature_matrix = np.vstack((non_imputed_feature_matrix, \
-                                descriptor_numbers))
+                for line in input_stream:
+                    line = line.rstrip().split(',')
+                    name = line[0][1:-1]
                         
-                        if (name in fragments) and (name in found_fragments):
-                            fragment_number_name_mapping[FRAGMENT_COUNT] = name
-                            actives_fragment_molecule_mapping[name].append(molecule_index)
-
-                        elif (name in fragments) and (name not in found_fragments):
-                            found_fragments.append(name)
-                            fragment_number_name_mapping[FRAGMENT_COUNT] = name
-                            actives_fragment_molecule_mapping[name] = [molecule_index]
-                        else:
-                            continue
-
-                        # First append the molecule index, so we know which molecule
-                        # the fragment came from in further stages of the pipeline
-                        molecule_descriptor_row = np.empty((1, len(line)), np.float)
-                        molecule_descriptor_row[0,0] = molecule_index
-
-                        # Next we just copy the newly obtained features into our feature matrix
-                        # If the feature is not a number, we explicitly input np.nan
-                        # Need the for loop since we may have NaNs
-                        for j in range(1, molecule_descriptor_row.shape[1]):
-                            try:
-                                molecule_descriptor_row[0,j] = float(line[j])
-                            except ValueError:
-                                molecule_descriptor_row[0,j] = np.nan
-
-                        # Finally append the row to our matrix
+                    if (non_imputed_feature_matrix is None):
+                        non_imputed_feature_matrix = np.empty((0, len(line)), np.float)
+                        # Append the descriptor number columns
+                        descriptor_numbers = np.arange(len(line))
                         non_imputed_feature_matrix = np.vstack((non_imputed_feature_matrix, \
-                                                        molecule_descriptor_row))
+                            descriptor_numbers))
+                    
+                    if (name in fragments) and (name in found_fragments):
+                        fragment_number_name_mapping[FRAGMENT_COUNT] = name
+                        actives_fragment_molecule_mapping[name].append(molecule_index)
 
-                        FRAGMENT_COUNT+=1
+                    elif (name in fragments) and (name not in found_fragments):
+                        found_fragments.append(name)
+                        fragment_number_name_mapping[FRAGMENT_COUNT] = name
+                        actives_fragment_molecule_mapping[name] = [molecule_index]
+                    else:
+                        continue
 
-                # Use the descriptors dictionary in RAM
-                else:
-                    for f in fragments:
-                        # If we already found the fragment, we continue on; will save us time and space
-                        if f in found_fragments:
-                            fragment_number_name_mapping[FRAGMENT_COUNT] = f
-                            actives_fragment_molecule_mapping[f].append(molecule_index)
-                        else:
-                            found_fragments.append(f)
-                            fragment_number_name_mapping[FRAGMENT_COUNT] = f
-                            actives_fragment_molecule_mapping[f] = [molecule_index]
+                    # First append the molecule index, so we know which molecule
+                    # the fragment came from in further stages of the pipeline
+                    molecule_descriptor_row = np.empty((1, len(line)), np.float)
+                    molecule_descriptor_row[0,0] = molecule_index
+
+                    # Next we just copy the newly obtained features into our feature matrix
+                    # If the feature is not a number, we explicitly input np.nan
+                    # Need the for loop since we may have NaNs
+                    for j in range(1, molecule_descriptor_row.shape[1]):
                         try:
-                            ix_f = descriptors_map[f]
-                        
-                            non_imputed_feature_matrix = np.append(non_imputed_feature_matrix,
-                                                        [np.insert(descriptors[ix_f], 0, molecule_index)], axis=0)
-                            FRAGMENT_COUNT+=1
-                        except KeyError:
-                            print("Key error")
-                            continue
+                            molecule_descriptor_row[0,j] = float(line[j])
+                        except ValueError:
+                            molecule_descriptor_row[0,j] = np.nan
+
+                    # Finally append the row to our matrix
+                    non_imputed_feature_matrix = np.vstack((non_imputed_feature_matrix, \
+                                                    molecule_descriptor_row))
+
+                    FRAGMENT_COUNT+=1
+
+            # Use the descriptors dictionary in RAM
+            else:
+                for f in fragments:
+                    # If we already found the fragment, we continue on; will save us time and space
+                    if f in found_fragments:
+                        fragment_number_name_mapping[FRAGMENT_COUNT] = f
+                        actives_fragment_molecule_mapping[f].append(molecule_index)
+                    else:
+                        found_fragments.append(f)
+                        fragment_number_name_mapping[FRAGMENT_COUNT] = f
+                        actives_fragment_molecule_mapping[f] = [molecule_index]
+                    try:
+                        ix_f = descriptors_map[f]
+                    
+                        non_imputed_feature_matrix = np.append(non_imputed_feature_matrix,
+                                                    [np.insert(descriptors[ix_f], 0, molecule_index)], axis=0)
+                        FRAGMENT_COUNT+=1
+                    except KeyError:
+                        print("Key error")
+                        continue
     
     print("Number of active fragments: %d\n" % FRAGMENT_COUNT)
     print("Number of active molecules: %d\n" % len(molecule_sdfs))
@@ -334,82 +336,128 @@ def _load_matrix_sdf(descriptor_file, molecules_to_fragments_file,
     return [non_imputed_feature_matrix, FRAGMENT_COUNT]
 
 def _inactives_load_impute_sdf(degenerate_features, \
-    global_median_cache, descriptor_file, molecules_to_fragments_file,
-    molecule_sdfs, FRAGMENT_COUNT, output_details=0,
+    global_median_cache, descriptor_file, molecules_to_fragments,
+    FRAGMENT_COUNT, output_details=0,
     descriptors_map=None, descriptors=None):
 
     # For debugging purposes
     OLD_FRAGMENT_COUNT = FRAGMENT_COUNT
 
-    with open(molecules_to_fragments_file, 'r') as input_stream:
+    # Keep a list of already found fragments for metadata storage
+    found_fragments = []
+    
+    # Create a temporary holding space for the fragments, and periodically flush to disk
+    inactives_feature_matrix = np.empty([FLUSH_BUFFER_SIZE, global_median_cache.shape[1]], np.float)
 
-        molecules_to_fragments = json.load(input_stream)
+    FLUSH_COUNT = 0
 
-        # Keep a list of already found fragments for metadata storage
-        found_fragments = []
-        
-        # Create a temporary holding space for the fragments, and periodically flush to disk
-        inactives_feature_matrix = np.empty([FLUSH_BUFFER_SIZE, global_median_cache.shape[1]], np.float)
+    # Add all fragment data for each molecule in the array
+    # 'molecule_sdfs', and return a matrix of found values
+    # for molecule_index in range(0, len(molecule_sdfs)):
+    for molecule in molecules_to_fragments:
 
-        FLUSH_COUNT = 0
+        # # Sometimes the desired SMILE may not have any fragment data, so we just continue
+        # # And notify the user that no fragments were found for this SMILES
+        # try:
+        #     full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
+        #                 if molecule["name"] == molecule_sdfs[molecule_index]]
+        #     # First index is actual fragments, since there 
+        #     # can exist only one key value pair for the molecule and its fragments
+        #     full_fragments = full_fragments[0]
+        #     fragments = [fragment["smiles"] for fragment in full_fragments]
 
-        # Add all fragment data for each molecule in the array
-        # 'molecule_sdfs', and return a matrix of found values
-        for molecule_index in range(0, len(molecule_sdfs)):
+        #     # if output_details:
+        #         # print("Starting analysis of {} ...".format(molecule_sdfs[molecule_index]))
+        # except KeyError:
+        #     print("Fragments not available for molecule ", molecule_sdfs[molecule_index])
+        #     continue
 
-            # Sometimes the desired SMILE may not have any fragment data, so we just continue
-            # And notify the user that no fragments were found for this SMILES
-            try:
-                full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
-                            if molecule["name"] == molecule_sdfs[molecule_index]]
-                # First index is actual fragments, since there 
-                # can exist only one key value pair for the molecule and its fragments
-                full_fragments = full_fragments[0]
-                fragments = [fragment["smiles"] for fragment in full_fragments]
+        full_fragments = molecule["fragments"]
+        fragments = [fragment["smiles"] for fragment in full_fragments]
 
-                # if output_details:
-                    # print("Starting analysis of {} ...".format(molecule_sdfs[molecule_index]))
-            except KeyError:
-                print("Fragments not available for molecule ", molecule_sdfs[molecule_index])
-                continue
-
-            with open(descriptor_file,'r') as input_stream:
-                # Use the descriptors file on disk
-                if (descriptors_map is None):
-                    header = input_stream.readline().rstrip().split(',')
+        with open(descriptor_file,'r') as input_stream:
+            # Use the descriptors file on disk
+            if (descriptors_map is None):
+                header = input_stream.readline().rstrip().split(',')
+                
+                for line in input_stream:
+                    line = line.rstrip().split(',')
+                    name = line[0][1:-1]
                     
-                    for line in input_stream:
-                        line = line.rstrip().split(',')
-                        name = line[0][1:-1]
+                    if (name in fragments) and (name in found_fragments):
+                        fragment_number_name_mapping[FRAGMENT_COUNT] = name
+                        inactives_fragment_molecule_mapping[name].append(molecule_index)
+
+                    # The fragment found is not already added to the matrix
+                    elif (name in fragments) and (name not in found_fragments):
+                        found_fragments.append(name)
+                        fragment_number_name_mapping[FRAGMENT_COUNT] = name
+                        inactives_fragment_molecule_mapping[name] = [molecule_index]
+                    else:
+                        continue
+
+                    molecule_descriptor_row = np.empty([1, len(line)-1], np.float)
+
+                    # Next we just copy the newly obtained features into our feature matrix
+                    # If we encounter a nan, either we impute it with the global median cache from the actives
+                    # Or we delete it as we consider it a degenerate feature
+                    for j in range(1, len(line)):
+                        try:
+                            molecule_descriptor_row[0,j-1] = float(line[j])
+                        except ValueError:
+                            if (j-1 in degenerate_features):
+                                molecule_descriptor_row[0,j-1] = np.nan
+                            else:
+                                molecule_descriptor_row[0,j-1] = global_median_cache[0,j-1]
+
+                    if (FLUSH_COUNT == FLUSH_BUFFER_SIZE):
+                        # Flush only the non degenerate descriptors to file
+                        all_descriptors = np.arange(global_median_cache.shape[1])
+                        non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
+                        non_degenerate_inactives_feature_matrix = inactives_feature_matrix[:,non_degenerate_descriptors]
+
+                        with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'a') as f_handle:
+                            np.savetxt(f_handle, non_degenerate_inactives_feature_matrix, delimiter=',', fmt='%5.5f')
+                        FLUSH_COUNT=0
+
+                        for feature in range(non_degenerate_inactives_feature_matrix.shape[1]):
+                            # Get the maximum accross the feature values
+                            max_feature = np.amax(non_degenerate_inactives_feature_matrix[:,feature])
+                            # Get the minimum accross the feature values
+                            min_feature = np.amin(non_degenerate_inactives_feature_matrix[:,feature])
+                            
+                            if (max_feature > feature_max[feature]):
+                                feature_max[feature] = max_feature
+                            if (min_feature < feature_min[feature]):
+                                feature_min[feature] = min_feature
                         
-                        if (name in fragments) and (name in found_fragments):
-                            fragment_number_name_mapping[FRAGMENT_COUNT] = name
-                            inactives_fragment_molecule_mapping[name].append(molecule_index)
+                    inactives_feature_matrix[FLUSH_COUNT]= molecule_descriptor_row
+                    FLUSH_COUNT+=1
+                    FRAGMENT_COUNT+=1
 
-                        # The fragment found is not already added to the matrix
-                        elif (name in fragments) and (name not in found_fragments):
-                            found_fragments.append(name)
-                            fragment_number_name_mapping[FRAGMENT_COUNT] = name
-                            inactives_fragment_molecule_mapping[name] = [molecule_index]
-                        else:
-                            continue
+            # Use the descriptors dictionary in RAM
+            else:
+                for f in fragments:
+                    # If we already found the fragment, we continue on; will save us time and space
+                    if f in found_fragments:
+                        fragment_number_name_mapping[FRAGMENT_COUNT] = f
+                        inactives_fragment_molecule_mapping[f].append(molecule_index)
+                    else:
+                        found_fragments.append(f)
+                        fragment_number_name_mapping[FRAGMENT_COUNT] = f
+                        inactives_fragment_molecule_mapping[f] = [molecule_index]
+                    try:
+                        ix_f = descriptors_map[f]
+                        current_fragment = descriptors[ix_f]
 
-                        molecule_descriptor_row = np.empty([1, len(line)-1], np.float)
+                        # Obtain all descriptors that have non-numerical values for this fragment
+                        nan_descriptors = np.where(np.isnan(current_fragment) == True)
 
-                        # Next we just copy the newly obtained features into our feature matrix
-                        # If we encounter a nan, either we impute it with the global median cache from the actives
-                        # Or we delete it as we consider it a degenerate feature
-                        for j in range(1, len(line)):
-                            try:
-                                molecule_descriptor_row[0,j-1] = float(line[j])
-                            except ValueError:
-                                if (j-1 in degenerate_features):
-                                    molecule_descriptor_row[0,j-1] = np.nan
-                                else:
-                                    molecule_descriptor_row[0,j-1] = global_median_cache[0,j-1]
+                        for j in nan_descriptors:
+                            current_fragment[j] = global_median_cache[0,j]
 
                         if (FLUSH_COUNT == FLUSH_BUFFER_SIZE):
-                            # Flush only the non degenerate descriptors to file
+                            # Flush only the non-degenerate descriptors to file
                             all_descriptors = np.arange(global_median_cache.shape[1])
                             non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
                             non_degenerate_inactives_feature_matrix = inactives_feature_matrix[:,non_degenerate_descriptors]
@@ -417,95 +465,49 @@ def _inactives_load_impute_sdf(degenerate_features, \
                             with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'a') as f_handle:
                                 np.savetxt(f_handle, non_degenerate_inactives_feature_matrix, delimiter=',', fmt='%5.5f')
                             FLUSH_COUNT=0
-
+                            
                             for feature in range(non_degenerate_inactives_feature_matrix.shape[1]):
                                 # Get the maximum accross the feature values
                                 max_feature = np.amax(non_degenerate_inactives_feature_matrix[:,feature])
                                 # Get the minimum accross the feature values
                                 min_feature = np.amin(non_degenerate_inactives_feature_matrix[:,feature])
-                                
+                            
                                 if (max_feature > feature_max[feature]):
                                     feature_max[feature] = max_feature
                                 if (min_feature < feature_min[feature]):
                                     feature_min[feature] = min_feature
-                            
-                        inactives_feature_matrix[FLUSH_COUNT]= molecule_descriptor_row
+
+
+                        inactives_feature_matrix[FLUSH_COUNT] = current_fragment
                         FLUSH_COUNT+=1
                         FRAGMENT_COUNT+=1
 
-                # Use the descriptors dictionary in RAM
-                else:
-                    for f in fragments:
-                        # If we already found the fragment, we continue on; will save us time and space
-                        if f in found_fragments:
-                            fragment_number_name_mapping[FRAGMENT_COUNT] = f
-                            inactives_fragment_molecule_mapping[f].append(molecule_index)
-                        else:
-                            found_fragments.append(f)
-                            fragment_number_name_mapping[FRAGMENT_COUNT] = f
-                            inactives_fragment_molecule_mapping[f] = [molecule_index]
-                        try:
-                            ix_f = descriptors_map[f]
-                            current_fragment = descriptors[ix_f]
+                    except KeyError:
+                        print("Key error")
+                        continue
+    
+    print("Number of inactive fragments: %d\n" % (FRAGMENT_COUNT - OLD_FRAGMENT_COUNT))
+    print("Number of inactive molecules: %d\n" % len(molecule_sdfs))
 
-                            # Obtain all descriptors that have non-numerical values for this fragment
-                            nan_descriptors = np.where(np.isnan(current_fragment) == True)
+    # At the end, flush whatever inactives fragments we have left
+    if (FLUSH_COUNT % FLUSH_BUFFER_SIZE != 0):
+        all_descriptors = np.arange(global_median_cache.shape[1])
+        non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
+        non_degenerate_inactives_feature_matrix = inactives_feature_matrix[:,non_degenerate_descriptors]
 
-                            for j in nan_descriptors:
-                                current_fragment[j] = global_median_cache[0,j]
+        with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'a') as f_handle:
+            np.savetxt(f_handle, non_degenerate_inactives_feature_matrix[0:FLUSH_COUNT], delimiter=',', fmt='%5.5f')
 
-                            if (FLUSH_COUNT == FLUSH_BUFFER_SIZE):
-                                # Flush only the non-degenerate descriptors to file
-                                all_descriptors = np.arange(global_median_cache.shape[1])
-                                non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
-                                non_degenerate_inactives_feature_matrix = inactives_feature_matrix[:,non_degenerate_descriptors]
-
-                                with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'a') as f_handle:
-                                    np.savetxt(f_handle, non_degenerate_inactives_feature_matrix, delimiter=',', fmt='%5.5f')
-                                FLUSH_COUNT=0
-                                
-                                for feature in range(non_degenerate_inactives_feature_matrix.shape[1]):
-                                    # Get the maximum accross the feature values
-                                    max_feature = np.amax(non_degenerate_inactives_feature_matrix[:,feature])
-                                    # Get the minimum accross the feature values
-                                    min_feature = np.amin(non_degenerate_inactives_feature_matrix[:,feature])
-                                
-                                    if (max_feature > feature_max[feature]):
-                                        feature_max[feature] = max_feature
-                                    if (min_feature < feature_min[feature]):
-                                        feature_min[feature] = min_feature
-
-
-                            inactives_feature_matrix[FLUSH_COUNT] = current_fragment
-                            FLUSH_COUNT+=1
-                            FRAGMENT_COUNT+=1
-
-                        except KeyError:
-                            print("Key error")
-                            continue
-        
-        print("Number of inactive fragments: %d\n" % (FRAGMENT_COUNT - OLD_FRAGMENT_COUNT))
-        print("Number of inactive molecules: %d\n" % len(molecule_sdfs))
-
-        # At the end, flush whatever inactives fragments we have left
-        if (FLUSH_COUNT % FLUSH_BUFFER_SIZE != 0):
-            all_descriptors = np.arange(global_median_cache.shape[1])
-            non_degenerate_descriptors = np.delete(all_descriptors, degenerate_features)
-            non_degenerate_inactives_feature_matrix = inactives_feature_matrix[:,non_degenerate_descriptors]
-
-            with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'a') as f_handle:
-                np.savetxt(f_handle, non_degenerate_inactives_feature_matrix[0:FLUSH_COUNT], delimiter=',', fmt='%5.5f')
-
-            for feature in range(non_degenerate_inactives_feature_matrix.shape[1]):
-                # Get the maximum accross the feature values
-                max_feature = np.amax(non_degenerate_inactives_feature_matrix[:,feature])
-                # Get the minimum accross the feature values
-                min_feature = np.amin(non_degenerate_inactives_feature_matrix[:,feature])
-                                
-                if (max_feature > feature_max[feature]):
-                    feature_max[feature] = max_feature
-                if (min_feature < feature_min[feature]):
-                    feature_min[feature] = min_feature
+        for feature in range(non_degenerate_inactives_feature_matrix.shape[1]):
+            # Get the maximum accross the feature values
+            max_feature = np.amax(non_degenerate_inactives_feature_matrix[:,feature])
+            # Get the minimum accross the feature values
+            min_feature = np.amin(non_degenerate_inactives_feature_matrix[:,feature])
+                            
+            if (max_feature > feature_max[feature]):
+                feature_max[feature] = max_feature
+            if (min_feature < feature_min[feature]):
+                feature_min[feature] = min_feature
 
 
 def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max=None, feature_min=None):
@@ -553,7 +555,7 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
 
                 # Flush the new normalized vector into the new file
                 with open(os.path.join(DATA_DIRECTORY,"temp_file"),'a') as f_handle:
-                    np.savetxt(f_handle, next_observation, delimiter=',',fmt='%5.5f')
+                    np.savetxt(f_handle, next_observation.reshape(1,len(next_observation)), delimiter=',',fmt='%5.5f')
             
             max_feature_array = feature_max
             min_feature_array = feature_min
@@ -591,10 +593,11 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
     os.rename(os.path.join(DATA_DIRECTORY,"temp_file"), molecule_feature_matrix_file)
     return [max_feature_array,min_feature_array]
 
-def create_feature_matrix(descriptor_file, sdf_molecules_to_fragments_file,
-    active_molecules, inactive_molecules, output_details=False):
-    
+# def create_feature_matrix(descriptor_file, sdf_molecules_to_fragments_file,
+#     active_molecules, inactive_molecules, output_details=False):
+def create_feature_matrix(features_file,active_fragments,inactive_fragments,output_details=False):
     #TODO: description
+
     descriptors_map = None
     descriptors = None
 
@@ -606,11 +609,10 @@ def create_feature_matrix(descriptor_file, sdf_molecules_to_fragments_file,
 
     if DESCRIPTOR_TO_RAM:
         # First load the descriptors into RAM
-        descriptors_map, descriptors = _read_descriptor_file(descriptor_file)
+        descriptors_map, descriptors = _read_descriptor_file(features_file)
 
     # Load the non-imputed actives feature matrix
-    [non_imputed_feature_matrix,FRAGMENT_COUNT] = _load_matrix_sdf(descriptor_file, sdf_molecules_to_fragments_file,
-        active_molecules, output_details=1, 
+    [non_imputed_feature_matrix,FRAGMENT_COUNT] = _load_matrix_sdf(features_file,active_fragments,output_details=1, 
         descriptors_map = descriptors_map, descriptors=descriptors)
 
     # Impute the actives, keeping track of degenerate features and any global medians
@@ -618,8 +620,7 @@ def create_feature_matrix(descriptor_file, sdf_molecules_to_fragments_file,
     
     # Load inactives matrix using the results from the actives imputation to impute the inactives matrix
     _inactives_load_impute_sdf(degenerate_features,
-        global_median_cache, descriptor_file, sdf_molecules_to_fragments_file, \
-        inactive_molecules, FRAGMENT_COUNT, output_details=1, \
+        global_median_cache, features_file, inactive_fragments, FRAGMENT_COUNT, output_details=1, \
         descriptors_map = descriptors_map, descriptors= descriptors)
 
     # Normalize the features
@@ -640,118 +641,164 @@ def _compute_subspace_distance(point_1,point_2,subspace):
     # Return the square root of the aggregated distance
     return np.sqrt(distance)
 
+def get_score(molecule):
+    return molecule["score"]
 
-def get_molecule_activity_score(molecule_name, molecules_to_fragments_file, features_file):
 
-    descriptors_map, descriptors = _read_descriptor_file(descriptor_file)
+def get_AUC(molecule_names_and_activity, molecules_to_fragments, features_file, MODEL_DIRECTORY):
 
-    molecules_to_fragments = json.load(molecules_to_fragments_file)
-    full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
-                        if molecule["name"] == molecule_name]
+    descriptors_map, descriptors = _read_descriptor_file(os.path.join(DATA_DIRECTORY,features_file))
+    sorted_activity_list = []
 
-    # First index is actual fragments, since there 
-    # can exist only one key value pair for the molecule and its fragments
-    full_fragments = full_fragments[0]
-    fragments = [fragment["smiles"] for fragment in full_fragments]
+    for test_molecule in molecule_names_and_activity:
+        full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
+                            if molecule["name"] == test_molecule["name"]]
 
-    with open(os.path.join(config.DATA_DIRECTORY,'global_median_cache.pkl'),'r') as f_handle:
-        global_median_cache = pickle.load(f_handle)
+        # First index is actual fragments, since there 
+        # can exist only one key value pair for the molecule and its fragments
+        full_fragments = full_fragments[0]
+        fragments = [fragment["smiles"] for fragment in full_fragments]
 
-    with open(os.path.join(config.DATA_DIRECTORY,'used_features.pkl'),'r') as f_handle:
-        used_features = pickle.load(f_handle)
+        with open(os.path.join(ROOT_DIR_METADATA,'global_median_cache.pkl'),'r') as f_handle:
+            global_median_cache = pickle.load(f_handle)
 
-    found_fragments = []
-    feature_matrix = np.empty((0,len(used_features)))
+        with open(os.path.join(ROOT_DIR_METADATA,'used_features.pkl'),'r') as f_handle:
+            used_features = pickle.load(f_handle)
 
-    # Create the feature matrix for the fragments of this particular molecule
-    for f in fragments:
-        # If we already found the fragment, we continue on; will save us time and space
-        if f in found_fragments:
-            continue
-        else:
-            found_fragments.append(f)
-            
-            try:
-                ix_f = descriptors_map[f]
-                current_fragment = descriptors[ix_f]
+        found_fragments = []
+        feature_matrix = np.empty((0,len(used_features)))
 
-                # First, project the features of the current fragment into only the non-degenerate
-                # feature space as learned from the training set.
-                degenerate_features = [feature for feature in np.arange(len(current_fragment)) if feature not in used_features]
-                current_fragment = np.delete(current_fragment,degenerate_features,1)
-
-                # Debugging purposes
-                print(len(current_fragment))
-
-                # Obtain all descriptors that have non-numerical values for this fragment
-                nan_descriptors = np.where(np.isnan(current_fragment) == True)
-
-                # Impute these non-numerical values with the values from the global median cache
-                # which was again, obtained from the training set.
-                for j in nan_descriptors:
-                    current_fragment[j] = global_median_cache[0,j]
-
-                # Append this fragment to our feature matrix
-                np.vstack(feature_matrix,current_fragment)
-
-            except KeyError:
-                print("Key error")
+        # Create the feature matrix for the fragments of this particular molecule
+        for f in fragments:
+            # If we already found the fragment, we continue on; will save us time and space
+            if f in found_fragments:
                 continue
+            else:
+                found_fragments.append(f)
+                
+                try:
+                    ix_f = descriptors_map[f]
+                    current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
 
-    # For each fragment in our obtained feature matrix, find the minimum distance between any
-    # centroid of a significant cluster in our trained model. After finding such distance for every fragment
-    # in our feature matrix, take the average of the distances and output this as a score. 
-    MODEL_DIRECTORY = os.path.join(config.DATA_DIRECTORY,"ClustersModel")
-    with open(os.path.join(MODEL_DIRECTORY),"molecular_cluster_model.pkl") as f_handle:
-        molecular_cluster_model = pickle.load(f_handle)
+                    # First, project the features of the current fragment into only the non-degenerate
+                    # feature space as learned from the training set.
+                    current_fragment = current_fragment[:,used_features]
 
-    distance_array = []
-    for i in range(feature_matrix.shape[0]):
-        distance_array.append(_compute_subspace_distance(feature_matrix[i],molecular_cluster_model['centroid'],molecular_cluster_model['subspace']))
+                    # Obtain all descriptors that have non-numerical values for this fragment
+                    nan_descriptors = np.where(np.isnan(current_fragment) == True)
 
-    # Return the average over all the computed distances as the score
-    return np.mean(np.asarray(distance_array))
+                    # Impute these non-numerical values with the values from the global median cache
+                    # which was again, obtained from the training set.
+                    for j in nan_descriptors:
+                        current_fragment[0,j] = global_median_cache[0,j]
+
+                    # Append this fragment to our feature matrix
+                    np.vstack((feature_matrix,current_fragment))
+
+                except KeyError:
+                    print("Key error")
+                    continue
+
+        with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
+            molecular_cluster_model = pickle.load(f_handle)
+
+        if len(molecular_cluster_model) == 0:
+            print "No clusters in model; can't evaluate new molecule."
+            return -1
+
+        distance_array = []
+        for i in range(feature_matrix.shape[0]):
+            closest_centroid_distance = np.min([ _compute_subspace_distance(feature_matrix[i],molecular_cluster_model[j]['centroid'],molecular_cluster_model[j]['subspace']) \
+                for j in range(len(molecular_cluster_model))])
+
+            distance_array.append(closest_centroid_distance)
+
+        score = np.mean(np.asarray(distance_array))
+        sorted_activity_list.append({"score":score,"activity":test_molecule["activity"]})
+
+    sorted_activity_list = sorted(sorted_activity_list,key=get_score)
+    return Scoring.CalcAUC(sorted_activity_list, "activity")
 
 
 
-def main():
-    DATASET_NUMBER = int(sys.argv[1])
 
-    actives_dataset_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_ligands.json")
-    inactives_dataset_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_decoys.json")
-    features_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_features.csv")
-    fragments_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_fragments.json")
+def molecular_model_creation(active_fragments,inactive_fragments,features_file,num_active_molecules,num_inactive_molecules):
+
+    # actives_dataset_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_ligands.json")
+    # inactives_dataset_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_decoys.json")
+    # features_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_features.csv")
+    # fragments_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_fragments.json")
     
-    os.environ["DATASET_NUMBER"] = str(DATASET_NUMBER)
+    # os.environ["DATASET_NUMBER"] = str(DATASET_NUMBER)
 
-    result = subprocess.call(['bash', './data_preprocessing.sh'])
+    # result = subprocess.call(['bash', './data_preprocessing.sh'])
 
-    # Fetch the SDF Actives and Inactives List
-    with open(actives_dataset_file,'r') as f_handle:
-        actives = json.load(f_handle)
-    with open(inactives_dataset_file,'r') as f_handle:
-        inactives = json.load(f_handle)
+    # # Fetch the SDF Actives and Inactives List
+    # with open(actives_dataset_file,'r') as f_handle:
+    #     actives = json.load(f_handle)
+    # with open(inactives_dataset_file,'r') as f_handle:
+    #     inactives = json.load(f_handle)
 
-    print "Starting molecular feature matrix creation.. "
+    print "Starting molecular feature matrix creation..."
     # Retrieve the molecular feature matrix corresponding to our dataset and 
     # flush it to file
-    create_feature_matrix(features_file, fragments_file ,actives, inactives, output_details=False)
-    print "Finished molecular feature matrix creation.. "
+    # create_feature_matrix(features_file, fragments_file ,actives, inactives, output_details=False)
+    create_feature_matrix(features_file, active_fragments, inactive_fragments,output_details=False)
+    print "Finished molecular feature matrix creation."
 
-    print "Starting search of molecular clusters"
+    print "Starting search of molecular clusters..."
     # Find the clusters using ELKI
     molecular_clusters.find_clusters(CLUSTER_FILENAME = os.path.join(config.DATA_DIRECTORY,"detected_clusters"),
         FEATURE_MATRIX_FILE = os.path.join(config.DATA_DIRECTORY,"molecular_feature_matrix.csv"),
-        ELKI_EXECUTABLE=config.ELKI_EXECUTABLE,num_active_molecules=len(actives),num_inactive_molecules=len(inactives),epsilon=None, mu=None)
-    print "Finished search of molecular clusters"
+        ELKI_EXECUTABLE=config.ELKI_EXECUTABLE,num_active_molecules=len(actives),num_inactive_molecules=len(inactives))
+    print "Finished search of molecular clusters."
 
-    print "Starting analysis and pruning of found clusters"
     # Analyze the clusters and output the most pure and diverse ones
-    PURITY_THRESHOLD = .6
-    DIVERSITY_THRESHOLD = 20
+    print "Starting analysis and pruning of found clusters..."
+    PURITY_THRESHOLD = .5
+    DIVERSITY_THRESHOLD = num_active_molecules * .6
     DIVERSITY_PERCENTAGE = False
     cluster_analysis.create_cluster_centroid_model(PURITY_THRESHOLD, DIVERSITY_THRESHOLD, DIVERSITY_PERCENTAGE)
-    print "Finished analysis and pruning of clusters! Clusters available in data directory"
+    print "Finished analysis and pruning of clusters! Clusters model available in data directory for querying."
+
+def main():
+    actives_fragment_file = sys.argv[1]
+    inactives_fragment_file = sys.argv[2]
+    features_file = sys.argv[3]
+    training_test_split_file = sys.argv[4]
+    MOLECULAR_MODEL_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
+
+    with open(training_test_split_file,"r+") as f_handle:
+        training_test_molecules = json.load(f_handle)
+
+    active_training_molecule_names = [molecule["name"] for molecule in training_test_molecules["data"]["train"]["ligands"]]
+    inactive_training_molecule_names = [molecule["name"] for molecule in training_test_molecules["data"]["train"]["decoys"]]
+
+    with open(actives_fragment_file,"r+") as f_handle:
+        actives_molecule_to_fragments = json.load(f_handle)
+    with open(inactives_fragment_file,"r+") as f_handle:
+        inactives_molecule_to_fragments = json.load(f_handle)
+
+    active_training_molecules = [molecule for molecule in actives_molecule_to_fragments \
+                                    if molecule["name"] in active_training_molecule_names]
+    
+    inactive_training_molecules = [molecule for molecule in inactives_molecule_to_fragments \
+                                    if molecule["name"] in inactive_training_molecule_names]
+    
+    # Preprocessing: remove constant features
+    output_features_file = os.path.join(os.getcwd(),"output_features.csv")
+    remove_constant_features(features_file,output_features_file)
+
+    # Create the molecular model
+    molecular_model_creation(active_training_molecules,inactive_training_molecules,output_features_file,len(active_training_molecules),len(inactive_training_molecules))
+    
+    testing_molecules = training_test_molecules["data"]["test"]
+
+    # Combined active and inactive molecular fragments
+    full_molecules_to_fragments = actives_molecule_to_fragments.extend(inactives_molecule_to_fragments)
+
+    # Get the AUC score for the testing data
+    print(get_AUC(testing_molecules,full_molecules_to_fragments,features_file,MOLECULAR_MODEL_DIRECTORY))
 
 if __name__ == '__main__':
     main()
