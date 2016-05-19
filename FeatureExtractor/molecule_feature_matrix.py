@@ -738,7 +738,7 @@ def molecular_model_creation(active_fragments,inactive_fragments,features_file,n
     # with open(inactives_dataset_file,'r') as f_handle:
     #     inactives = json.load(f_handle)
 
-    print "Starting molecular feature matrix creation..."
+    print "Starting molecular feature model creation..."
     # Retrieve the molecular feature matrix corresponding to our dataset and 
     # flush it to file
     # create_feature_matrix(features_file, fragments_file ,actives, inactives, output_details=False)
@@ -778,12 +778,15 @@ def main():
     with open(inactives_fragment_file,"r+") as f_handle:
         inactives_molecule_to_fragments = json.load(f_handle)
 
+    print("Extracting active and inactive training molecules...")
+
     active_training_molecules = [molecule for molecule in actives_molecule_to_fragments \
                                     if molecule["name"] in active_training_molecule_names]
     
     inactive_training_molecules = [molecule for molecule in inactives_molecule_to_fragments \
                                     if molecule["name"] in inactive_training_molecule_names]
     
+    print("Removing constant features in feature matrix...")
     # Preprocessing: remove constant features
     output_features_file = os.path.join(os.getcwd(),"output_features.csv")
     remove_constant_features(features_file,output_features_file)
@@ -791,11 +794,14 @@ def main():
     # Create the molecular model
     molecular_model_creation(active_training_molecules,inactive_training_molecules,output_features_file,len(active_training_molecules),len(inactive_training_molecules))
     
+    print("Finished molecular feature model creation...")
+
     testing_molecules = training_test_molecules["data"]["test"]
 
     # Combined active and inactive molecular fragments
     full_molecules_to_fragments = actives_molecule_to_fragments.extend(inactives_molecule_to_fragments)
 
+    print("Getting AUC Score for current dataset...")
     # Get the AUC score for the testing data
     print(get_AUC(testing_molecules,full_molecules_to_fragments,features_file,MOLECULAR_MODEL_DIRECTORY))
 
