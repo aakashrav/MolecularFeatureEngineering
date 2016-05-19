@@ -13,9 +13,6 @@ def _create_feature_matrix(features_file):
         # Gets the first line
         header = next(reader)
 
-        # header = input_stream.readline().rstrip().split(',')
-        print header
-
         # for line in input_stream:
         for line in reader:
             # line = line.rstrip().split(',')
@@ -26,10 +23,6 @@ def _create_feature_matrix(features_file):
 
             molecule_descriptor_row = np.empty((1, len(header)-1))
             molecule_names.append(name)
-
-            print(len(line))
-            print(len(header))
-            print(molecule_descriptor_row.shape)
 
             # Next we just copy the newly obtained features into our feature matrix
             # If the feature is not a number, we explicitly input np.nan
