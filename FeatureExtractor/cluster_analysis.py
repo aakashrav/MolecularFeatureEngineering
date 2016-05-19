@@ -12,9 +12,9 @@ import molecular_clusters
 from numpy import genfromtxt
 import time
 
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import matplotlib.mlab as mlab
+# import matplotlib.pyplot as plt
+# import matplotlib.patches as mpatches
+# import matplotlib.mlab as mlab
 
 
 _dish_clustering_parameters_method = {"silhouette":0, "calinsky":1}
