@@ -51,7 +51,7 @@ def _create_feature_matrix(features_file):
     return feature_matrix
 
 def remove_constant_features(features_file = None, output_features_file = None):
-    if (features_file == None) || (output_features_file == None)
+    if (features_file == None) || (output_features_file == None):
         features_file = sys.argv[1]
         output_features_file = sys.argv[2]
 
