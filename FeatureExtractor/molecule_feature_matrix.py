@@ -17,7 +17,6 @@ import config
 import shutil
 import sys
 import subprocess
-import obtain_molecules
 import molecular_clusters
 import cluster_analysis
 import remove_constant_features
