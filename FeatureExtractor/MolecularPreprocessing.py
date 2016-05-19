@@ -50,9 +50,11 @@ def _create_feature_matrix(features_file):
     feature_matrix = np.vstack((np.asarray(header).reshape(1,feature_matrix.shape[1]),feature_matrix))
     return feature_matrix
 
-def main():
-    features_file = sys.argv[1]
-    output_features_file = sys.argv[2]
+def remove_constant_features(features_file = None, output_features_file = None):
+    if (features_file == None) || (output_features_file == None)
+        features_file = sys.argv[1]
+        output_features_file = sys.argv[2]
+
     feature_matrix = _create_feature_matrix(features_file) 
 
     CONSTANT_FEATURE_REMOVAL_RATIO = .7 
@@ -89,4 +91,4 @@ def main():
     #     np.savetxt(f_handle, feature_matrix[1:feature_matrix.shape[0]-1], delimiter=',', fmt="%s "+("%f "*(feature_matrix.shape[1]-2))+"%f", header=header_string)
 
 if __name__ == "__main__":
-    main()
+    remove_constant_features(None,None)
