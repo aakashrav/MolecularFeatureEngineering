@@ -480,6 +480,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
                                     feature_max[feature] = max_feature
                                 if (min_feature < feature_min[feature]):
                                     feature_min[feature] = min_feature
+                        print("Success")
 
 
                         inactives_feature_matrix[FLUSH_COUNT] = current_fragment
@@ -781,6 +782,10 @@ def main():
     active_training_molecule_names = [molecule["name"] for molecule in training_test_molecules["data"]["train"]["ligands"]]
     inactive_training_molecule_names = [molecule["name"] for molecule in training_test_molecules["data"]["train"]["decoys"]]
 
+    print(active_training_molecule_names)
+    print(inactive_training_molecule_names)
+    input("Say something")
+    
     with open(actives_fragment_file,"r+") as f_handle:
         actives_molecule_to_fragments = json.load(f_handle)
     with open(inactives_fragment_file,"r+") as f_handle:
