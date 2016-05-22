@@ -7,7 +7,7 @@ def _create_feature_matrix(features_file):
     feature_matrix = None
     molecule_names = []
 
-    with open(features_file,'r') as input_stream:
+    with open(features_file,'rb') as input_stream:
 
         reader = csv.reader(input_stream)
         # Gets the first line
@@ -38,7 +38,7 @@ def _create_feature_matrix(features_file):
                 #     break
 
             feature_matrix = np.vstack((feature_matrix, molecule_descriptor_row))
-            print("In here")
+            # print("In here")
     
     feature_matrix = np.hstack((np.asarray(molecule_names).reshape(feature_matrix.shape[0],1),feature_matrix))
     feature_matrix = np.vstack((np.asarray(header).reshape(1,feature_matrix.shape[1]),feature_matrix))
