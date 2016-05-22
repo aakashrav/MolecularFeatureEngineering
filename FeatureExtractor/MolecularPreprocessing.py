@@ -38,7 +38,6 @@ def _create_feature_matrix(features_file):
                 #     break
 
             feature_matrix = np.vstack((feature_matrix, molecule_descriptor_row))
-            print(name)
     
     feature_matrix = np.hstack((np.asarray(molecule_names).reshape(feature_matrix.shape[0],1),feature_matrix))
     feature_matrix = np.vstack((np.asarray(header).reshape(1,feature_matrix.shape[1]),feature_matrix))
@@ -50,6 +49,8 @@ def remove_constant_features(features_file = None, output_features_file = None):
         output_features_file = sys.argv[2]
 
     feature_matrix = _create_feature_matrix(features_file) 
+
+    print("Beginning constant feature removal")
 
     # V1
     # CONSTANT_FEATURE_REMOVAL_RATIO = .7 
