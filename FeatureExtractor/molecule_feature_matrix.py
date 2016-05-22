@@ -332,8 +332,8 @@ def _load_matrix_sdf(descriptor_file, molecules_to_fragments,output_details=0,
 
             molecule_index += 1
     
-    print("Number of active fragments: %d\n" % FRAGMENT_COUNT)
-    print("Number of active molecules: %d\n" % len(molecule_sdfs))
+    # print("Number of active fragments: %d\n" % FRAGMENT_COUNT)
+    # print("Number of active molecules: %d\n" % len(molecule_sdfs))
 
     return [non_imputed_feature_matrix, FRAGMENT_COUNT]
 
@@ -488,11 +488,11 @@ def _inactives_load_impute_sdf(degenerate_features, \
                     except KeyError:
                         print("Key error")
                         continue
-                        
+
             molecule_index += 1
     
-    print("Number of inactive fragments: %d\n" % (FRAGMENT_COUNT - OLD_FRAGMENT_COUNT))
-    print("Number of inactive molecules: %d\n" % len(molecule_sdfs))
+    # print("Number of inactive fragments: %d\n" % (FRAGMENT_COUNT - OLD_FRAGMENT_COUNT))
+    # print("Number of inactive molecules: %d\n" % len(molecule_sdfs))
 
     # At the end, flush whatever inactives fragments we have left
     if (FLUSH_COUNT % FLUSH_BUFFER_SIZE != 0):
