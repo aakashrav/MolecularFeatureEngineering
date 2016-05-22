@@ -232,6 +232,7 @@ def _load_matrix_sdf(descriptor_file, molecules_to_fragments,output_details=0,
 
     FRAGMENT_COUNT = 0
 
+    molecule_index = 0
     # Add all fragment data for each molecule in the array
     # 'molecule_sfds', and return a matrix of found values
     # for molecule_index in range(0, len(molecule_sdfs)):
@@ -328,6 +329,8 @@ def _load_matrix_sdf(descriptor_file, molecules_to_fragments,output_details=0,
                     except KeyError:
                         print("Key error")
                         continue
+
+            molecule_index += 1
     
     print("Number of active fragments: %d\n" % FRAGMENT_COUNT)
     print("Number of active molecules: %d\n" % len(molecule_sdfs))
@@ -350,6 +353,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
 
     FLUSH_COUNT = 0
 
+    molecule_index = 0
     # Add all fragment data for each molecule in the array
     # 'molecule_sdfs', and return a matrix of found values
     # for molecule_index in range(0, len(molecule_sdfs)):
@@ -484,6 +488,8 @@ def _inactives_load_impute_sdf(degenerate_features, \
                     except KeyError:
                         print("Key error")
                         continue
+                        
+            molecule_index += 1
     
     print("Number of inactive fragments: %d\n" % (FRAGMENT_COUNT - OLD_FRAGMENT_COUNT))
     print("Number of inactive molecules: %d\n" % len(molecule_sdfs))
