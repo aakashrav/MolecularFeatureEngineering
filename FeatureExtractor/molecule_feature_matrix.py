@@ -231,7 +231,6 @@ def _load_matrix_sdf(descriptor_file,molecules_to_fragments,output_details=0,
         non_imputed_feature_matrix = None
 
     FRAGMENT_COUNT = 0
-
     molecule_index = 0
     # Add all fragment data for each molecule in the array
     # 'molecule_sfds', and return a matrix of found values
@@ -257,9 +256,6 @@ def _load_matrix_sdf(descriptor_file,molecules_to_fragments,output_details=0,
 
         full_fragments = molecule["fragments"]
         fragments = [fragment["smiles"] for fragment in full_fragments]
-        print(fragments)
-        print(descriptors_map[fragments[0]])
-        input("Say someething..")
 
         with open(descriptor_file,'r') as input_stream:
             # Use the descriptors file on disk
