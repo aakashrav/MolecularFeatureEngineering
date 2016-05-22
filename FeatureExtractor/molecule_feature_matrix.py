@@ -796,8 +796,8 @@ def main():
     print("Removing constant features in feature matrix...")
 
     # Preprocessing: remove constant features
-    # output_features_file = os.path.join(os.getcwd(),"output_features.csv")
-    # MolecularPreprocessing.remove_constant_features(features_file,output_features_file)
+    output_features_file = os.path.join(os.getcwd(),"output_features.csv")
+    MolecularPreprocessing.remove_constant_features(features_file,output_features_file)
 
     # Create the molecular model
     # molecular_model_creation(active_training_molecules,inactive_training_molecules,output_features_file,len(active_training_molecules),len(inactive_training_molecules))
