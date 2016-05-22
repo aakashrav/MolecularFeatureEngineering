@@ -213,7 +213,7 @@ def _flush_metadata(global_median_cache, used_features):
 # def _load_matrix_sdf(descriptor_file, molecules_to_fragments_file,
 #     molecule_sdfs, output_details=0,
 #     descriptors_map=None, descriptors=None):
-def _load_matrix_sdf(descriptor_file, molecules_to_fragments,output_details=0,
+def _load_matrix_sdf(descriptor_file,molecules_to_fragments,output_details=0,
     descriptors_map=None, descriptors=None):
 
     # Keep a list of already found fragments for metadata storage
@@ -257,6 +257,8 @@ def _load_matrix_sdf(descriptor_file, molecules_to_fragments,output_details=0,
 
         full_fragments = molecule["fragments"]
         fragments = [fragment["smiles"] for fragment in full_fragments]
+        print(fragment)
+        input("Say someething..")
 
         with open(descriptor_file,'r') as input_stream:
             # Use the descriptors file on disk
@@ -618,9 +620,6 @@ def create_feature_matrix(features_file,active_fragments,inactive_fragments,outp
     if DESCRIPTOR_TO_RAM:
         # First load the descriptors into RAM
         descriptors_map, descriptors = _read_descriptor_file(features_file)
-
-    print(descriptors_map)
-    input("Say something")
 
     # Load the non-imputed actives feature matrix
     [non_imputed_feature_matrix,FRAGMENT_COUNT] = _load_matrix_sdf(features_file,active_fragments,output_details=1, 
