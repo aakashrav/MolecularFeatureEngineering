@@ -328,6 +328,7 @@ def _load_matrix_sdf(descriptor_file, molecules_to_fragments,output_details=0,
                         FRAGMENT_COUNT+=1
                     except KeyError:
                         print("Key error")
+                        print(f)
                         continue
 
             molecule_index += 1
