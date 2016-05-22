@@ -773,7 +773,7 @@ def main():
     actives_fragment_file = sys.argv[1]
     inactives_fragment_file = sys.argv[2]
     features_file = sys.argv[3]
-    training_test_split_file = sys.argv[4]
+    training_test_split_file = sys.argv[4] # Check
     MOLECULAR_MODEL_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
 
     with open(training_test_split_file,"r+") as f_handle:
@@ -782,10 +782,6 @@ def main():
     active_training_molecule_names = [molecule["name"] for molecule in training_test_molecules["data"]["train"]["ligands"]]
     inactive_training_molecule_names = [molecule["name"] for molecule in training_test_molecules["data"]["train"]["decoys"]]
 
-    print(active_training_molecule_names)
-    print(inactive_training_molecule_names)
-    input("Say something")
-    
     with open(actives_fragment_file,"r+") as f_handle:
         actives_molecule_to_fragments = json.load(f_handle)
     with open(inactives_fragment_file,"r+") as f_handle:
@@ -798,6 +794,10 @@ def main():
     
     inactive_training_molecules = [molecule for molecule in inactives_molecule_to_fragments \
                                     if molecule["name"] in inactive_training_molecule_names]
+
+    print(active_training_molecules)
+    print(inactive_training_molecules)
+    input("Say something")
     
     print("Removing constant features in feature matrix...")
 
