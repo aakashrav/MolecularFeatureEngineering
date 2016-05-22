@@ -352,7 +352,6 @@ def _inactives_load_impute_sdf(degenerate_features, \
     inactives_feature_matrix = np.empty([FLUSH_BUFFER_SIZE, global_median_cache.shape[1]], np.float)
 
     FLUSH_COUNT = 0
-
     molecule_index = 0
     # Add all fragment data for each molecule in the array
     # 'molecule_sdfs', and return a matrix of found values
