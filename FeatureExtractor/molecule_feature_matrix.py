@@ -326,7 +326,7 @@ def _load_matrix_sdf(descriptor_file,molecules_to_fragments,output_details=0,
                                                     [np.insert(descriptors[ix_f], 0, molecule_index)], axis=0)
                         FRAGMENT_COUNT+=1
                     except KeyError:
-                        print("Key error")
+                        print("Key error actives")
                         print(f)
                         continue
 
@@ -487,7 +487,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
                         FRAGMENT_COUNT+=1
 
                     except KeyError:
-                        print("Key error")
+                        print("Key error inactives")
                         print(f)
                         continue
 
