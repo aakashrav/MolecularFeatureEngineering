@@ -619,6 +619,9 @@ def create_feature_matrix(features_file,active_fragments,inactive_fragments,outp
         # First load the descriptors into RAM
         descriptors_map, descriptors = _read_descriptor_file(features_file)
 
+    print(descriptors_map)
+    input("Say something")
+
     # Load the non-imputed actives feature matrix
     [non_imputed_feature_matrix,FRAGMENT_COUNT] = _load_matrix_sdf(features_file,active_fragments,output_details=1, 
         descriptors_map = descriptors_map, descriptors=descriptors)
@@ -770,8 +773,8 @@ def molecular_model_creation(active_fragments,inactive_fragments,features_file,n
     print "Finished analysis and pruning of clusters! Clusters model available in data directory for querying."
 
 def main():
-    actives_fragment_file = sys.argv[1]
-    inactives_fragment_file = sys.argv[2]
+    actives_fragment_file = sys.argv[1] # Check
+    inactives_fragment_file = sys.argv[2] # Check
     features_file = sys.argv[3]
     training_test_split_file = sys.argv[4] # Check
     MOLECULAR_MODEL_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
@@ -794,10 +797,6 @@ def main():
     
     inactive_training_molecules = [molecule for molecule in inactives_molecule_to_fragments \
                                     if molecule["name"] in inactive_training_molecule_names]
-
-    print(active_training_molecules)
-    print(inactive_training_molecules)
-    input("Say something")
     
     print("Removing constant features in feature matrix...")
 
