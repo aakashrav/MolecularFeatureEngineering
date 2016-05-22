@@ -487,6 +487,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
 
                     except KeyError:
                         print("Key error")
+                        print(f)
                         continue
 
             molecule_index += 1
