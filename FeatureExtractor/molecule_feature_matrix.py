@@ -75,7 +75,7 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
     inactive_fragments=None):
     
     if (feature_matrix is None):
-        print("Empty matrix; no standard imputation done, continuing on..")
+        print("Empty matrix; no standard imputation done, continuing...")
         return [None,None,None]
 
     # Keep track of indices corresponding to the molecule of each fragment- just the first column
@@ -91,6 +91,8 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
     # Cache globally imputed descriptors
     global_median_cache = np.empty([1,feature_matrix.shape[1]], dtype=np.float)
 
+    print("Starting creation of global median cache")
+
     for descriptor in range(0,feature_matrix.shape[1]):
         global_descriptor_median = _compute_feature_median(feature_matrix, descriptor,
                 molecule_keys)
@@ -98,11 +100,13 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
             degenerate_features.append(descriptor)
         global_median_cache[0,descriptor] = global_descriptor_median
     
+    print("Finished creation of global median cache")
+    
     # Recompute the significant features before beginning imputation
     if DESCRIPTOR_TO_RAM:
         neighborhood_extractor.extract_features(NUM_FEATURES,descriptor_matrix,COVARIANCE_THRESHOLD,descriptors_map,active_fragments,inactive_fragments)
 
-    print "Actives imputation: starting out with %d features" % (feature_matrix.shape[1])
+    print("Actives imputation: starting out with %d features" % (feature_matrix.shape[1]))
     significant_features = np.genfromtxt(os.path.join(config.DATA_DIRECTORY,'significant_features'),delimiter=',')
     redundant_features = [i for i in all_features if i not in significant_features]
 
