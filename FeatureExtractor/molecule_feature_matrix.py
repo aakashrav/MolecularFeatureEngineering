@@ -480,7 +480,6 @@ def _inactives_load_impute_sdf(degenerate_features, \
                                     feature_max[feature] = max_feature
                                 if (min_feature < feature_min[feature]):
                                     feature_min[feature] = min_feature
-                        print("Success")
 
                         if f in found_fragments:
                             fragment_number_name_mapping[FRAGMENT_COUNT] = f
@@ -812,8 +811,8 @@ def main():
     MolecularPreprocessing.remove_constant_features(features_file,output_features_file)
 
     # Create the molecular model
-    # molecular_model_creation(active_training_molecules,inactive_training_molecules,output_features_file,len(active_training_molecules),len(inactive_training_molecules))
-    molecular_model_creation(active_training_molecules,inactive_training_molecules,features_file,len(active_training_molecules),len(inactive_training_molecules))
+    molecular_model_creation(active_training_molecules,inactive_training_molecules,output_features_file,len(active_training_molecules),len(inactive_training_molecules))
+    # molecular_model_creation(active_training_molecules,inactive_training_molecules,features_file,len(active_training_molecules),len(inactive_training_molecules))
     
     print("Finished molecular feature model creation...")
 
