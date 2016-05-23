@@ -318,18 +318,20 @@ def _load_matrix_sdf(descriptor_file,molecules_to_fragments,output_details=0,
             else:
                 for f in fragments:
                     # If we already found the fragment, we continue on; will save us time and space
-                    if f in found_fragments:
-                        fragment_number_name_mapping[FRAGMENT_COUNT] = f
-                        actives_fragment_molecule_mapping[f].append(molecule_index)
-                    else:
-                        found_fragments.append(f)
-                        fragment_number_name_mapping[FRAGMENT_COUNT] = f
-                        actives_fragment_molecule_mapping[f] = [molecule_index]
                     try:
                         ix_f = descriptors_map[f]
                     
                         non_imputed_feature_matrix = np.append(non_imputed_feature_matrix,
                                                     [np.insert(descriptors[ix_f], 0, molecule_index)], axis=0)
+
+                        if f in found_fragments:
+                            fragment_number_name_mapping[FRAGMENT_COUNT] = f
+                            actives_fragment_molecule_mapping[f].append(molecule_index)
+                        else:
+                            found_fragments.append(f)
+                            fragment_number_name_mapping[FRAGMENT_COUNT] = f
+                            actives_fragment_molecule_mapping[f] = [molecule_index]
+
                         FRAGMENT_COUNT+=1
                         print("Found an active!")
                     except KeyError:
@@ -448,13 +450,6 @@ def _inactives_load_impute_sdf(degenerate_features, \
             else:
                 for f in fragments:
                     # If we already found the fragment, we continue on; will save us time and space
-                    if f in found_fragments:
-                        fragment_number_name_mapping[FRAGMENT_COUNT] = f
-                        inactives_fragment_molecule_mapping[f].append(molecule_index)
-                    else:
-                        found_fragments.append(f)
-                        fragment_number_name_mapping[FRAGMENT_COUNT] = f
-                        inactives_fragment_molecule_mapping[f] = [molecule_index]
                     try:
                         ix_f = descriptors_map[f]
                         current_fragment = descriptors[ix_f]
@@ -486,6 +481,14 @@ def _inactives_load_impute_sdf(degenerate_features, \
                                 if (min_feature < feature_min[feature]):
                                     feature_min[feature] = min_feature
                         print("Success")
+
+                        if f in found_fragments:
+                            fragment_number_name_mapping[FRAGMENT_COUNT] = f
+                            inactives_fragment_molecule_mapping[f].append(molecule_index)
+                        else:
+                            found_fragments.append(f)
+                            fragment_number_name_mapping[FRAGMENT_COUNT] = f
+                            inactives_fragment_molecule_mapping[f] = [molecule_index]
 
 
                         inactives_feature_matrix[FLUSH_COUNT] = current_fragment
