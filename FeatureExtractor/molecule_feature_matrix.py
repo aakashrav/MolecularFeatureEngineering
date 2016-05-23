@@ -629,8 +629,6 @@ def create_feature_matrix(features_file,active_fragments,inactive_fragments,outp
     [non_imputed_feature_matrix,FRAGMENT_COUNT] = _load_matrix_sdf(features_file,active_fragments,output_details=1, 
         descriptors_map = descriptors_map, descriptors=descriptors)
 
-    print non_imputed_feature_matrix
-    
     print("Beginning imputation of actives feature matrix and creation of global median cache.")
     # Impute the actives, keeping track of degenerate features and any global medians
     global_median_cache,degenerate_features,used_features = _actives_feature_impute(non_imputed_feature_matrix,descriptors,None,None,None)
