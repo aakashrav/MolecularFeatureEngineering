@@ -104,8 +104,7 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
 
     # Recompute the significant features before beginning imputation
     if DESCRIPTOR_TO_RAM:
-        # neighborhood_extractor.extract_features(NUM_FEATURES,descriptor_matrix,COVARIANCE_THRESHOLD,descriptors_map,active_fragments,inactive_fragments)
-        neighborhood_extractor.extract_features(NUM_FEATURES,feature_matrix,COVARIANCE_THRESHOLD,descriptors_map,active_fragments,inactive_fragments)
+        neighborhood_extractor.extract_features(NUM_FEATURES,descriptor_matrix,COVARIANCE_THRESHOLD,descriptors_map,active_fragments,inactive_fragments)
 
 
     print("Actives imputation: starting out with %d features" % (feature_matrix.shape[1]))
