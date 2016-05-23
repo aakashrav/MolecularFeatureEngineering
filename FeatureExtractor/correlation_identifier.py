@@ -211,7 +211,9 @@ def identify_correlated_features( feature_matrix, \
             # Gets the first line
             all_descriptor_names = next(reader)
     
+    print("About to create correlation coefficient matrix")
     corr_matrix = np.corrcoef(feature_matrix,None,rowvar=0)
+    print("Created correlation coefficient matrix")
     degrees = _count_degrees(corr_matrix,corr_threshold)
     chosen = [True]*len(degrees)
     isCorrelated = lambda i,j: corr_matrix[i][j] >= corr_threshold
