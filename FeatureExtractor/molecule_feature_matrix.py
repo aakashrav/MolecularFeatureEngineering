@@ -325,6 +325,7 @@ def _load_matrix_sdf(descriptor_file,molecules_to_fragments,output_details=0,
                         non_imputed_feature_matrix = np.append(non_imputed_feature_matrix,
                                                     [np.insert(descriptors[ix_f], 0, molecule_index)], axis=0)
                         FRAGMENT_COUNT+=1
+                        print("Found an active!")
                     except KeyError:
                         print("Key error actives")
                         print(f)
@@ -484,7 +485,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
                         inactives_feature_matrix[FLUSH_COUNT] = current_fragment
                         FLUSH_COUNT+=1
                         FRAGMENT_COUNT+=1
-
+                        print("Found an inactive!")
                     except KeyError:
                         print("Key error inactives")
                         print(f)
@@ -700,7 +701,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, features_file, 
 
                     # Append this fragment to our feature matrix
                     np.vstack((feature_matrix,current_fragment))
-
+                    print("Key error AUC!")
                 except KeyError:
                     print("Key error")
                     continue
