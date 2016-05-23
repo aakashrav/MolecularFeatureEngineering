@@ -766,7 +766,7 @@ def molecular_model_creation(active_fragments,inactive_fragments,features_file,n
     # Find the clusters using ELKI
     molecular_clusters.find_clusters(CLUSTER_FILENAME = os.path.join(config.DATA_DIRECTORY,"detected_clusters"),
         FEATURE_MATRIX_FILE = os.path.join(config.DATA_DIRECTORY,"molecular_feature_matrix.csv"),
-        ELKI_EXECUTABLE=config.ELKI_EXECUTABLE,num_active_molecules=len(actives),num_inactive_molecules=len(inactives))
+        ELKI_EXECUTABLE=config.ELKI_EXECUTABLE,num_active_molecules=len(num_active_molecules),num_inactive_molecules=len(num_inactive_molecules))
     print "Finished search of molecular clusters."
 
     # Analyze the clusters and output the most pure and diverse ones
