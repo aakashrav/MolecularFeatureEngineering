@@ -188,6 +188,8 @@ def _read_descriptor_file(descriptor_file_name):
             descriptors = np.vstack((descriptors, np.asarray(aux_descriptors)))
             del aux_descriptors[:]
 
+    print(descriptors_smiles_to_ix)
+    input("OK?")
     return [descriptors_smiles_to_ix, descriptors]
 
 def _flush_metadata(global_median_cache, used_features):
