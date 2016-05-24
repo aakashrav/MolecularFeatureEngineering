@@ -609,11 +609,8 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
 
 # def create_feature_matrix(descriptor_file, sdf_molecules_to_fragments_file,
 #     active_molecules, inactive_molecules, output_details=False):
-def create_feature_matrix(features_file,active_fragments,inactive_fragments,output_details=False):
+def create_feature_matrix(features_file,active_fragments,inactive_fragments,descriptors_map=None,descriptors=None,output_details=False):
     #TODO: description
-
-    descriptors_map = None
-    descriptors = None
 
     if not os.path.exists(DATA_DIRECTORY):
         os.makedirs(DATA_DIRECTORY)
@@ -621,8 +618,7 @@ def create_feature_matrix(features_file,active_fragments,inactive_fragments,outp
         shutil.rmtree(DATA_DIRECTORY)
         os.makedirs(DATA_DIRECTORY)
 
-    if DESCRIPTOR_TO_RAM:
-        # First load the descriptors into RAM
+    if (descriptors_map == None) or (descriptors == None):
         descriptors_map, descriptors = _read_descriptor_file(features_file)
 
     # Load the non-imputed actives feature matrix
@@ -739,7 +735,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, features_file, 
 
 
 
-def molecular_model_creation(active_fragments,inactive_fragments,features_file,num_active_molecules,num_inactive_molecules):
+def molecular_model_creation(active_fragments,inactive_fragments,features_map,features_matrix,num_active_molecules,num_inactive_molecules):
 
     # actives_dataset_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_ligands.json")
     # inactives_dataset_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_decoys.json")
@@ -760,7 +756,7 @@ def molecular_model_creation(active_fragments,inactive_fragments,features_file,n
     # Retrieve the molecular feature matrix corresponding to our dataset and 
     # flush it to file
     # create_feature_matrix(features_file, fragments_file ,actives, inactives, output_details=False)
-    create_feature_matrix(features_file, active_fragments, inactive_fragments,output_details=False)
+    create_feature_matrix(features_file, active_fragments, inactive_fragments,features_map,features_matrix,output_details=False)
     print "Finished molecular feature matrix creation."
 
     print "Starting search of molecular clusters..."
@@ -803,15 +799,20 @@ def main():
     
     inactive_training_molecules = [molecule for molecule in inactives_molecule_to_fragments \
                                     if molecule["name"] in inactive_training_molecule_names]
+
+    
+    print("Reading the features file into memory")
+    features_map, features = _read_descriptor_file(features_file)
     
     print("Removing constant features in feature matrix...")
 
     # Preprocessing: remove constant features
-    output_features_file = os.path.join(os.getcwd(),"output_features.csv")
-    MolecularPreprocessing.remove_constant_features(features_file,output_features_file)
+    # output_features_file = os.path.join(os.getcwd(),"output_features.csv")
+    # MolecularPreprocessing.remove_constant_features(features_file,output_features_file)
+    features = MolecularPreprocessing.remove_constant_features(features)
 
     # Create the molecular model
-    molecular_model_creation(active_training_molecules,inactive_training_molecules,output_features_file,len(active_training_molecules),len(inactive_training_molecules))
+    molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules))
     # molecular_model_creation(active_training_molecules,inactive_training_molecules,features_file,len(active_training_molecules),len(inactive_training_molecules))
     
     print("Finished molecular feature model creation...")

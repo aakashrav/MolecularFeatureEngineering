@@ -37,14 +37,14 @@ def _create_feature_matrix(features_file):
     feature_matrix = np.vstack((np.asarray(header).reshape(1,feature_matrix.shape[1]),feature_matrix))
     return feature_matrix
 
-def remove_constant_features(features_file = None, output_features_file = None):
-    if (features_file == None) or (output_features_file == None):
-        features_file = sys.argv[1]
-        output_features_file = sys.argv[2]
+def remove_constant_features(feature_matrix):
+    # if (features_file == None) or (output_features_file == None):
+    #     features_file = sys.argv[1]
+    #     output_features_file = sys.argv[2]
 
-    feature_matrix = _create_feature_matrix(features_file) 
+    # feature_matrix = _create_feature_matrix(features_file) 
 
-    print("Beginning constant feature removal")
+    # print("Beginning constant feature removal")
 
     # # V1
     # CONSTANT_FEATURE_REMOVAL_RATIO = .7 
@@ -67,13 +67,12 @@ def remove_constant_features(features_file = None, output_features_file = None):
 
     feature_matrix = np.delete(feature_matrix,all_constant_features,1) 
 
-    # Save the data manually, NumPy savetxt seems to be giving problems
-    with open(output_features_file,'w+') as f_handle:
-        for row in feature_matrix:
-            for i in range(0,len(row)-1):
-                f_handle.write(str(row[i])+",")
-            f_handle.write(row[len(row)-1])
-            f_handle.write("\n")
+    return feature_matrix
 
-if __name__ == "__main__":
-    remove_constant_features(None,None)
+    # Save the data manually, NumPy savetxt seems to be giving problems
+    # with open(output_features_file,'w+') as f_handle:
+    #     for row in feature_matrix:
+    #         for i in range(0,len(row)-1):
+    #             f_handle.write(str(row[i])+",")
+    #         f_handle.write(row[len(row)-1])
+    #         f_handle.write("\n")
