@@ -225,16 +225,16 @@ def identify_correlated_features( feature_matrix, \
         m = max(degrees)
         i = degrees.index(m)
 
-    if molecule_feature_matrix.DEBUG:
-        neighborhood_filename = os.path.join(DATA_DIRECTORY,"Covariance_Neighborhoods")
-        open(neighborhood_filename,'w+')
+    # if molecule_feature_matrix.DEBUG:
+    #     neighborhood_filename = os.path.join(DATA_DIRECTORY,"Covariance_Neighborhoods")
+    #     open(neighborhood_filename,'w+')
             
     # While there are still some correlated features, we choose feature with highest degree as a representitive and we
     # remove all features that are correlated with it (and weren't chosen yet already)
     while(m > 0):
-        if molecule_feature_matrix.DEBUG:
-            with open(neighborhood_filename,'a') as f_handle:
-                f_handle.write("\n\nNeighborhood for " + all_descriptor_names[i] + "\n")
+        # if molecule_feature_matrix.DEBUG:
+        #     with open(neighborhood_filename,'a') as f_handle:
+        #         f_handle.write("\n\nNeighborhood for " + all_descriptor_names[i] + "\n")
 
         for j in range(0,len(corr_matrix)):
             # For every neighboro four chosen represantative
@@ -243,9 +243,9 @@ def identify_correlated_features( feature_matrix, \
                 for k in range(0,len(corr_matrix)):
                     if chosen[k] and isCorrelated(k,j):
                         degrees[k] -= 1
-                if molecule_feature_matrix.DEBUG:
-                    with open(neighborhood_filename,'a') as f_handle:
-                        f_handle.write(all_descriptor_names[j]+",")
+                # if molecule_feature_matrix.DEBUG:
+                #     with open(neighborhood_filename,'a') as f_handle:
+                #         f_handle.write(all_descriptor_names[j]+",")
 
         # Delete all neighbors of our chosen representative
         # The neighbors can no longer be chosen features in further iterations
@@ -256,9 +256,9 @@ def identify_correlated_features( feature_matrix, \
         
         m = max(degrees)
         i = degrees.index(m)
-        if molecule_feature_matrix.DEBUG:
-            with open(neighborhood_filename,'a') as f_handle:
-                f_handle.write('\n')
+        # if molecule_feature_matrix.DEBUG:
+        #     with open(neighborhood_filename,'a') as f_handle:
+        #         f_handle.write('\n')
         
     significant_features = np.where(np.array(chosen) == True)[0]
     # Return the requested amount of significant features
