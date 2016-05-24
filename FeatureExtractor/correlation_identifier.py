@@ -204,7 +204,7 @@ def identify_correlated_features( feature_matrix, \
             uniform features")
         return []
     
-    # DATA_DIRECTORY = config.DATA_DIRECTORY
+    DATA_DIRECTORY = config.DATA_DIRECTORY
     # if molecule_feature_matrix.DEBUG:
     #     with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv')) as f_handle:
     #         reader = csv.reader(f_handle)
