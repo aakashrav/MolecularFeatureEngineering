@@ -204,12 +204,12 @@ def identify_correlated_features( feature_matrix, \
             uniform features")
         return []
     
-    DATA_DIRECTORY = config.DATA_DIRECTORY
-    if molecule_feature_matrix.DEBUG:
-        with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv')) as f_handle:
-            reader = csv.reader(f_handle)
-            # Gets the first line
-            all_descriptor_names = next(reader)
+    # DATA_DIRECTORY = config.DATA_DIRECTORY
+    # if molecule_feature_matrix.DEBUG:
+    #     with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv')) as f_handle:
+    #         reader = csv.reader(f_handle)
+    #         # Gets the first line
+    #         all_descriptor_names = next(reader)
     
     print("About to create correlation coefficient matrix")
     corr_matrix = np.corrcoef(feature_matrix,None,rowvar=0)

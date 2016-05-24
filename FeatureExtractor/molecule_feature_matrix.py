@@ -164,10 +164,9 @@ def _read_descriptor_file(descriptor_file_name):
         #Header serves to find out the number of descriptors
         header = descriptor_file.readline().rstrip().split(',')
 
-        if DEBUG:
-            print("Reading!")
-            with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv'),'wb+') as f_handle:
-                csv.writer(f_handle).writerow(header)
+        # if DEBUG:
+        #     with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv'),'wb+') as f_handle:
+        #         csv.writer(f_handle).writerow(header)
 
         descriptors = np.empty((0, len(header)-1), np.float)
         #Adding rows into the NP array one by one is expensive. Therefore we read rows
