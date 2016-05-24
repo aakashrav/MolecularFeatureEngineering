@@ -165,6 +165,7 @@ def _read_descriptor_file(descriptor_file_name):
         header = descriptor_file.readline().rstrip().split(',')
 
         if DEBUG:
+            print("Reading!")
             with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv'),'wb+') as f_handle:
                 csv.writer(f_handle).writerow(header)
 
