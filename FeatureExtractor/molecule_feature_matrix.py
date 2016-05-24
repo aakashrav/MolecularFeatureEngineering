@@ -735,7 +735,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, features_file, 
 
 
 
-def molecular_model_creation(active_fragments,inactive_fragments,features_map,features_matrix,num_active_molecules,num_inactive_molecules):
+def molecular_model_creation(features_file,active_fragments,inactive_fragments,features_map,features_matrix,num_active_molecules,num_inactive_molecules):
 
     # actives_dataset_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_ligands.json")
     # inactives_dataset_file = os.path.join(config.INPUT_DATA_DIRECTORY,str(DATASET_NUMBER), str(DATASET_NUMBER) + "_decoys.json")
@@ -812,7 +812,7 @@ def main():
     features = MolecularPreprocessing.remove_constant_features(features)
 
     # Create the molecular model
-    molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules))
+    molecular_model_creation(features_file,active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules))
     # molecular_model_creation(active_training_molecules,inactive_training_molecules,features_file,len(active_training_molecules),len(inactive_training_molecules))
     
     print("Finished molecular feature model creation...")
