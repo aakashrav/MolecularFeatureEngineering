@@ -44,7 +44,7 @@ def remove_constant_features(feature_matrix):
 
     # feature_matrix = _create_feature_matrix(features_file) 
 
-    # print("Beginning constant feature removal")
+    print("Features remaining before constant feature removal: %d", feature_matrix.shape[1])
 
     # # V1
     # CONSTANT_FEATURE_REMOVAL_RATIO = .7 
@@ -66,6 +66,8 @@ def remove_constant_features(feature_matrix):
             all_constant_features.append(j)
 
     feature_matrix = np.delete(feature_matrix,all_constant_features,1) 
+
+    print("Features remaining after constant feature removal: %d", feature_matrix.shape[1])
 
     return feature_matrix
 
