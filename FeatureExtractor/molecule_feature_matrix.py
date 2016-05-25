@@ -801,9 +801,6 @@ def main():
 
     active_training_molecules = [molecule for molecule in actives_molecule_to_fragments \
                                     if molecule["name"] in active_training_molecule_names]
-
-    print(active_training_molecules)
-    input("This ok?")
     
     inactive_training_molecules = [molecule for molecule in inactives_molecule_to_fragments \
                                     if molecule["name"] in inactive_training_molecule_names]
@@ -817,7 +814,7 @@ def main():
     # Preprocessing: remove constant features
     # output_features_file = os.path.join(os.getcwd(),"output_features.csv")
     # MolecularPreprocessing.remove_constant_features(features_file,output_features_file)
-    features = MolecularPreprocessing.remove_constant_features(features)
+    # features = MolecularPreprocessing.remove_constant_features(features)
 
     # Create the molecular model
     molecular_model_creation(features_file,active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules))
