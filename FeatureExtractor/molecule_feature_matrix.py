@@ -801,6 +801,9 @@ def main():
 
     active_training_molecules = [molecule for molecule in actives_molecule_to_fragments \
                                     if molecule["name"] in active_training_molecule_names]
+
+    print(active_training_molecules)
+    input("This ok?")
     
     inactive_training_molecules = [molecule for molecule in inactives_molecule_to_fragments \
                                     if molecule["name"] in inactive_training_molecule_names]
