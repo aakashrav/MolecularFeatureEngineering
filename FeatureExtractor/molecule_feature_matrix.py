@@ -176,7 +176,7 @@ def _read_descriptor_file(descriptor_file_name):
         for line in descriptor_file:
             line_split = line.rstrip().split(',')
             descriptors_smiles_to_ix[line_split[0].strip('"\'')] = ix
-            print(line_split[0].strip('"\''))
+
             #descriptors_all_values = np.append(descriptors_all_values, [np.array(line_split[1:])], axis=0)
             aux_descriptors.append([float(x) if isfloat(x) else float('nan') for x in line_split[1:]])
             ix += 1
@@ -189,7 +189,6 @@ def _read_descriptor_file(descriptor_file_name):
             descriptors = np.vstack((descriptors, np.asarray(aux_descriptors)))
             del aux_descriptors[:]
 
-    input("OK? Ldah..")
     print(descriptors_smiles_to_ix)
     print(descriptors_smiles_to_ix['c(cc)(NC)c(C)c'])
     input("OK? Ldah..")
@@ -807,6 +806,7 @@ def main():
 
     
     print("Reading the features file into memory")
+
     features_map, features = _read_descriptor_file(features_file)
     
     print("Removing constant features in feature matrix...")
@@ -814,7 +814,7 @@ def main():
     # Preprocessing: remove constant features
     # output_features_file = os.path.join(os.getcwd(),"output_features.csv")
     # MolecularPreprocessing.remove_constant_features(features_file,output_features_file)
-    # features = MolecularPreprocessing.remove_constant_features(features)
+    features = MolecularPreprocessing.remove_constant_features(features)
 
     # Create the molecular model
     molecular_model_creation(features_file,active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules))
