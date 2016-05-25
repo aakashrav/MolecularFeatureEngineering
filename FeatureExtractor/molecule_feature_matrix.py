@@ -176,6 +176,8 @@ def _read_descriptor_file(descriptor_file_name):
         for line in descriptor_file:
             line_split = line.rstrip().split(',')
             descriptors_smiles_to_ix[line_split[0].strip('"\'')] = ix
+            if (line_split[0].strip('"\'') == 'c(cc)(NC)c(C)c'):
+                print("Here!")
             #descriptors_all_values = np.append(descriptors_all_values, [np.array(line_split[1:])], axis=0)
             aux_descriptors.append([float(x) if isfloat(x) else float('nan') for x in line_split[1:]])
             ix += 1
@@ -188,6 +190,7 @@ def _read_descriptor_file(descriptor_file_name):
             descriptors = np.vstack((descriptors, np.asarray(aux_descriptors)))
             del aux_descriptors[:]
 
+    input("OK? Ldah..")
     print(descriptors_smiles_to_ix)
     print(descriptors_smiles_to_ix['c(cc)(NC)c(C)c'])
     input("OK? Ldah..")
