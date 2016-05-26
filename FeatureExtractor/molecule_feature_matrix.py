@@ -333,10 +333,9 @@ def _load_matrix_sdf(descriptor_file,molecules_to_fragments,output_details=0,
                             actives_fragment_molecule_mapping[f] = [molecule_index]
 
                         FRAGMENT_COUNT+=1
-                        print("Found an active!")
                     except KeyError:
-                        print("Key error actives")
-                        print(f)
+                        print("Key error extracting actives from feature matrix.")
+                        print("Affected fragment %s" % f)
                         continue
 
             molecule_index += 1
@@ -493,10 +492,10 @@ def _inactives_load_impute_sdf(degenerate_features, \
                         inactives_feature_matrix[FLUSH_COUNT] = current_fragment
                         FLUSH_COUNT+=1
                         FRAGMENT_COUNT+=1
-                        print("Found an inactive!")
+
                     except KeyError:
-                        print("Key error inactives")
-                        print(f)
+                        print("Key error extracting inactives from feature matrix.")
+                        print("Affected fragment %s" % f)
                         continue
 
             molecule_index += 1
@@ -821,7 +820,7 @@ def main():
     testing_molecules = training_test_molecules["data"]["test"]
 
     # Combined active and inactive molecular fragments
-    full_molecules_to_fragments = actives_molecule_to_fragments.extend(inactives_molecule_to_fragments)
+    full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
 
     print("Getting AUC Score for current dataset...")
     # Get the AUC score for the testing data
