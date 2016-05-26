@@ -62,7 +62,7 @@ def _compute_feature_median(non_imputed_feature_matrix, descriptor_indice, molec
         if (np.isnan(descriptor_values).any()):
             continue
         else:
-            if (np.mean(descriptor_values)==np.nan):
+            if (np.isfinite(np.mean(descriptor_values)) == False):
                 print(descriptor_values)
                 input("What now?")
 
