@@ -57,20 +57,18 @@ def _compute_feature_median(non_imputed_feature_matrix, descriptor_indice, molec
         fragments_for_molecule = non_imputed_feature_matrix[molecule_fragment_indices]
         # Get the values for this specific descriptor
         descriptor_values = fragments_for_molecule[:,descriptor_indice]
-        # If there doesn't exist any nan descriptor values for fragments of this molecule
+        # If there doesn't exist any infinite descriptor values for fragments of this molecule,
         # we add it to the global average array.
         if (np.isfinite(descriptor_values).all()):
             global_descriptor_average_array.append(np.mean(descriptor_values))
         else:
             continue
+
     # If descriptor is defined for no molecule, it is a degenerate descriptor,
     # So we return np.nan, else we return the median of the averages
     if (len(global_descriptor_average_array) == 0):
         return np.nan
     else:
-        if (np.isfinite(global_descriptor_average_array).all() == False):
-            input("What now boi?")
-
         return np.median(global_descriptor_average_array)
 
 def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=None, active_fragments=None,
@@ -93,7 +91,7 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
     # Cache globally imputed descriptors
     global_median_cache = np.empty([1,feature_matrix.shape[1]], dtype=np.float)
 
-    print("Starting creation of global median cache")
+    print("Starting creation of global median cache...")
 
     for descriptor in range(0,feature_matrix.shape[1]):
         global_descriptor_median = _compute_feature_median(feature_matrix, descriptor,
@@ -102,20 +100,30 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
             degenerate_features.append(descriptor)
         global_median_cache[0,descriptor] = global_descriptor_median
     
-    print("Finished creation of global median cache")
+    print("Imputing fragments according to global median cache...")
 
-    # Recompute the significant features before beginning imputation
+    # Now, loop through the fragments and impute using the global median cache
+    for fragment in range(1, len(feature_matrix)):
+        # Obtain all descriptors that have non-numerical values for this fragment
+        nan_descriptors = np.where(np.isnan(feature_matrix[fragment]) == True)
+        for j in nan_descriptors:
+            feature_matrix[fragment, j] = global_median_cache[0,j]
+
+    print("Removing redundant features according to correlation neighborhoods...")
+
+    # Compute the significant features using the correlation neighborhoods method
     if DESCRIPTOR_TO_RAM:
-        neighborhood_extractor.extract_features(NUM_FEATURES,descriptor_matrix,COVARIANCE_THRESHOLD,descriptors_map,active_fragments,inactive_fragments)
-
+        # neighborhood_extractor.extract_features(NUM_FEATURES,descriptor_matrix,COVARIANCE_THRESHOLD,descriptors_map,active_fragments,inactive_fragments)
+        neighborhood_extractor.extract_features(NUM_FEATURES,feature_matrix,COVARIANCE_THRESHOLD,descriptors_map,active_fragments,inactive_fragments)
 
     print("Actives imputation: starting out with %d features" % (feature_matrix.shape[1]))
     significant_features = np.genfromtxt(os.path.join(config.DATA_DIRECTORY,'significant_features'),delimiter=',')
     redundant_features = [i for i in all_features if i not in significant_features]
 
+    # Remove the redundant features from the feature matrix
     feature_matrix = np.delete(feature_matrix, redundant_features, 1)
-    print "Actives imputation: removed %d features with constant features and covariance neighborhoods, now have %d features, with the NUM_FEATURES \
-    parameters set to %d" % (len(redundant_features), len(significant_features), NUM_FEATURES)
+    print "Actives imputation: removed %d features with constant features and covariance neighborhoods, now have %d features, with the NUM_FEATURES parameters set to %d" % (len(redundant_features), len(significant_features), NUM_FEATURES)
+
     # Remove the redundant features from the degenerate features, since they have already
     # been removed
     for feature in redundant_features:
@@ -124,16 +132,9 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
         except IndexError:
             continue
 
-    # First remove all degenerate features
+    # Then remove all the degenerate features from the feature matrix
     feature_matrix = np.delete(feature_matrix, degenerate_features, 1)
     print "Actives imputation: removed degenerate features, now have %d features" % (feature_matrix.shape[1])
-    
-    # Now loop through the fragments and impute
-    for fragment in range(1, len(feature_matrix)):
-        # Obtain all descriptors that have non-numerical values for this fragment
-        nan_descriptors = np.where(np.isnan(feature_matrix[fragment]) == True)
-        for j in nan_descriptors:
-            feature_matrix[fragment, j] = global_median_cache[0,j]
 
     # Remove existing dataset files and flush new actives data
     with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'w+') as f_handle:
