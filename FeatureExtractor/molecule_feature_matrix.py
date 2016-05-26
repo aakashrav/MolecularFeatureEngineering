@@ -73,9 +73,9 @@ def _compute_feature_median(non_imputed_feature_matrix, descriptor_indice, molec
     if (len(global_descriptor_average_array) == 0):
         return np.nan
     else:
-        if (np.isfinite().all(global_descriptor_average_array) == False):
+        if (np.isfinite(global_descriptor_average_array).all() == False):
             input("What now boi?")
-            
+
         return np.median(global_descriptor_average_array)
 
 def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=None, active_fragments=None,
