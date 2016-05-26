@@ -62,10 +62,10 @@ def _compute_feature_median(non_imputed_feature_matrix, descriptor_indice, molec
         if (np.isnan(descriptor_values).any()):
             continue
         else:
-            if (np.mean(descriptor_values)==0):
+            if (np.mean(descriptor_values)==np.nan):
                 print(descriptor_values)
                 input("What now?")
-                
+
             global_descriptor_average_array.append(np.mean(descriptor_values))
     
     # If descriptor is defined for no molecule, it is a degenerate descriptor,
