@@ -184,7 +184,7 @@ def _read_descriptor_file(descriptor_file_name):
             if ix % 1000 == 0:
                 descriptors = np.vstack((descriptors, np.asarray(aux_descriptors)))
                 del aux_descriptors[:]
-                break
+                # break
             #print '{0}.'.format(ix)
         if len(aux_descriptors) > 0:
             descriptors = np.vstack((descriptors, np.asarray(aux_descriptors)))
