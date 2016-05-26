@@ -156,7 +156,8 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
 
 def _read_descriptor_file(descriptor_file_name):
     print("[{}] Reading descriptors file...".format(str(datetime.now())))
-    print(descriptor_file_name)
+    print("Descriptor file name: %s" % descriptor_file_name)
+
     # Read in fragments descriptors into an NP array
     descriptors = None
     # Store mapping between SMILES and indeces in a dictionary
@@ -178,21 +179,16 @@ def _read_descriptor_file(descriptor_file_name):
             line_split = line.rstrip().split(',')
             descriptors_smiles_to_ix[line_split[0].strip('"\'')] = ix
 
-            #descriptors_all_values = np.append(descriptors_all_values, [np.array(line_split[1:])], axis=0)
             aux_descriptors.append([float(x) if isfloat(x) else float('nan') for x in line_split[1:]])
             ix += 1
             if ix % 1000 == 0:
                 descriptors = np.vstack((descriptors, np.asarray(aux_descriptors)))
                 del aux_descriptors[:]
-                # break
-            #print '{0}.'.format(ix)
+
         if len(aux_descriptors) > 0:
             descriptors = np.vstack((descriptors, np.asarray(aux_descriptors)))
             del aux_descriptors[:]
 
-    # print(descriptors_smiles_to_ix)
-    # print(descriptors_smiles_to_ix['c(cc)(NC)c(C)c'])
-    # input("OK? Ldah..")
     return [descriptors_smiles_to_ix, descriptors]
 
 def _flush_metadata(global_median_cache, used_features):
@@ -663,9 +659,8 @@ def get_score(molecule):
     return molecule["score"]
 
 
-def get_AUC(molecule_names_and_activity, molecules_to_fragments, features_file, MODEL_DIRECTORY):
+def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY):
 
-    descriptors_map, descriptors = _read_descriptor_file(os.path.join(DATA_DIRECTORY,features_file))
     sorted_activity_list = []
 
     for test_molecule in molecule_names_and_activity:
@@ -698,11 +693,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, features_file, 
                     ix_f = descriptors_map[f]
                     current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
 
-                    # First, project the features of the current fragment into only the non-degenerate
-                    # feature space as learned from the training set.
-                    current_fragment = current_fragment[:,used_features]
-
-                    # Obtain all descriptors that have non-numerical values for this fragment
+                    # Obtain all feature values that have non-numerical values for this fragment
                     nan_descriptors = np.where(np.isnan(current_fragment) == True)
 
                     # Impute these non-numerical values with the values from the global median cache
@@ -710,11 +701,15 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, features_file, 
                     for j in nan_descriptors:
                         current_fragment[0,j] = global_median_cache[0,j]
 
+                    # Finally, project the features of the current fragment into only the non-degenerate
+                    # feature space as learned from the training set.
+                    current_fragment = current_fragment[:,used_features]
+
                     # Append this fragment to our feature matrix
                     np.vstack((feature_matrix,current_fragment))
-                    print("Key error AUC!")
+
                 except KeyError:
-                    print("Key error")
+                    print("Key error during AUC calculation!")
                     continue
 
         with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
@@ -830,7 +825,7 @@ def main():
 
     print("Getting AUC Score for current dataset...")
     # Get the AUC score for the testing data
-    print(get_AUC(testing_molecules,full_molecules_to_fragments,features_file,MOLECULAR_MODEL_DIRECTORY))
+    print(get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY))
 
 if __name__ == '__main__':
     main()
