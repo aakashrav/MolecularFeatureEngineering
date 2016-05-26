@@ -156,6 +156,7 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
 
 def _read_descriptor_file(descriptor_file_name):
     print("[{}] Reading descriptors file...".format(str(datetime.now())))
+    print(descriptor_file_name)
     # Read in fragments descriptors into an NP array
     descriptors = None
     # Store mapping between SMILES and indeces in a dictionary
