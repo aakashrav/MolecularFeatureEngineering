@@ -59,15 +59,10 @@ def _compute_feature_median(non_imputed_feature_matrix, descriptor_indice, molec
         descriptor_values = fragments_for_molecule[:,descriptor_indice]
         # If there doesn't exist any nan descriptor values for fragments of this molecule
         # we add it to the global average array.
-        if (np.isnan(descriptor_values).any()):
-            continue
-        else:
-            if (np.isfinite(np.mean(descriptor_values)) == False):
-                print(descriptor_values)
-                input("What now?")
-
+        if (np.isfinite(descriptor_values).all()):
             global_descriptor_average_array.append(np.mean(descriptor_values))
-    
+        else
+            continue
     # If descriptor is defined for no molecule, it is a degenerate descriptor,
     # So we return np.nan, else we return the median of the averages
     if (len(global_descriptor_average_array) == 0):
