@@ -564,7 +564,7 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     molecular_clusters.find_clusters(CLUSTER_FILENAME = os.path.join(config.DATA_DIRECTORY,"detected_clusters"),
         FEATURE_MATRIX_FILE = os.path.join(config.DATA_DIRECTORY,"molecular_feature_matrix.csv"),
         ELKI_EXECUTABLE=config.ELKI_EXECUTABLE,num_active_molecules=num_active_molecules,num_inactive_molecules=num_inactive_molecules,
-        parameter_dictionary["num_binding_sites"])
+        num_binding_sites=parameter_dictionary["num_binding_sites"])
 
     print "Finished search for molecular clusters..."
 
