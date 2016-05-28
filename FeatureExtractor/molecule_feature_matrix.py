@@ -541,15 +541,13 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 
         if scoring_method == 1:
             score = np.mean(np.asarray(distance_array))
-        else
+        else:
             score = np.min(np.asarray(distance_array))
 
         sorted_activity_list.append({"score":score,"activity":test_molecule["activity"]})
 
     sorted_activity_list = sorted(sorted_activity_list,key=get_score)
     return Scoring.CalcAUC(sorted_activity_list, "activity")
-
-
 
 
 def _molecular_model_creation(active_fragments,inactive_fragments,features_map, \
