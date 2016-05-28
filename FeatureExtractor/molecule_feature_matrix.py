@@ -473,7 +473,7 @@ def get_score(molecule):
 
 
 def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
-    global_median_cache,used_features):
+    global_median_cache,used_features,scoring_method):
 
     sorted_activity_list = []
 
@@ -538,7 +538,12 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         if (len(distance_array) == 0):
             continue
 
-        score = np.mean(np.asarray(distance_array))
+
+        if scoring_method == 1:
+            score = np.mean(np.asarray(distance_array))
+        else
+            score = np.min(np.asarray(distance_array))
+
         sorted_activity_list.append({"score":score,"activity":test_molecule["activity"]})
 
     sorted_activity_list = sorted(sorted_activity_list,key=get_score)
@@ -547,7 +552,8 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 
 
 
-def _molecular_model_creation(active_fragments,inactive_fragments,features_map,features_matrix,num_active_molecules,num_inactive_molecules):
+def _molecular_model_creation(active_fragments,inactive_fragments,features_map, \
+    features_matrix,num_active_molecules,num_inactive_molecules,parameter_dictionary):
 
     # Retrieve the molecular feature matrix corresponding to our dataset and 
     # flush it to file
@@ -559,13 +565,17 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map,f
     # Find the clusters using ELKI
     molecular_clusters.find_clusters(CLUSTER_FILENAME = os.path.join(config.DATA_DIRECTORY,"detected_clusters"),
         FEATURE_MATRIX_FILE = os.path.join(config.DATA_DIRECTORY,"molecular_feature_matrix.csv"),
-        ELKI_EXECUTABLE=config.ELKI_EXECUTABLE,num_active_molecules=num_active_molecules,num_inactive_molecules=num_inactive_molecules)
+        ELKI_EXECUTABLE=config.ELKI_EXECUTABLE,num_active_molecules=num_active_molecules,num_inactive_molecules=num_inactive_molecules,
+        mu=parameter_dictionary["num_binding_sites"])
+
     print "Finished search for molecular clusters..."
 
     # Analyze the clusters and output the most pure and diverse ones
     print "Starting analysis and pruning of found clusters..."
-    PURITY_THRESHOLD = .5
-    DIVERSITY_THRESHOLD = num_active_molecules * .6
+    # PURITY_THRESHOLD = .5
+    PURITY_THRESHOLD = parameter_dictionary["PURITY_THRESHOLD"]
+    # DIVERSITY_THRESHOLD = num_active_molecules * .6
+    DIVERSITY_THRESHOLD = num_active_molecules * parameter_dictionary["DIVERSITY_THRESHOLD"]
     DIVERSITY_PERCENTAGE = False
     cluster_analysis.create_cluster_centroid_model(PURITY_THRESHOLD, DIVERSITY_THRESHOLD, DIVERSITY_PERCENTAGE)
     print "Finished analysis and pruning of clusters! Clusters' model available in data directory for querying with \
@@ -611,21 +621,31 @@ def main():
 
     print("Creating molecular feature model...")
 
-    # Create the molecular model
-    [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules))
+    for num_binding_sites in [1,2,3,5]:
+        for DIVERSITY_THRESHOLD in [.5,.6.,.7,.8]:
+            for PURITY_THRESHOLD in [.2,.3,.4,.5]:
+                for scoring_method in [1,2]:
 
-    print("Finished creating molecular feature model, beginning testing...")
+                    parameter_dictionary = {"num_binding_sites":num_binding_sites,"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
+                        "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method}
 
-    testing_molecules = training_test_molecules["data"]["test"]
+                    # Create the molecular model
+                    [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary)
 
-    # Combined active and inactive molecular fragments
-    full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
+                    print("Finished creating molecular feature model, beginning testing...")
 
-    print("Getting AUC Score for current dataset...")
-    # Get the AUC score for the testing data
-    print("AUC Score for the current dataset:")
-    print(get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features))
+                    testing_molecules = training_test_molecules["data"]["test"]
 
+                    # Combined active and inactive molecular fragments
+                    full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
+
+                    print("Getting AUC Score for current dataset...")
+                    # Get the AUC score for the testing data
+                    print("AUC Score for the current parameters: ")
+                    print(parameter_dictionary)
+                    print(get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"]))
+    
+    print("Finished computation of AUCs.")
 if __name__ == '__main__':
     main()
     

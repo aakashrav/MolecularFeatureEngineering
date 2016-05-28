@@ -5,7 +5,7 @@ import config
 import subprocess
 
 def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,
-    num_active_molecules,num_inactive_molecules):
+    num_active_molecules,num_inactive_molecules,num_binding_sites):
 
     with open(CLUSTER_FILENAME,'w+') as f_handle:
         
