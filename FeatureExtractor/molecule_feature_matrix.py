@@ -729,7 +729,8 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
             print("closest_centroid_distance:%d" % closest_centroid_distance)
             distance_array.append(closest_centroid_distance)
 
-        print("Distance array! %d" % feature.matrix.shape[0])
+        print("Distance array! %d" % feature_matrix.shape[0])
+        print(feature_matrix)
         print(distance_array)
         input("Now what?")
         score = np.mean(np.asarray(distance_array))
