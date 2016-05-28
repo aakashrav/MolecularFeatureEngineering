@@ -96,7 +96,7 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
     for descriptor in range(0,feature_matrix.shape[1]):
         global_descriptor_median = _compute_feature_median(feature_matrix, descriptor,
                 molecule_keys)
-        if (np.isnan(global_descriptor_median)):
+        if (not np.isfinite(global_descriptor_median)):
             degenerate_features.append(descriptor)
         global_median_cache[0,descriptor] = global_descriptor_median
     
@@ -105,7 +105,7 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
     # Now, loop through the fragments and impute using the global median cache
     for fragment in range(1, len(feature_matrix)):
         # Obtain all descriptors that have non-numerical values for this fragment
-        nan_descriptors = np.where(np.isnan(feature_matrix[fragment]) == True)
+        nan_descriptors = np.where(np.isfinite(feature_matrix[fragment]) != True)
         for j in nan_descriptors:
             feature_matrix[fragment, j] = global_median_cache[0,j]
 
@@ -457,7 +457,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
                         current_fragment = descriptors[ix_f]
 
                         # Obtain all descriptors that have non-numerical values for this fragment
-                        nan_descriptors = np.where(np.isnan(current_fragment) == True)
+                        nan_descriptors = np.where(np.isfinite(current_fragment) != True)
 
                         for j in nan_descriptors:
                             current_fragment[j] = global_median_cache[0,j]
@@ -700,7 +700,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                     current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
 
                     # Obtain all feature values that have non-numerical values for this fragment
-                    nan_descriptors = np.where(np.isnan(current_fragment) == True)
+                    nan_descriptors = np.where(np.isfinite(current_fragment) != True)
 
                     # Impute these non-numerical values with the values from the global median cache
                     # which was again, obtained from the training set.
