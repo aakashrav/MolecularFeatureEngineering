@@ -646,6 +646,8 @@ def create_feature_matrix(features_file,active_fragments,inactive_fragments,desc
     # Flush statistics on molecules
     _flush_metadata(global_median_cache, used_features)
 
+    return [global_median_cache,used_features]
+
 def _compute_subspace_distance(point_1,point_2,subspace):
     "A helper function that computes the distance between point 1 and point 2, when projected to the \
     specified subspace."
@@ -662,7 +664,8 @@ def get_score(molecule):
     return molecule["score"]
 
 
-def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY):
+def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
+    global_median_cache,used_features):
 
     sorted_activity_list = []
 
@@ -675,11 +678,11 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         full_fragments = full_fragments[0]
         fragments = [fragment["smiles"] for fragment in full_fragments]
 
-        with open(os.path.join(ROOT_DIR_METADATA,'global_median_cache.pkl'),'r') as f_handle:
-            global_median_cache = pickle.load(f_handle)
+        # with open(os.path.join(ROOT_DIR_METADATA,'global_median_cache.pkl'),'r') as f_handle:
+        #     global_median_cache = pickle.load(f_handle)
 
-        with open(os.path.join(ROOT_DIR_METADATA,'used_features.pkl'),'r') as f_handle:
-            used_features = pickle.load(f_handle)
+        # with open(os.path.join(ROOT_DIR_METADATA,'used_features.pkl'),'r') as f_handle:
+        #     used_features = pickle.load(f_handle)
 
         found_fragments = []
         feature_matrix = np.empty((0,len(used_features)))
@@ -759,7 +762,7 @@ def molecular_model_creation(features_file,active_fragments,inactive_fragments,f
     # Retrieve the molecular feature matrix corresponding to our dataset and 
     # flush it to file
     # create_feature_matrix(features_file, fragments_file ,actives, inactives, output_details=False)
-    create_feature_matrix(features_file, active_fragments, inactive_fragments,features_map,features_matrix,output_details=False)
+    [global_median_cache,used_features] = create_feature_matrix(features_file, active_fragments, inactive_fragments,features_map,features_matrix,output_details=False)
     print "Finished molecular feature matrix creation."
 
     print "Starting search of molecular clusters..."
@@ -776,6 +779,8 @@ def molecular_model_creation(features_file,active_fragments,inactive_fragments,f
     DIVERSITY_PERCENTAGE = False
     cluster_analysis.create_cluster_centroid_model(PURITY_THRESHOLD, DIVERSITY_THRESHOLD, DIVERSITY_PERCENTAGE)
     print "Finished analysis and pruning of clusters! Clusters model available in data directory for querying."
+
+    return [global_median_cache,used_features]
 
 def main():
     actives_fragment_file = sys.argv[1] # Check
@@ -816,7 +821,7 @@ def main():
     features = MolecularPreprocessing.remove_constant_features(features)
 
     # Create the molecular model
-    molecular_model_creation(features_file,active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules))
+    [global_median_cache, used_features] = molecular_model_creation(features_file,active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules))
     # molecular_model_creation(active_training_molecules,inactive_training_molecules,features_file,len(active_training_molecules),len(inactive_training_molecules))
     
     print("Finished molecular feature model creation...")
@@ -828,7 +833,7 @@ def main():
 
     print("Getting AUC Score for current dataset...")
     # Get the AUC score for the testing data
-    print(get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY))
+    print(get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features))
 
 if __name__ == '__main__':
     main()
