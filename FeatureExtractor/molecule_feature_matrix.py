@@ -109,32 +109,29 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
         for j in nan_descriptors:
             feature_matrix[fragment, j] = global_median_cache[0,j]
 
-    print("Removing redundant features according to correlation neighborhoods...")
+    # Then remove all the degenerate features from the feature matrix
+    feature_matrix = np.delete(feature_matrix, degenerate_features, 1)
+    print "Actives imputation: removed degenerate features, now have %d features" % (feature_matrix.shape[1])
 
     # Compute the significant features using the correlation neighborhoods method
     if DESCRIPTOR_TO_RAM:
         # neighborhood_extractor.extract_features(NUM_FEATURES,descriptor_matrix,COVARIANCE_THRESHOLD,descriptors_map,active_fragments,inactive_fragments)
         neighborhood_extractor.extract_features(NUM_FEATURES,feature_matrix,COVARIANCE_THRESHOLD,descriptors_map,active_fragments,inactive_fragments)
 
-    print("Actives imputation: starting out with %d features" % (feature_matrix.shape[1]))
     significant_features = np.genfromtxt(os.path.join(config.DATA_DIRECTORY,'significant_features'),delimiter=',')
-    redundant_features = [i for i in all_features if i not in significant_features]
+    redundant_features = [i for i in (feature_matrix.shape[1]-1) if i not in significant_features]
 
     # Remove the redundant features from the feature matrix
     feature_matrix = np.delete(feature_matrix, redundant_features, 1)
     print "Actives imputation: removed %d features with constant features and covariance neighborhoods, now have %d features, with the NUM_FEATURES parameters set to %d" % (len(redundant_features), len(significant_features), NUM_FEATURES)
 
-    # Remove the redundant features from the degenerate features, since they have already
-    # been removed
-    for feature in redundant_features:
-        try:
-            degenerate_features = np.delete(degenerate_features,feature,1)
-        except IndexError:
-            continue
-
-    # Then remove all the degenerate features from the feature matrix
-    feature_matrix = np.delete(feature_matrix, degenerate_features, 1)
-    print "Actives imputation: removed degenerate features, now have %d features" % (feature_matrix.shape[1])
+    # # Remove the redundant features from the degenerate features, since they have already
+    # # been removed
+    # for feature in redundant_features:
+    #     try:
+    #         degenerate_features = np.delete(degenerate_features,feature,1)
+    #     except IndexError:
+    #         continue
 
     # Remove existing dataset files and flush new actives data
     with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'w+') as f_handle:
