@@ -17,9 +17,6 @@ import time
 # import matplotlib.mlab as mlab
 
 
-_dish_clustering_parameters_method = {"silhouette":0, "calinsky":1}
-
-
 class Cluster:
     def __init__(self):
         self.points = []
@@ -66,100 +63,6 @@ class Cluster:
     def set_descriptor_averages(self, new_values):
         self.descriptor_averages = new_values
 
-def compute_silhouette(point, cluster, other_clusters, point_index):
-    
-    dissimilarity_indices = [0,0]
-
-    intracluster_dissimilarity = 0
-
-    # If cluster is a noise cluster, we use all dimensions
-    if (any(cluster.get_subspace_mask())):
-        projected_point = [value if cluster.get_subspace_mask()[index] == 1 else 0 for index,value in enumerate(point)]
-    # else:
-    #     For now when we deal with noisy clusters, we just return -1 for the cluster
-    #     projected_point = point
-    #     return ((-1)/cluster.get_num_points())
-
-
-    for other_point in [value for index,value in enumerate(cluster.get_points()) if index!=point_index]:
-
-        # If cluster is a noise cluster, we use all dimensions
-        if (any(cluster.get_subspace_mask())):
-            projected_other_point = [value if cluster.get_subspace_mask()[index] == 1 else 0 for index,value in enumerate(other_point)]
-        # else:
-        #     projected_other_point = other_point
-
-        intracluster_dissimilarity+= np.linalg.norm(np.subtract(projected_point, projected_other_point))
-
-    intracluster_dissimilarity /= cluster.get_num_points()
-    dissimilarity_indices[0] = intracluster_dissimilarity
-    
-    # Dissimilarity must always be positive, so we ensure that the following code updates this value
-    min_alternate_dissimilarity = -1
-
-    for cluster in other_clusters:
-        intercluster_dissimilarity = 0
-        for other_point in cluster.get_points():
-
-            projected_other_point = [value if cluster.get_subspace_mask()[index] == 1 else 0 for index,value in enumerate(other_point)]
-
-            intercluster_dissimilarity+= np.linalg.norm(np.subtract(projected_point, projected_other_point))
-
-        intercluster_dissimilarity /= cluster.get_num_points()
-        
-        # We are in the first iteration, so update
-        if (min_alternate_dissimilarity == -1):
-        	min_alternate_dissimilarity = intercluster_dissimilarity
-        # Found a new lowest dissimilarity value
-        elif (min_alternate_dissimilarity > intercluster_dissimilarity):
-        	min_alternate_dissimilarity = intercluster_dissimilarity
-        else:
-        	continue
-    
-    # No update to the min alternate dissimilarity has been made, so we return error value
-    if (min_alternate_dissimilarity == -1):
-        return -3
-
-    dissimilarity_indices[1] = min_alternate_dissimilarity
-    
-    silhouette = (dissimilarity_indices[1] - dissimilarity_indices[0])/max(dissimilarity_indices[0], dissimilarity_indices[1])
-    
-    return silhouette
-
-
-
-def calculate_clustering_metric(method,clusters):
-    "Clusters are given in GNUPlot mode by ELKI, this function extracts the clusters and returns an \
-    array of Cluster objects."
-
-    try:
-        choice = _dish_clustering_parameters_method[method.lower()]
-    except KeyError:
-        return -2
-
-    if (choice == 0):
-
-        silhouettes = []
-
-        for i in range(len(clusters)):
-            # If the cluster is a noise cluster, move on
-            if not(any(clusters[i].get_subspace_mask())):
-                print "Skipped!"
-                continue
-            cluster_silhouettes = [0] * clusters[i].get_num_points()
-            other_clusters  = [cluster for index,cluster in enumerate(clusters) if index!=i]
-            for j in range(clusters[i].get_num_points()):
-                cluster_silhouettes[j] = compute_silhouette(clusters[i].get_points()[j],\
-                    clusters[i], other_clusters, j)
-
-            silhouettes.extend(cluster_silhouettes)
-        
-        try:
-            return sum(silhouettes)/len(silhouettes)
-        except ZeroDivisionError:
-            print "Silhouettes have length 0: %d" % (len(silhouettes))
-            return -2
-        
 
 def extract_clusters_from_file(filename):
     clusters = []
@@ -405,16 +308,6 @@ def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversi
 
     with open(os.path.join(CLUSTER_DIRECTORY,'molecular_cluster_model.pkl'),'w+') as f_handle:
         pickle.dump(molecular_cluster_model, f_handle, pickle.HIGHEST_PROTOCOL)
-
-    # silhouette_metric = calculate_clustering_metric("silhouette", active_clusters
-
-    # if (silhouette_metric == -2):
-    #     print "Error on silhouette metric %d" % (-2)
-    # elif (silhouette_metric == -3):
-    #     # TODO, JUST CHECK LENGTH AT BEGINNING AND RETURN
-    #     print "Only one input cluster, silhouette metric irrelevant"
-    # else:
-    #     print "Silhouette: %d" % (silhouette_metric)
 
 def dish_main():
 

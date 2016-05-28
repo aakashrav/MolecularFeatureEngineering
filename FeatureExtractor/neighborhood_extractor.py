@@ -37,8 +37,7 @@ def _read_descriptor_file(descriptor_file_name):
 
     return descriptors
 
-def extract_features(NUM_FEATURES, feature_matrix, covariance_threshold = .80, descriptors_map=None,
-    active_fragments=None, inactive_fragments=None):
+def extract_features(NUM_FEATURES, feature_matrix, covariance_threshold = .80):
 
     all_features = np.arange(feature_matrix.shape[1])
     # Keep track of the features

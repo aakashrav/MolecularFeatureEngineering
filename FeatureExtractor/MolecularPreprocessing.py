@@ -3,48 +3,9 @@ import os
 import sys
 import csv
 
-def _create_feature_matrix(features_file):
-    feature_matrix = None
-    molecule_names = []
-
-    with open(features_file,'rb') as input_stream:
-
-        header = input_stream.readline().rstrip().split(',')
-
-        for line in input_stream:
-            line = line.rstrip().split(',')
-            name = line[0][1:-1]
-
-            if (feature_matrix is None):
-                feature_matrix = np.empty((0, len(header)-1))
-
-            molecule_descriptor_row = np.empty((1, len(header)-1))
-            molecule_names.append(name)
-
-            # Next we just copy the newly obtained features into our feature matrix
-            # If the feature is not a number, we explicitly input np.nan
-            # Need the for loop since we may have NaNs
-            for j in range(1, molecule_descriptor_row.shape[1]):
-                try:
-                    molecule_descriptor_row[0,j] = float(line[j])
-                except ValueError:
-                    molecule_descriptor_row[0,j] = np.nan
-
-            # Finally append the row to our matrix
-            feature_matrix = np.vstack((feature_matrix, molecule_descriptor_row))
-    
-    feature_matrix = np.hstack((np.asarray(molecule_names).reshape(feature_matrix.shape[0],1),feature_matrix))
-    feature_matrix = np.vstack((np.asarray(header).reshape(1,feature_matrix.shape[1]),feature_matrix))
-    return feature_matrix
-
 def remove_constant_features(feature_matrix):
-    # if (features_file == None) or (output_features_file == None):
-    #     features_file = sys.argv[1]
-    #     output_features_file = sys.argv[2]
 
-    # feature_matrix = _create_feature_matrix(features_file) 
-
-    print("Features remaining before constant feature removal: %d", feature_matrix.shape[1])
+    print("Features remaining before constant feature removal: %d" % feature_matrix.shape[1])
 
     # V1
     # CONSTANT_FEATURE_REMOVAL_RATIO = .7 
@@ -67,14 +28,6 @@ def remove_constant_features(feature_matrix):
 
     feature_matrix = np.delete(feature_matrix,all_constant_features,1) 
 
-    print("Features remaining after constant feature removal: %d", feature_matrix.shape[1])
+    print("Features remaining after constant feature removal: %d" % feature_matrix.shape[1])
 
     return feature_matrix
-
-    # Save the data manually, NumPy savetxt seems to be giving problems
-    # with open(output_features_file,'w+') as f_handle:
-    #     for row in feature_matrix:
-    #         for i in range(0,len(row)-1):
-    #             f_handle.write(str(row[i])+",")
-    #         f_handle.write(row[len(row)-1])
-    #         f_handle.write("\n")
