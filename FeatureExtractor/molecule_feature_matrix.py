@@ -214,7 +214,7 @@ def _flush_metadata(global_median_cache, used_features):
     with open(os.path.join(DATA_DIRECTORY,"inactives_fragment_molecule_mapping.pkl"), 'wb+') as f_handle:
         pickle.dump(inactives_fragment_molecule_mapping, f_handle, pickle.HIGHEST_PROTOCOL)
 
-def _load_matrix_sdf(molecules_to_fragments,output_details=0,
+def _load_matrix_sdf(molecules_to_fragments,
     descriptors_map, descriptors):
 
     # Keep a list of already found fragments for metadata storage
@@ -423,7 +423,7 @@ def _normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_ma
     os.rename(os.path.join(DATA_DIRECTORY,"temp_file"), molecule_feature_matrix_file)
     return [max_feature_array,min_feature_array]
 
-def _create_feature_matrix(active_fragments,inactive_fragments,descriptors_map,descriptors,output_details=False):
+def _create_feature_matrix(active_fragments,inactive_fragments,descriptors_map,descriptors):
     #TODO: description
 
     if not os.path.exists(DATA_DIRECTORY):
@@ -433,7 +433,7 @@ def _create_feature_matrix(active_fragments,inactive_fragments,descriptors_map,d
         os.makedirs(DATA_DIRECTORY)
 
     # Load the non-imputed actives' feature matrix
-    [non_imputed_feature_matrix,FRAGMENT_COUNT] = _load_matrix_sdf(active_fragments,output_details=1, 
+    [non_imputed_feature_matrix,FRAGMENT_COUNT] = _load_matrix_sdf(active_fragments, 
         descriptors_map = descriptors_map, descriptors=descriptors)
 
     print("Beginning imputation of actives feature matrix and creation of global median cache...")
@@ -552,7 +552,7 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map,f
     # Retrieve the molecular feature matrix corresponding to our dataset and 
     # flush it to file
     print("Creating molecular feature matrix...")
-    [global_median_cache,used_features] = _create_feature_matrix(features_file, active_fragments, inactive_fragments,features_map,features_matrix,output_details=False)
+    [global_median_cache,used_features] = _create_feature_matrix(features_file, active_fragments, inactive_fragments,features_map,features_matrix)
     print("Finished molecular feature matrix creation...")
 
     print "Starting search for molecular clusters..."
