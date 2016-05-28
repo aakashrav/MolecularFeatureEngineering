@@ -561,6 +561,10 @@ def normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max
                     #     # value in range [0,1] - in this case 1.
                     #     next_observation[feature] = 1
                     #     continue
+
+                    if feature_max[feature] == feature_min[feature]:
+                        next_observation[feature] = 1
+                        continue
                     
                     try:
                         next_observation[feature] = (next_observation[feature] - feature_min[feature]) / (feature_max[feature] - feature_min[feature])
