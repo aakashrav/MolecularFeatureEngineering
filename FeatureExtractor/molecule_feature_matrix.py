@@ -620,7 +620,7 @@ def main():
     print("Creating molecular feature model...")
 
     for num_binding_sites in [1,2,3,5]:
-        for DIVERSITY_THRESHOLD in [.5,.6.,.7,.8]:
+        for DIVERSITY_THRESHOLD in [.5,.6,.7,.8]:
             for PURITY_THRESHOLD in [.2,.3,.4,.5]:
                 for scoring_method in [1,2]:
 
