@@ -12,7 +12,7 @@ FLUSH_BUFFER_SIZE = 100
 DESCRIPTOR_TO_RAM = 1
 
 # Parameters for determining significant features using covariance neighborhoods
-NUM_FEATURES = 50
+NUM_FEATURES = 500
 COVARIANCE_THRESHOLD = .80
 
 # Cluster extraction and pruning parameters

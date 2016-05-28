@@ -265,4 +265,4 @@ def identify_correlated_features( feature_matrix, \
     if (len(significant_features) <= num_features):
         return significant_features
     else:
-        return significant_features[0:num_features-1]
+        return significant_features[0:num_features]
