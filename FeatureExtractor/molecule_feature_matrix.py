@@ -119,7 +119,7 @@ def _actives_feature_impute(feature_matrix, descriptor_matrix, descriptors_map=N
         neighborhood_extractor.extract_features(NUM_FEATURES,feature_matrix,COVARIANCE_THRESHOLD,descriptors_map,active_fragments,inactive_fragments)
 
     significant_features = np.genfromtxt(os.path.join(config.DATA_DIRECTORY,'significant_features'),delimiter=',')
-    redundant_features = [i for i in (feature_matrix.shape[1]-1) if i not in significant_features]
+    redundant_features = [i for i in range(feature_matrix.shape[1]) if i not in significant_features]
 
     # Remove the redundant features from the feature matrix
     feature_matrix = np.delete(feature_matrix, redundant_features, 1)
