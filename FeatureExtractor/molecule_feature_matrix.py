@@ -552,7 +552,7 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map,f
     # Retrieve the molecular feature matrix corresponding to our dataset and 
     # flush it to file
     print("Creating molecular feature matrix...")
-    [global_median_cache,used_features] = _create_feature_matrix(features_file, active_fragments, inactive_fragments,features_map,features_matrix)
+    [global_median_cache,used_features] = _create_feature_matrix(active_fragments, inactive_fragments,features_map,features_matrix)
     print("Finished molecular feature matrix creation...")
 
     print "Starting search for molecular clusters..."
