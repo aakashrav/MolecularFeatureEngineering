@@ -638,10 +638,13 @@ def main():
                     full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
 
                     print("Getting AUC Score for current dataset...")
-                    # Get the AUC score for the testing data
-                    print("AUC Score for the current parameters: ")
-                    print(parameter_dictionary)
-                    print(get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"]))
+                    with open("results",'w+') as f_handle:
+                        # Get the AUC score for the testing data
+                        f_handle.write("AUC Score for the current parameters:\n")
+                        f_handle.write(parameter_dictionary)
+                        f_handle.write("\n")
+                        f_handle.write(get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"]))
+                        f_handle.write("\n")
     
     print("Finished computation of AUCs.")
 if __name__ == '__main__':
