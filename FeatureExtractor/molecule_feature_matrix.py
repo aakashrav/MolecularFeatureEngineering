@@ -644,7 +644,7 @@ def main():
                         json.dump(parameter_dictionary, f_handle)
                         f_handle.write("\n")
                         AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
-                        f_handle.write(AUC_SCORE)
+                        f_handle.write(str(AUC_SCORE))
                         f_handle.write("\n")
     
     print("Finished computation of AUCs.")
