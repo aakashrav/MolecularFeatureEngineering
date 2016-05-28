@@ -534,10 +534,10 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 
             distance_array.append(closest_centroid_distance)
         
-        if (len(distance_array) == 0)
+        if (len(distance_array) == 0):
             print(feature_matrix.shape[0])
             input("GENERATION WHAT")
-            
+
         score = np.mean(np.asarray(distance_array))
         sorted_activity_list.append({"score":score,"activity":test_molecule["activity"]})
 
