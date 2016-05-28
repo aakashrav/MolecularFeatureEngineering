@@ -726,10 +726,12 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
             closest_centroid_distance = np.min([ _compute_subspace_distance(feature_matrix[i],molecular_cluster_model[j]['centroid'],molecular_cluster_model[j]['subspace']) \
                 for j in range(len(molecular_cluster_model))])
 
+            print("closest_centroid_distance:%d" % closest_centroid_distance)
             distance_array.append(closest_centroid_distance)
 
-        print("Distance array!")
+        print("Distance array! %d" % feature.matrix.shape[0])
         print(distance_array)
+        input("Now what?")
         score = np.mean(np.asarray(distance_array))
         sorted_activity_list.append({"score":score,"activity":test_molecule["activity"]})
 
