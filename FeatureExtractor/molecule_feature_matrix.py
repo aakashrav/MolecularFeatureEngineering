@@ -708,7 +708,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                     current_fragment = current_fragment[:,used_features]
 
                     # Append this fragment to our feature matrix
-                    np.vstack((feature_matrix,current_fragment))
+                    feature_matrix = np.vstack((feature_matrix,current_fragment))
 
                 except KeyError:
                     print("Key error during AUC calculation!")
