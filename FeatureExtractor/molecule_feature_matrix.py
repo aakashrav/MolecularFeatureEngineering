@@ -618,27 +618,27 @@ def main():
     features = MolecularPreprocessing.remove_constant_features(features)
 
     print("Creating molecular feature model...")
+    
+    with open("results",'w+') as f_handle:
+        for num_binding_sites in [1,2,3,5]:
+            for DIVERSITY_THRESHOLD in [.5,.6,.7,.8]:
+                for PURITY_THRESHOLD in [.2,.3,.4,.5]:
+                    for scoring_method in [1,2]:
 
-    for num_binding_sites in [1,2,3,5]:
-        for DIVERSITY_THRESHOLD in [.5,.6,.7,.8]:
-            for PURITY_THRESHOLD in [.2,.3,.4,.5]:
-                for scoring_method in [1,2]:
+                        parameter_dictionary = {"num_binding_sites":num_binding_sites,"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
+                            "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method}
 
-                    parameter_dictionary = {"num_binding_sites":num_binding_sites,"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
-                        "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method}
+                        # Create the molecular model
+                        [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary)
 
-                    # Create the molecular model
-                    [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary)
+                        print("Finished creating molecular feature model, beginning testing...")
 
-                    print("Finished creating molecular feature model, beginning testing...")
+                        testing_molecules = training_test_molecules["data"]["test"]
 
-                    testing_molecules = training_test_molecules["data"]["test"]
+                        # Combined active and inactive molecular fragments
+                        full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
 
-                    # Combined active and inactive molecular fragments
-                    full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
-
-                    print("Getting AUC Score for current dataset...")
-                    with open("results",'w+') as f_handle:
+                        print("Getting AUC Score for current dataset...")
                         # Get the AUC score for the testing data
                         f_handle.write("AUC Score for the current parameters:\n")
                         json.dump(parameter_dictionary, f_handle)
