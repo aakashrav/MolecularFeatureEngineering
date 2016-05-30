@@ -37,14 +37,14 @@ def _read_descriptor_file(descriptor_file_name):
 
     return descriptors
 
-def extract_features(NUM_FEATURES, feature_matrix, covariance_threshold = .80):
+def extract_features(NUM_FEATURES, feature_matrix, correlation_threshold = .80):
 
     all_features = np.arange(feature_matrix.shape[1])
     # Keep track of the features
     feature_matrix = np.vstack((all_features, feature_matrix))
     
     # Prune heavily correlated features
-    correlation_representatives = correlation_identifier.identify_correlated_features(feature_matrix[1:], NUM_FEATURES,covariance_threshold)
+    correlation_representatives = correlation_identifier.identify_correlated_features(feature_matrix[1:], NUM_FEATURES,correlation_threshold)
     feature_matrix = feature_matrix[:,correlation_representatives]
     significant_features = feature_matrix[0]
 

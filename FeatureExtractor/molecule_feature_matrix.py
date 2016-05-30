@@ -25,7 +25,7 @@ from rdkit.ML.Scoring import Scoring
 FLUSH_BUFFER_SIZE = config.FLUSH_BUFFER_SIZE
 DESCRIPTOR_TO_RAM = config.DESCRIPTOR_TO_RAM
 NUM_FEATURES = config.NUM_FEATURES
-COVARIANCE_THRESHOLD = config.COVARIANCE_THRESHOLD
+CORRELATION_THRESHOLD = config.CORRELATION_THRESHOLD
 DATA_DIRECTORY = config.DATA_DIRECTORY
 DEBUG = config.DEBUG
 
@@ -114,7 +114,7 @@ def _actives_feature_impute(feature_matrix):
 
     # Compute the significant features using the correlation neighborhoods method
     if DESCRIPTOR_TO_RAM:
-        neighborhood_extractor.extract_features(NUM_FEATURES,feature_matrix,COVARIANCE_THRESHOLD)
+        neighborhood_extractor.extract_features(NUM_FEATURES,feature_matrix,CORRELATION_THRESHOLD)
 
     significant_features = np.genfromtxt(os.path.join(config.DATA_DIRECTORY,'significant_features'),delimiter=',')
     redundant_features = [i for i in range(feature_matrix.shape[1]) if i not in significant_features]
@@ -586,6 +586,7 @@ def main():
     inactives_fragment_file = sys.argv[2] 
     features_file = sys.argv[3]
     training_test_split_file = sys.argv[4]
+    results_file = sys.argv[5]
     MOLECULAR_MODEL_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
 
     with open(training_test_split_file,"r+") as f_handle:
@@ -619,7 +620,7 @@ def main():
 
     print("Creating molecular feature model...")
     
-    with open("results",'w+') as f_handle:
+    with open(results_file,'w+') as f_handle:
         for num_binding_sites in [1,2,3,5]:
             for DIVERSITY_THRESHOLD in [.5,.6,.7,.8]:
                 for PURITY_THRESHOLD in [.2,.3,.4,.5]:
