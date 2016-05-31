@@ -123,14 +123,6 @@ def _actives_feature_impute(feature_matrix):
     feature_matrix = np.delete(feature_matrix, redundant_features, 1)
     print "Actives imputation: removed %d features with constant features and covariance neighborhoods, now have %d features, with the NUM_FEATURES parameters set to %d" % (len(redundant_features), len(significant_features), NUM_FEATURES)
 
-    # # Remove the redundant features from the degenerate features, since they have already
-    # # been removed
-    # for feature in redundant_features:
-    #     try:
-    #         degenerate_features = np.delete(degenerate_features,feature,1)
-    #     except IndexError:
-    #         continue
-
     # Remove existing dataset files and flush new actives data
     with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'w+') as f_handle:
         np.savetxt(f_handle, feature_matrix[1:,:], delimiter=',',fmt='%5.5f')
@@ -620,7 +612,7 @@ def main():
 
     print("Creating molecular feature model...")
     
-    with open(results_file,'w+') as f_handle:
+    with open(results_file2,'w+') as f_handle:
         for num_binding_sites in [1,2,3,5]:
             for DIVERSITY_THRESHOLD in [.5,.6,.7,.8]:
                 for PURITY_THRESHOLD in [.2,.3,.4,.5]:

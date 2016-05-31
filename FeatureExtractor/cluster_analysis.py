@@ -123,7 +123,7 @@ def prune_clusters(clusters, fragment_name_number_mapping, active_fragment_molec
     diversity_threshold = 5, percentage = False, \
     purity_threshold = .3, test = False):
 
-    print "Clusters before %d" % (len(clusters))
+    print("Clusters before %d" % (len(clusters)))
 
     if percentage:
         diversity_threshold = diversity_threshold * len(active_fragment_molecule_mapping) 
@@ -132,7 +132,7 @@ def prune_clusters(clusters, fragment_name_number_mapping, active_fragment_molec
     purity_threshold_weighting = compute_threshold_weighting(active_fragment_molecule_mapping, inactive_fragment_molecule_mapping)
     purity_threshold /= purity_threshold_weighting
 
-    print "Purity threshold with weighting: %f" % purity_threshold
+    print("Purity threshold with weighting: %f" % purity_threshold)
     
     degenerate_clusters = []
     
@@ -195,10 +195,10 @@ def prune_clusters(clusters, fragment_name_number_mapping, active_fragment_molec
     # Get final unique list of all non-significant clusters
     degenerate_clusters = np.unique(degenerate_clusters)
 
-    print "Degenerate clusters: %s" % degenerate_clusters
+    print("Degenerate clusters: %s" % degenerate_clusters)
     significant_clusters = [cluster for index, cluster in enumerate(clusters) if index not in degenerate_clusters]
 
-    print "Clusters after %d" % (len(significant_clusters))
+    print("Clusters after %d" % (len(significant_clusters)))
     return significant_clusters
 
 
@@ -449,29 +449,34 @@ def dish_main():
     # Take the average
     scatterplot_scores = scatterplot_scores/scatterplot_scores_num
 
-    #setup the 2D grid with Numpy
-    x, y = np.meshgrid(scatterplot_x, scatterplot_y)
+    print(scatterplot_x)
+    print(scatterplot_y)
 
-    plt.xlabel('Epsilon')
-    plt.ylabel('NumPoints')
+    # #setup the 2D grid with Numpy
+    # x, y = np.meshgrid(scatterplot_x, scatterplot_y)
 
-    #now just plug the data into pcolormesh, it's that easy!
-    plt.pcolormesh(x, y, scatterplot_scores)
-    plt.colorbar() #need a colorbar to show the intensity scale
-    plt.show() #boom
+    # plt.xlabel('Epsilon')
+    # plt.ylabel('NumPoints')
 
-    plt.clf()
+    # #now just plug the data into pcolormesh, it's that easy!
+    # plt.pcolormesh(x, y, scatterplot_scores)
+    # plt.colorbar() #need a colorbar to show the intensity scale
+    # plt.show() #boom
 
-    # The histogram of the data
-    n, bins, patches = plt.hist(dataset_scores, 50, normed=1, facecolor='green', alpha=0.75)
+    # plt.clf()
 
-    plt.xlabel('Score')
-    plt.ylabel('Datasets')
-    plt.title('Histogram of the number of datasets achieving each score')
-    plt.axis([np.amin(dataset_scores), np.amax(dataset_scores),0,len(dataset_scores)/4])
-    plt.grid(True)
+    # # The histogram of the data
+    # n, bins, patches = plt.hist(dataset_scores, 50, normed=1, facecolor='green', alpha=0.75)
+    # # plt.scatter(scatterplot_x,scatterplot_y)
 
-    plt.show()
+
+    # plt.xlabel('Score')
+    # plt.ylabel('Datasets')
+    # plt.title('Histogram of the number of datasets achieving each score')
+    # plt.axis([np.amin(dataset_scores), np.amax(dataset_scores),0,len(dataset_scores)/4])
+    # plt.grid(True)
+
+    # plt.show()
 
 if __name__ == "__main__":
     dish_main()
