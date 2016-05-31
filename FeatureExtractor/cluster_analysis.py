@@ -348,7 +348,7 @@ def dish_main():
         with open(os.path.join(CURRENT_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),'r') as f_handle:
             feature_matrix = genfromtxt(f_handle, delimiter=',')
 
-        max_feature_vals, min_feature_vals = molecule_feature_matrix.normalize_features(os.path.join(CURRENT_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),CURRENT_DATA_DIRECTORY,None,None)
+        max_feature_vals, min_feature_vals = molecule_feature_matrix._normalize_features(os.path.join(CURRENT_DATA_DIRECTORY,"test_molecular_feature_matrix.csv"),CURRENT_DATA_DIRECTORY,None,None)
 
         with open(os.path.join(CURRENT_DATA_DIRECTORY,"parameters.pkl"),'r') as f_handle:
             parameters = pickle.load(f_handle)
