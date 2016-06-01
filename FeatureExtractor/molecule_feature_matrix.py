@@ -612,7 +612,7 @@ def main():
 
     print("Creating molecular feature model...")
     
-    with open(results_file2,'w+') as f_handle:
+    with open(results_file,'w+') as f_handle:
         for num_binding_sites in [1,2,3,5]:
             for DIVERSITY_THRESHOLD in [.5,.6,.7,.8]:
                 for PURITY_THRESHOLD in [.2,.3,.4,.5]:
