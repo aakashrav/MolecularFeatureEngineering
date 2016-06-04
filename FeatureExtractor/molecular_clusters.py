@@ -5,7 +5,7 @@ import config
 import subprocess
 
 def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,
-    num_active_molecules,num_inactive_molecules,num_binding_sites):
+    num_active_molecules,num_inactive_molecules,epsilon,mu_ratio):
 
     with open(CLUSTER_FILENAME,'w+') as f_handle:
         
@@ -14,13 +14,14 @@ def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,
         # Calculate epsilon and mu for this specific dataset.
         # Epsilon will be the median of the standard deviations of each of the columns in the 
         # feature matrix.
-        standard_deviations_columns = [np.std(feature_matrix[:,i]) for i in range(feature_matrix.shape[1])]
-        epsilon = np.median(standard_deviations_columns)
+        # standard_deviations_columns = [np.std(feature_matrix[:,i]) for i in range(feature_matrix.shape[1])]
+        # epsilon = np.median(standard_deviations_columns)
 
         # Mu will be the number of active molecules divided by the amount of binding sites
         # For now set binding sites to 5, TODO: Customize this number
         num_binding_sites = 5
-        mu = int(np.ceil(num_active_molecules/num_binding_sites))
+        # mu = int(np.ceil(num_active_molecules/num_binding_sites))
+        mu = int(np.ceil(num_active_molecules * mu_ratio))
         
         print "Computed epsilon for molecular matrix: %5.5f" % epsilon
         print "Computed mu for molecular matrix: %d" % mu
