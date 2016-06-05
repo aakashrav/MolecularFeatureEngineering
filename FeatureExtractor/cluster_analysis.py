@@ -298,9 +298,9 @@ def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversi
     with open(os.path.join(DATA_DIRECTORY,"inactives_fragment_molecule_mapping.pkl"),'rb') as f_handle:
         inactive_fragment_molecule_mapping = pickle.load(f_handle)
 
-    clusters = prune_clusters(clusters, fragment_number_name_mapping, \
-        active_fragment_molecule_mapping, inactive_fragment_molecule_mapping,\
-         diversity_threshold=diversity_threshold, percentage=diversity_percentage, purity_threshold=purity_threshold)
+    # clusters = prune_clusters(clusters, fragment_number_name_mapping, \
+    #     active_fragment_molecule_mapping, inactive_fragment_molecule_mapping,\
+    #      diversity_threshold=diversity_threshold, percentage=diversity_percentage, purity_threshold=purity_threshold)
 
     molecular_cluster_model = []
     for cluster in clusters:
