@@ -605,10 +605,10 @@ def main():
 
     features_map, features = _read_descriptor_file(features_file)
     
-    # print("Removing constant features in feature matrix...")
+    print("Removing constant features in feature matrix...")
 
-    # # Preprocessing: remove constant features
-    # features = MolecularPreprocessing.remove_constant_features(features)
+    # Preprocessing: remove constant features
+    features = MolecularPreprocessing.remove_constant_features(features)
 
     print("Creating molecular feature model...")
     
