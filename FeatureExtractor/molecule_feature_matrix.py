@@ -373,10 +373,10 @@ def _normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_ma
                 # Normalize each feature's value
                 for feature in range(len(next_observation)):
                     next_observation[feature] = (next_observation[feature] - feature_min[feature]) / (feature_max[feature] - feature_min[feature])
+                    # Handle degenerate cases where, due to some rounding errors, the maximum
+                    # and minimum are exactly the same and we therefore get a division by zero.
                     if not (np.isfinite(next_observation[feature])):
-                        print(feature_min[feature])
-                        print(feature_max[feature])
-                        input("What now??")
+                        next_observation[feature] = feature_max[feature]
 
 
                 # Flush the new normalized vector into the new file
