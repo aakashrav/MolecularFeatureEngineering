@@ -110,6 +110,7 @@ def process(csv_file_name, out_file_name, log_file_name, corr_threshold):
     # Get only a subset of all the chosen features, due to time complexity constraints.
     if len(features) > config.NUM_FEATURES:
         features = features[0:config.NUM_FEATURES]
+        feature_names = feature_names[0:config.NUM_FEATURES]
 
     with open(out_file_name, "w") as fo:
         line = "Name"
