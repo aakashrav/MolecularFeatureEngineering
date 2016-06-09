@@ -609,7 +609,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                 
                 current_centroid_distance = _compute_subspace_distance(feature_matrix[i],cluster_model['centroid'],cluster_model['subspace'])
 
-                distance_array.append(closest_centroid_distance)
+                distance_array.append(current_centroid_distance)
             
             # No fragments are found for this molecule, so we continue since we can't evaluate it.
             if (len(distance_array) == 0):
