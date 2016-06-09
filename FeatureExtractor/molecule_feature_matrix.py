@@ -647,7 +647,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         total_ranking = 0
         num_rankings = 0
         for cluster_activity_list in cluster_rankings_list:
-            for index,value in enumerate cluster_activity_list:
+            for index,value in enumerate(cluster_activity_list):
                 if value["name"] == molecule["name"]:
                     total_ranking+=index
                     num_rankings+=1
