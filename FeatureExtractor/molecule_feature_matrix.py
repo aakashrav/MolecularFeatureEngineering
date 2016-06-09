@@ -469,82 +469,165 @@ def get_score(molecule):
     return molecule["score"]
 
 
+# def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
+#     global_median_cache,used_features,scoring_method):
+
+#     sorted_activity_list = []
+
+#     for test_molecule in molecule_names_and_activity:
+#         full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
+#                             if molecule["name"] == test_molecule["name"]]
+
+#         # First index is actual fragments, since there 
+#         # can exist only one key value pair for the molecule and its fragments
+#         full_fragments = full_fragments[0]
+#         fragments = [fragment["smiles"] for fragment in full_fragments]
+
+#         found_fragments = []
+#         feature_matrix = np.empty((0,len(used_features)))
+
+#         # Create the feature matrix for the fragments of this particular molecule
+#         for f in fragments:
+#             # If we already found the fragment, we continue on; will save us time and space
+#             if f in found_fragments:
+#                 continue
+#             else:
+#                 found_fragments.append(f)
+                
+#                 try:
+#                     ix_f = descriptors_map[f]
+#                     current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
+
+#                     # Obtain all feature values that have non-numerical values for this fragment
+#                     nan_descriptors = np.where(np.isfinite(current_fragment) != True)
+
+#                     # Impute these non-numerical values with the values from the global median cache
+#                     # which was again, obtained from the training set.
+#                     for j in nan_descriptors:
+#                         current_fragment[0,j] = global_median_cache[0,j]
+
+#                     # Finally, project the features of the current fragment into only the non-degenerate
+#                     # feature space as learned from the training set.
+#                     current_fragment = current_fragment[:,used_features]
+
+#                     # Append this fragment to our feature matrix
+#                     feature_matrix = np.vstack((feature_matrix,current_fragment))
+
+#                 except KeyError:
+#                     print("Key error during AUC calculation!")
+#                     continue
+
+#         with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
+#             molecular_cluster_model = pickle.load(f_handle)
+
+#         if len(molecular_cluster_model) == 0:
+#             print "No clusters found in model; can't evaluate any new test molecules..."
+#             return -1
+
+#         distance_array = []
+#         for i in range(feature_matrix.shape[0]):
+#             closest_centroid_distance = np.min([ _compute_subspace_distance(feature_matrix[i],molecular_cluster_model[j]['centroid'],molecular_cluster_model[j]['subspace']) \
+#                 for j in range(len(molecular_cluster_model))])
+
+#             distance_array.append(closest_centroid_distance)
+        
+#         # No fragments are found for this molecule, so we continue since we can't evaluate it.
+#         if (len(distance_array) == 0):
+#             continue
+
+
+#         if scoring_method == 1:
+#             score = np.mean(np.asarray(distance_array))
+#         else:
+#             score = np.min(np.asarray(distance_array))
+
+#         sorted_activity_list.append({"score":score,"activity":test_molecule["activity"]})
+
+#     sorted_activity_list = sorted(sorted_activity_list,key=get_score)
+#     return Scoring.CalcAUC(sorted_activity_list, "activity")
+
 def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
     global_median_cache,used_features,scoring_method):
 
     sorted_activity_list = []
 
-    for test_molecule in molecule_names_and_activity:
-        full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
-                            if molecule["name"] == test_molecule["name"]]
+    with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
+        molecular_cluster_model = pickle.load(f_handle)
 
-        # First index is actual fragments, since there 
-        # can exist only one key value pair for the molecule and its fragments
-        full_fragments = full_fragments[0]
-        fragments = [fragment["smiles"] for fragment in full_fragments]
+    if len(molecular_cluster_model) == 0:
+        print "No clusters found in model; can't evaluate any new test molecules..."
+        return -1
 
-        found_fragments = []
-        feature_matrix = np.empty((0,len(used_features)))
+    for cluster_model in molecular_cluster_model:
+        for test_molecule in molecule_names_and_activity:
+            full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
+                                if molecule["name"] == test_molecule["name"]]
 
-        # Create the feature matrix for the fragments of this particular molecule
-        for f in fragments:
-            # If we already found the fragment, we continue on; will save us time and space
-            if f in found_fragments:
-                continue
-            else:
-                found_fragments.append(f)
-                
-                try:
-                    ix_f = descriptors_map[f]
-                    current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
+            # First index is actual fragments, since there 
+            # can exist only one key value pair for the molecule and its fragments
+            full_fragments = full_fragments[0]
+            fragments = [fragment["smiles"] for fragment in full_fragments]
 
-                    # Obtain all feature values that have non-numerical values for this fragment
-                    nan_descriptors = np.where(np.isfinite(current_fragment) != True)
+            found_fragments = []
+            feature_matrix = np.empty((0,len(used_features)))
 
-                    # Impute these non-numerical values with the values from the global median cache
-                    # which was again, obtained from the training set.
-                    for j in nan_descriptors:
-                        current_fragment[0,j] = global_median_cache[0,j]
-
-                    # Finally, project the features of the current fragment into only the non-degenerate
-                    # feature space as learned from the training set.
-                    current_fragment = current_fragment[:,used_features]
-
-                    # Append this fragment to our feature matrix
-                    feature_matrix = np.vstack((feature_matrix,current_fragment))
-
-                except KeyError:
-                    print("Key error during AUC calculation!")
+            # Create the feature matrix for the fragments of this particular molecule
+            for f in fragments:
+                # If we already found the fragment, we continue on; will save us time and space
+                if f in found_fragments:
                     continue
+                else:
+                    found_fragments.append(f)
+                    
+                    try:
+                        ix_f = descriptors_map[f]
+                        current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
 
-        with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
-            molecular_cluster_model = pickle.load(f_handle)
+                        # Obtain all feature values that have non-numerical values for this fragment
+                        nan_descriptors = np.where(np.isfinite(current_fragment) != True)
 
-        if len(molecular_cluster_model) == 0:
-            print "No clusters found in model; can't evaluate any new test molecules..."
-            return -1
+                        # Impute these non-numerical values with the values from the global median cache
+                        # which was again, obtained from the training set.
+                        for j in nan_descriptors:
+                            current_fragment[0,j] = global_median_cache[0,j]
 
-        distance_array = []
-        for i in range(feature_matrix.shape[0]):
-            closest_centroid_distance = np.min([ _compute_subspace_distance(feature_matrix[i],molecular_cluster_model[j]['centroid'],molecular_cluster_model[j]['subspace']) \
-                for j in range(len(molecular_cluster_model))])
+                        # Finally, project the features of the current fragment into only the non-degenerate
+                        # feature space as learned from the training set.
+                        current_fragment = current_fragment[:,used_features]
 
-            distance_array.append(closest_centroid_distance)
-        
-        # No fragments are found for this molecule, so we continue since we can't evaluate it.
-        if (len(distance_array) == 0):
-            continue
+                        # Append this fragment to our feature matrix
+                        feature_matrix = np.vstack((feature_matrix,current_fragment))
 
+                    except KeyError:
+                        print("Key error during AUC calculation!")
+                        continue
 
-        if scoring_method == 1:
-            score = np.mean(np.asarray(distance_array))
-        else:
-            score = np.min(np.asarray(distance_array))
+            distance_array = []
+            for i in range(feature_matrix.shape[0]):
+                # closest_centroid_distance = np.min([ _compute_subspace_distance(feature_matrix[i],molecular_cluster_model[j]['centroid'],molecular_cluster_model[j]['subspace']) \
+                #     for j in range(len(molecular_cluster_model))])
+                
+                current_centroid_distance = _compute_subspace_distance(feature_matrix[i],cluster_model['centroid'],cluster_model['subspace'])
 
-        sorted_activity_list.append({"score":score,"activity":test_molecule["activity"]})
+                distance_array.append(closest_centroid_distance)
+            
+            # No fragments are found for this molecule, so we continue since we can't evaluate it.
+            if (len(distance_array) == 0):
+                continue
 
-    sorted_activity_list = sorted(sorted_activity_list,key=get_score)
-    return Scoring.CalcAUC(sorted_activity_list, "activity")
+            if scoring_method == 1:
+                score = np.mean(np.asarray(distance_array))
+            else:
+                score = np.min(np.asarray(distance_array))
+
+            sorted_activity_list.append({"score":score,"activity":test_molecule["activity"]})
+
+        sorted_activity_list = sorted(sorted_activity_list,key=get_score)
+
+        print(sorted_activity_list)
+
+    return "hi"
+    # return Scoring.CalcAUC(sorted_activity_list, "activity")
 
 
 def _molecular_model_creation(active_fragments,inactive_fragments,features_map, \
@@ -618,11 +701,16 @@ def main():
     print("Creating molecular feature model...")
     
     with open(results_file,'w+') as f_handle:
-            for mu_ratio in [.2,.4,.6,.8]:
-                for epsilon in [.1,.4,.6,.8]:
-                    for DIVERSITY_THRESHOLD in [.1,.2,.3,.5,.6,.7,.8,.9,1.0]: # CONCISE THIS FOR EACH DATASET...
-                        for PURITY_THRESHOLD in [.2,.4,.6,.8]: 
-                            for scoring_method in [1,2]:
+            # for mu_ratio in [.2,.4,.6,.8]:
+            for mu_ratio in [.2]:
+                # for epsilon in [.1,.4,.6,.8]:
+                for epsilon in [.1]
+                    # for DIVERSITY_THRESHOLD in [.1,.2,.3,.5,.6,.7,.8,.9,1.0]: # CONCISE THIS FOR EACH DATASET...
+                    for DIVERSITY_THRESHOLD in [.3]:
+                        # for PURITY_THRESHOLD in [.2,.4,.6,.8]:
+                        for PURITY_THRESHOLD in [.2]: 
+                            # for scoring_method in [1,2]:
+                            for scoring_method in [2]:
 
                                 parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
                                     "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
