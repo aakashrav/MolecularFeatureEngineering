@@ -704,7 +704,7 @@ def main():
             # for mu_ratio in [.2,.4,.6,.8]:
             for mu_ratio in [.2]:
                 # for epsilon in [.1,.4,.6,.8]:
-                for epsilon in [.1]
+                for epsilon in [.1]:
                     # for DIVERSITY_THRESHOLD in [.1,.2,.3,.5,.6,.7,.8,.9,1.0]: # CONCISE THIS FOR EACH DATASET...
                     for DIVERSITY_THRESHOLD in [.3]:
                         # for PURITY_THRESHOLD in [.2,.4,.6,.8]:
