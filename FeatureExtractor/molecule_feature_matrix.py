@@ -549,8 +549,6 @@ def get_score(molecule):
 def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
     global_median_cache,used_features,scoring_method):
 
-    sorted_activity_list = []
-
     with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
         molecular_cluster_model = pickle.load(f_handle)
 
@@ -559,6 +557,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         return -1
 
     for cluster_model in molecular_cluster_model:
+        sorted_activity_list = []
         for test_molecule in molecule_names_and_activity:
             full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
                                 if molecule["name"] == test_molecule["name"]]
