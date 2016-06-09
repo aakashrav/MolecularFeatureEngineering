@@ -468,6 +468,12 @@ def _compute_subspace_distance(point_1,point_2,subspace):
 def get_score(molecule):
     return molecule["score"]
 
+def get_ranking(molecule):
+    return molecule["ranking"]
+
+def get_activity(molecule):
+    return molecule["activity"]
+
 
 # def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
 #     global_median_cache,used_features,scoring_method):
@@ -548,6 +554,12 @@ def get_score(molecule):
 
 def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
     global_median_cache,used_features,scoring_method):
+    
+    cluster_rankings_list = []
+    final_sorted_activity_list = []
+
+    for test_molecule in molecule_names_and_activity:
+        final_sorted_activity_list.append({"name":test_molecule["name"],"ranking":0,"activity":test_molecule["activity"]})
 
     with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
         molecular_cluster_model = pickle.load(f_handle)
@@ -557,7 +569,8 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         return -1
 
     for cluster_model in molecular_cluster_model:
-        sorted_activity_list = []
+        cluster_sorted_activity_list = []
+
         for test_molecule in molecule_names_and_activity:
             full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
                                 if molecule["name"] == test_molecule["name"]]
@@ -619,14 +632,32 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
             else:
                 score = np.min(np.asarray(distance_array))
 
-            sorted_activity_list.append({"score":score,"activity":test_molecule["activity"]})
+            cluster_sorted_activity_list.append({"name":test_molecule["name"],"score":score,"activity":test_molecule["activity"]})
 
-        sorted_activity_list = sorted(sorted_activity_list,key=get_score)
+        # First sort based on the secondary key, the activity in reverse.
+        cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_activity,reverse=True)
+        # Then sort based on the primary key, the score.
+        cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_score)
+        # Append the current cluster's ranking to the cluster ranking list.
+        cluster_rankings_list.append(cluster_sorted_activity_list)
+        print(cluster_sorted_activity_list)
 
-        print(sorted_activity_list)
+    # Compute the average ranking of each molecule from all the cluster rankings.
+    for molecule in final_sorted_activity_list:
+        total_ranking = 0
+        num_rankings = 0
+        for cluster_activity_list in cluster_rankings_list:
+            for index,value in enumerate cluster_activity_list:
+                if value["name"] == molecule["name"]:
+                    total_ranking+=index
+                    num_rankings+=1
+        molecule["ranking"] = int(total_ranking/num_rankings)
 
-    return "hi"
-    # return Scoring.CalcAUC(sorted_activity_list, "activity")
+    # First sort based on the secondary key, the activity in reverse.
+    final_sorted_activity_list = sorted(final_sorted_activity_list,key=get_activity,reverse=True)
+    # Then sort based on the primary key, the average ranking.
+    final_sorted_activity_list = sorted(final_sorted_activity_list, key=get_ranking)
+    return Scoring.CalcAUC(final_sorted_activity_list, "activity")
 
 
 def _molecular_model_creation(active_fragments,inactive_fragments,features_map, \

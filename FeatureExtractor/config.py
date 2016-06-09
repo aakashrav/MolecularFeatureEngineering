@@ -12,7 +12,7 @@ FLUSH_BUFFER_SIZE = 100
 DESCRIPTOR_TO_RAM = 1
 
 # Parameters for determining significant features using correlation neighborhoods
-NUM_FEATURES = 500
+NUM_FEATURES = 60
 CORRELATION_THRESHOLD = .80
 
 # Cluster extraction and pruning parameters
