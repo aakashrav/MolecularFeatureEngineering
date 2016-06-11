@@ -632,6 +632,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
             else:
                 score = np.min(np.asarray(distance_array))
 
+            score = np.around(score, decimals=10)
             cluster_sorted_activity_list.append({"name":test_molecule["name"],"score":score,"activity":test_molecule["activity"]})
 
         # First sort based on the secondary key, the activity in reverse.
