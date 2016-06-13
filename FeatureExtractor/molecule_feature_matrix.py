@@ -636,7 +636,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
             cluster_sorted_activity_list.append({"name":test_molecule["name"],"score":score,"activity":test_molecule["activity"]})
 
         # First sort based on the secondary key, the activity in reverse.
-        cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_activity,reverse=True)
+        # cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_activity,reverse=True)
         # Then sort based on the primary key, the score.
         cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_score)
         # Append the current cluster's ranking to the cluster ranking list.
@@ -655,7 +655,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         molecule["ranking"] = int(total_ranking/num_rankings)
 
     # First sort based on the secondary key, the activity in reverse.
-    final_sorted_activity_list = sorted(final_sorted_activity_list,key=get_activity,reverse=True)
+    # final_sorted_activity_list = sorted(final_sorted_activity_list,key=get_activity,reverse=True)
     # Then sort based on the primary key, the average ranking.
     final_sorted_activity_list = sorted(final_sorted_activity_list, key=get_ranking)
     return Scoring.CalcAUC(final_sorted_activity_list, "activity")
