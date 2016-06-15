@@ -754,7 +754,7 @@ def main():
                         # for PURITY_THRESHOLD in [.2]: #V2R
                         # for PURITY_THRESHOLD in [0.2]: #DRD1
                             # for scoring_method in [1,2]:
-                            for scoring_method in [2]: #5HT2B
+                            for scoring_method in [1]: #5HT2B
                             # for scoring_method in [1]: #V2R
                             # for scoring_method in [2]: # DRD1
 
