@@ -737,26 +737,26 @@ def main():
     print("Creating molecular feature model...")
     
     with open(results_file,'w+') as f_handle:
-            # for mu_ratio in [.2,.4,.6,.8]:
+            for mu_ratio in [.2,.4,.6,.8]:
             # for mu_ratio in [.2]: # 5HT2B
             # for mu_ratio in [.4]: # V2R
-            for mu_ratio in [0.8]: # DRD1
-                # for epsilon in [.1,.4,.6,.8]:
+            # for mu_ratio in [0.8]: # DRD1
+                for epsilon in [.1,.4,.6,.8]:
                 # for epsilon in [.1]: #5HT2B
                 # for epsilon in [.1]: #V2R
-                for epsilon in [0.4]: #DRD1
-                    # for DIVERSITY_THRESHOLD in [.1,.2,.3,.5,.6,.7,.8,.9,1.0]: # CONCISE THIS FOR EACH DATASET...
+                # for epsilon in [0.4]: #DRD1
+                    for DIVERSITY_THRESHOLD in [.1,.2,.3,.5,.6,.7,.8,.9,1.0]: # CONCISE THIS FOR EACH DATASET...
                     # for DIVERSITY_THRESHOLD in [.3]: # 5HT2B
                     # for DIVERSITY_THRESHOLD in [1.0]: #V2R
-                    for DIVERSITY_THRESHOLD in [0.8]: # DRD1
-                        # for PURITY_THRESHOLD in [.2,.4,.6,.8]:
+                    # for DIVERSITY_THRESHOLD in [0.8]: # DRD1
+                        for PURITY_THRESHOLD in [.2,.4,.6,.8]:
                         # for PURITY_THRESHOLD in [.2]: #5HT2B
                         # for PURITY_THRESHOLD in [.2]: #V2R
-                        for PURITY_THRESHOLD in [0.2]: #DRD1
-                            # for scoring_method in [1,2]:
+                        # for PURITY_THRESHOLD in [0.2]: #DRD1
+                            for scoring_method in [1,2]:
                             # for scoring_method in [2]: #5HT2B
                             # for scoring_method in [1]: #V2R
-                            for scoring_method in [2]: # DRD1
+                            # for scoring_method in [2]: # DRD1
 
                                 parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
                                     "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
