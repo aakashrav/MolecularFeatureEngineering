@@ -756,7 +756,7 @@ def main():
                             # for scoring_method in [1,2]:
                             # for scoring_method in [2]: #5HT2B
                             # for scoring_method in [1]: #V2R
-                            for scoring_method in [1]: # DRD1
+                            for scoring_method in [2]: # DRD1
 
                                 parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
                                     "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
