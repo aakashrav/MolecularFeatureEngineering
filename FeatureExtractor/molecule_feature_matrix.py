@@ -142,7 +142,6 @@ def _actives_feature_impute(feature_matrix):
     used_features = [ x-1 for x in feature_matrix[0]]
     degenerate_features = [i for i in all_features if i not in used_features]
     
-    print(used_features)
     return [global_median_cache, degenerate_features, used_features]
 
 def _read_descriptor_file(descriptor_file_name):
@@ -647,7 +646,9 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_score)
         # Append the current cluster's ranking to the cluster ranking list.
         cluster_rankings_list.append(cluster_sorted_activity_list)
-        # print(cluster_sorted_activity_list[0:400])
+        unique,counts = np.unique(cluster_model['subspace'],return_counts=True)
+        print(dict(zip(unique,counts))[1])
+        print(cluster_sorted_activity_list[0:400])
 
     # Compute the average ranking of each molecule from all the cluster rankings.
     for molecule in final_sorted_activity_list:
@@ -739,28 +740,28 @@ def main():
     
     with open(results_file,'w+') as f_handle:
             # for mu_ratio in [.2,.4,.6,.8]:
-            for mu_ratio in [.2,.6,.9]:
+            # for mu_ratio in [.2,.6,.9]: # NEW
             # for mu_ratio in [.2]: # 5HT2B
-            # for mu_ratio in [.4]: # V2R
+            for mu_ratio in [.4]: # V2R
             # for mu_ratio in [0.8]: # DRD1
                 # for epsilon in [.1,.4,.6,.8]:
-                for epsilon in [.2,.6,.9]:
-                # for epsilon in [.1]: #5HT2B
-                # for epsilon in [.1]: #V2R
+                # for epsilon in [.2,.6,.9]: # NEW
+                # for epsilon in [.1]: #5HT2B 
+                for epsilon in [.1]: #V2R
                 # for epsilon in [0.4]: #DRD1
                     # for DIVERSITY_THRESHOLD in [.1,.2,.3,.5,.6,.7,.8,.9,1.0]: # CONCISE THIS FOR EACH DATASET...
-                    for DIVERSITY_THRESHOLD in [.2,.6,.9]:
+                    # for DIVERSITY_THRESHOLD in [.2,.6,.9]: # NEW
                     # for DIVERSITY_THRESHOLD in [.3]: # 5HT2B
-                    # for DIVERSITY_THRESHOLD in [1.0]: #V2R
+                    for DIVERSITY_THRESHOLD in [1.0]: #V2R
                     # for DIVERSITY_THRESHOLD in [0.8]: # DRD1
                         # for PURITY_THRESHOLD in [.2,.4,.6,.8]:
-                        for PURITY_THRESHOLD in [.2,.6,.9]:
+                        # for PURITY_THRESHOLD in [.2,.6,.9]: # NEW
                         # for PURITY_THRESHOLD in [.2]: #5HT2B
-                        # for PURITY_THRESHOLD in [.2]: #V2R
+                        for PURITY_THRESHOLD in [.2]: #V2R
                         # for PURITY_THRESHOLD in [0.2]: #DRD1
-                            for scoring_method in [1,2]:
+                            # for scoring_method in [1,2]: # NEW
                             # for scoring_method in [2]: #5HT2B
-                            # for scoring_method in [1]: #V2R
+                            for scoring_method in [1]: #V2R 
                             # for scoring_method in [2]: # DRD1
 
                                 parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
