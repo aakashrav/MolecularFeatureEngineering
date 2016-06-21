@@ -142,7 +142,7 @@ def _actives_feature_impute(feature_matrix):
     used_features = [ x-1 for x in feature_matrix[0]]
     degenerate_features = [i for i in all_features if i not in used_features]
     
-    print(degenerate_features)
+    print(used_features)
     return [global_median_cache, degenerate_features, used_features]
 
 def _read_descriptor_file(descriptor_file_name):
