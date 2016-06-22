@@ -648,7 +648,10 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         cluster_rankings_list.append(cluster_sorted_activity_list)
         unique,counts = np.unique(cluster_model['subspace'],return_counts=True)
         print cluster_model['subspace']
-        print(dict(zip(unique,counts))['1'])
+        try:
+            print(dict(zip(unique,counts))[1])
+        except KeyError:
+            print(0)
         print(cluster_sorted_activity_list[0:400])
 
     # Compute the average ranking of each molecule from all the cluster rankings.
