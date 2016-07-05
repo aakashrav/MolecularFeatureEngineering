@@ -475,99 +475,10 @@ def get_activity(molecule):
     return molecule["activity"]
 
 
-def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
-    global_median_cache,used_features,scoring_method):
-
-    sorted_activity_list = []
-
-    for test_molecule in molecule_names_and_activity:
-        full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
-                            if molecule["name"] == test_molecule["name"]]
-
-        # First index is actual fragments, since there 
-        # can exist only one key value pair for the molecule and its fragments
-        full_fragments = full_fragments[0]
-        fragments = [fragment["smiles"] for fragment in full_fragments]
-
-        found_fragments = []
-        feature_matrix = np.empty((0,len(used_features)))
-
-        # Create the feature matrix for the fragments of this particular molecule
-        for f in fragments:
-            # If we already found the fragment, we continue on; will save us time and space
-            if f in found_fragments:
-                continue
-            else:
-                found_fragments.append(f)
-                
-                try:
-                    ix_f = descriptors_map[f]
-                    current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
-
-                    # Obtain all feature values that have non-numerical values for this fragment
-                    nan_descriptors = np.where(np.isfinite(current_fragment) != True)
-
-                    # Impute these non-numerical values with the values from the global median cache
-                    # which was again, obtained from the training set.
-                    for j in nan_descriptors:
-                        current_fragment[0,j] = global_median_cache[0,j]
-
-                    # Finally, project the features of the current fragment into only the non-degenerate
-                    # feature space as learned from the training set.
-                    current_fragment = current_fragment[:,used_features]
-
-                    # Append this fragment to our feature matrix
-                    feature_matrix = np.vstack((feature_matrix,current_fragment))
-
-                except KeyError:
-                    print("Key error during AUC calculation!")
-                    continue
-
-        with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
-            molecular_cluster_model = pickle.load(f_handle)
-
-        if len(molecular_cluster_model) == 0:
-            print "No clusters found in model; can't evaluate any new test molecules..."
-            return -1
-
-        distance_array = []
-        for i in range(feature_matrix.shape[0]):
-            closest_centroid_distance = np.min([ _compute_subspace_distance(feature_matrix[i],molecular_cluster_model[j]['centroid'],molecular_cluster_model[j]['subspace']) \
-                for j in range(len(molecular_cluster_model))])
-
-            distance_array.append(closest_centroid_distance)
-        
-        # No fragments are found for this molecule, so we continue since we can't evaluate it.
-        if (len(distance_array) == 0):
-            continue
-
-
-        if scoring_method == 1:
-            score = np.mean(np.asarray(distance_array))
-        else:
-            score = np.min(np.asarray(distance_array))
-
-        sorted_activity_list.append({"score":score,"activity":test_molecule["activity"]})
-
-    sorted_activity_list = sorted(sorted_activity_list,key=get_score)
-    return Scoring.CalcAUC(sorted_activity_list, "activity")
-
 # def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
 #     global_median_cache,used_features,scoring_method):
-    
-#     cluster_rankings_list = []
-#     final_sorted_activity_list = []
-#     molecule_fragment_matrices = {}
 
-#     for test_molecule in molecule_names_and_activity:
-#         final_sorted_activity_list.append({"name":test_molecule["name"],"ranking":0,"activity":test_molecule["activity"]})
-
-#     with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
-#         molecular_cluster_model = pickle.load(f_handle)
-
-#     if len(molecular_cluster_model) == 0:
-#         print "No clusters found in model; can't evaluate any new test molecules..."
-#         return -1
+#     sorted_activity_list = []
 
 #     for test_molecule in molecule_names_and_activity:
 #         full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
@@ -612,65 +523,154 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 #                     print("Key error during AUC calculation!")
 #                     continue
 
-#         molecule_fragment_matrices[test_molecule["name"]] = feature_matrix
+#         with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
+#             molecular_cluster_model = pickle.load(f_handle)
 
-#     for cluster_model in molecular_cluster_model:
-        
-#         cluster_sorted_activity_list = []
+#         if len(molecular_cluster_model) == 0:
+#             print "No clusters found in model; can't evaluate any new test molecules..."
+#             return -1
+
 #         distance_array = []
+#         for i in range(feature_matrix.shape[0]):
+#             closest_centroid_distance = np.min([ _compute_subspace_distance(feature_matrix[i],molecular_cluster_model[j]['centroid'],molecular_cluster_model[j]['subspace']) \
+#                 for j in range(len(molecular_cluster_model))])
 
-#         for test_molecule in molecule_names_and_activity:
-
-#             for i in range(molecule_fragment_matrices[test_molecule["name"]].shape[0]):
-#                 # closest_centroid_distance = np.min([ _compute_subspace_distance(feature_matrix[i],molecular_cluster_model[j]['centroid'],molecular_cluster_model[j]['subspace']) \
-#                 #     for j in range(len(molecular_cluster_model))])
-                
-#                 current_centroid_distance = _compute_subspace_distance(molecule_fragment_matrices[test_molecule["name"]][i],cluster_model['centroid'],cluster_model['subspace'])
-#                 distance_array.append(current_centroid_distance)
-            
-#             # No fragments are found for this molecule, so we continue since we can't evaluate it.
-#             if (len(distance_array) == 0):
-#                 continue
-
-#             if scoring_method == 1:
-#                 score = np.mean(np.asarray(distance_array))
-#             else:
-#                 score = np.min(np.asarray(distance_array))
-
-#             score = np.around(score, decimals=10)
-#             cluster_sorted_activity_list.append({"name":test_molecule["name"],"score":score,"activity":test_molecule["activity"]})
-
-#         # First sort based on the secondary key, the activity in reverse.
-#         # cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_activity,reverse=True)
-#         # Then sort based on the primary key, the score.
-#         cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_score)
-#         # Append the current cluster's ranking to the cluster ranking list.
-#         cluster_rankings_list.append(cluster_sorted_activity_list)
-#         unique,counts = np.unique(cluster_model['subspace'],return_counts=True)
+#             distance_array.append(closest_centroid_distance)
         
-#         # print cluster_model['subspace']
-#         # try:
-#         #     print(dict(zip(unique,counts))[1])
-#         # except KeyError:
-#         #     print(0)
-#         # print(cluster_sorted_activity_list[0:400])
+#         # No fragments are found for this molecule, so we continue since we can't evaluate it.
+#         if (len(distance_array) == 0):
+#             continue
 
-#     # Compute the average ranking of each molecule from all the cluster rankings.
-#     for molecule in final_sorted_activity_list:
-#         total_ranking = 0
-#         num_rankings = 0
-#         for cluster_activity_list in cluster_rankings_list:
-#             for index,value in enumerate(cluster_activity_list):
-#                 if value["name"] == molecule["name"]:
-#                     total_ranking+=index
-#                     num_rankings+=1
-#         molecule["ranking"] = int(total_ranking/num_rankings)
 
-#     # First sort based on the secondary key, the activity in reverse.
-#     # final_sorted_activity_list = sorted(final_sorted_activity_list,key=get_activity,reverse=True)
-#     # Then sort based on the primary key, the average ranking.
-#     final_sorted_activity_list = sorted(final_sorted_activity_list, key=get_ranking)
-#     return Scoring.CalcAUC(final_sorted_activity_list, "activity")
+#         if scoring_method == 1:
+#             score = np.mean(np.asarray(distance_array))
+#         else:
+#             score = np.min(np.asarray(distance_array))
+
+#         sorted_activity_list.append({"score":score,"activity":test_molecule["activity"]})
+
+#     sorted_activity_list = sorted(sorted_activity_list,key=get_score)
+#     return Scoring.CalcAUC(sorted_activity_list, "activity")
+
+def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
+    global_median_cache,used_features,scoring_method):
+    
+    cluster_rankings_list = []
+    final_sorted_activity_list = []
+    molecule_fragment_matrices = {}
+
+    for test_molecule in molecule_names_and_activity:
+        final_sorted_activity_list.append({"name":test_molecule["name"],"ranking":0,"activity":test_molecule["activity"]})
+
+    with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
+        molecular_cluster_model = pickle.load(f_handle)
+
+    if len(molecular_cluster_model) == 0:
+        print "No clusters found in model; can't evaluate any new test molecules..."
+        return -1
+
+    for test_molecule in molecule_names_and_activity:
+        full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
+                            if molecule["name"] == test_molecule["name"]]
+
+        # First index is actual fragments, since there 
+        # can exist only one key value pair for the molecule and its fragments
+        full_fragments = full_fragments[0]
+        fragments = [fragment["smiles"] for fragment in full_fragments]
+
+        found_fragments = []
+        feature_matrix = np.empty((0,len(used_features)))
+
+        # Create the feature matrix for the fragments of this particular molecule
+        for f in fragments:
+            # If we already found the fragment, we continue on; will save us time and space
+            if f in found_fragments:
+                continue
+            else:
+                found_fragments.append(f)
+                
+                try:
+                    ix_f = descriptors_map[f]
+                    current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
+
+                    # Obtain all feature values that have non-numerical values for this fragment
+                    nan_descriptors = np.where(np.isfinite(current_fragment) != True)
+
+                    # Impute these non-numerical values with the values from the global median cache
+                    # which was again, obtained from the training set.
+                    for j in nan_descriptors:
+                        current_fragment[0,j] = global_median_cache[0,j]
+
+                    # Finally, project the features of the current fragment into only the non-degenerate
+                    # feature space as learned from the training set.
+                    current_fragment = current_fragment[:,used_features]
+
+                    # Append this fragment to our feature matrix
+                    feature_matrix = np.vstack((feature_matrix,current_fragment))
+
+                except KeyError:
+                    print("Key error during AUC calculation!")
+                    continue
+
+        molecule_fragment_matrices[test_molecule["name"]] = feature_matrix
+
+    for cluster_model in molecular_cluster_model:
+        
+        cluster_sorted_activity_list = []
+        distance_array = []
+
+        for test_molecule in molecule_names_and_activity:
+
+            for i in range(molecule_fragment_matrices[test_molecule["name"]].shape[0]):
+                # closest_centroid_distance = np.min([ _compute_subspace_distance(feature_matrix[i],molecular_cluster_model[j]['centroid'],molecular_cluster_model[j]['subspace']) \
+                #     for j in range(len(molecular_cluster_model))])
+                
+                current_centroid_distance = _compute_subspace_distance(molecule_fragment_matrices[test_molecule["name"]][i],cluster_model['centroid'],cluster_model['subspace'])
+                distance_array.append(current_centroid_distance)
+            
+            # No fragments are found for this molecule, so we continue since we can't evaluate it.
+            if (len(distance_array) == 0):
+                continue
+
+            if scoring_method == 1:
+                score = np.mean(np.asarray(distance_array))
+            else:
+                score = np.min(np.asarray(distance_array))
+
+            score = np.around(score, decimals=10)
+            cluster_sorted_activity_list.append({"name":test_molecule["name"],"score":score,"activity":test_molecule["activity"]})
+
+        # First sort based on the secondary key, the activity in reverse.
+        # cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_activity,reverse=True)
+        # Then sort based on the primary key, the score.
+        cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_score)
+        # Append the current cluster's ranking to the cluster ranking list.
+        cluster_rankings_list.append(cluster_sorted_activity_list)
+        unique,counts = np.unique(cluster_model['subspace'],return_counts=True)
+        
+        # print cluster_model['subspace']
+        # try:
+        #     print(dict(zip(unique,counts))[1])
+        # except KeyError:
+        #     print(0)
+        # print(cluster_sorted_activity_list[0:400])
+
+    # Compute the average ranking of each molecule from all the cluster rankings.
+    for molecule in final_sorted_activity_list:
+        total_ranking = 0
+        num_rankings = 0
+        for cluster_activity_list in cluster_rankings_list:
+            for index,value in enumerate(cluster_activity_list):
+                if value["name"] == molecule["name"]:
+                    total_ranking+=index
+                    num_rankings+=1
+        molecule["ranking"] = int(total_ranking/num_rankings)
+
+    # First sort based on the secondary key, the activity in reverse.
+    # final_sorted_activity_list = sorted(final_sorted_activity_list,key=get_activity,reverse=True)
+    # Then sort based on the primary key, the average ranking.
+    final_sorted_activity_list = sorted(final_sorted_activity_list, key=get_ranking)
+    return Scoring.CalcAUC(final_sorted_activity_list, "activity")
 
 
 def _molecular_model_creation(active_fragments,inactive_fragments,features_map, \
