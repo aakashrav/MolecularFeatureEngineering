@@ -5,8 +5,8 @@ import config
 import subprocess
 
 def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,
-    num_active_molecules,num_inactive_molecules,epsilon,mu_ratio):
-
+    num_active_molecules,num_inactive_molecules,parameter_dictionary,ALG_TYPE):
+    
     with open(CLUSTER_FILENAME,'w+') as f_handle:
         
         feature_matrix = np.loadtxt(open(FEATURE_MATRIX_FILE,"rb"),delimiter=",",skiprows=0)
@@ -27,9 +27,10 @@ def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,
         print "Computed mu for molecular matrix: %d" % mu
         
         # Call DiSH via ELKI
-        result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
-        	'FixedDBIDsFilter','-time','-algorithm','clustering.subspace.DiSH','-dish.epsilon',\
-        	str(epsilon),'-dish.mu',str(mu),'-out',CLUSTER_FILENAME])
+        if ALG_TYPE == 'DISH':
+            result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
+            	'FixedDBIDsFilter','-time','-algorithm','clustering.subspace.DiSH','-dish.epsilon',\
+            	str(parameter_dictionary['epsilon']),'-dish.mu',str(parameter_dictionary['mu_ratio']),'-out',CLUSTER_FILENAME])
 
         if result == 0:
         	print "Cluster detection finished!"

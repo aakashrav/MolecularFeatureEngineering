@@ -674,7 +674,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 
 
 def _molecular_model_creation(active_fragments,inactive_fragments,features_map, \
-    features_matrix,num_active_molecules,num_inactive_molecules,parameter_dictionary):
+    features_matrix,num_active_molecules,num_inactive_molecules,parameter_dictionary, ALG_TYPE):
 
     # Retrieve the molecular feature matrix corresponding to our dataset and 
     # flush it to file
@@ -687,7 +687,8 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     molecular_clusters.find_clusters(CLUSTER_FILENAME = os.path.join(config.DATA_DIRECTORY,"detected_clusters"),
         FEATURE_MATRIX_FILE = os.path.join(config.DATA_DIRECTORY,"molecular_feature_matrix.csv"),
         ELKI_EXECUTABLE=config.ELKI_EXECUTABLE,num_active_molecules=num_active_molecules,num_inactive_molecules=num_inactive_molecules,
-        epsilon=parameter_dictionary["epsilon"],mu_ratio=parameter_dictionary["mu_ratio"])
+        parameter_dictionary, ALG_TYPE)
+        # epsilon=parameter_dictionary["epsilon"],mu_ratio=parameter_dictionary["mu_ratio"], ALG_TYPE)
 
     print "Finished search for molecular clusters..."
 
@@ -710,6 +711,7 @@ def main():
     features_file = sys.argv[3]
     training_test_split_file = sys.argv[4]
     results_file = sys.argv[5]
+    ALG_TYPE = sys.argv[6]
     MOLECULAR_MODEL_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
 
     with open(training_test_split_file,"r+") as f_handle:
@@ -744,6 +746,7 @@ def main():
     print("Creating molecular feature model...")
     
     with open(results_file,'w+') as f_handle:
+        if ALG_TYPE == 'DISH':
             # for mu_ratio in [.2,.4,.6,.8]:
             for mu_ratio in [.2,.6,.9]: # NEW
             # for mu_ratio in [.2]: # 5HT2B
@@ -779,7 +782,7 @@ def main():
                                     "mu_ratio":mu_ratio,"epsilon":epsilon}
 
                                 # Create the molecular model
-                                [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary)
+                                [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE)
 
                                 print("Finished creating molecular feature model, beginning testing...")
 
