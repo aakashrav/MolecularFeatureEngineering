@@ -21,7 +21,7 @@ def find_clusters(parameter_dictionary,ALG_TYPE,CLUSTER_FILENAME,FEATURE_MATRIX_
         # For now set binding sites to 5, TODO: Customize this number
         num_binding_sites = 5
         # mu = int(np.ceil(num_active_molecules/num_binding_sites))
-        mu = int(np.ceil(num_active_molecules * mu_ratio))
+        mu = int(np.ceil(num_active_molecules * parameter_dictionary['mu_ratio']))
         
         print "Computed epsilon for molecular matrix: %5.5f" % epsilon
         print "Computed mu for molecular matrix: %d" % mu
@@ -30,7 +30,7 @@ def find_clusters(parameter_dictionary,ALG_TYPE,CLUSTER_FILENAME,FEATURE_MATRIX_
         if ALG_TYPE == 'DISH':
             result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
             	'FixedDBIDsFilter','-time','-algorithm','clustering.subspace.DiSH','-dish.epsilon',\
-            	str(parameter_dictionary['epsilon']),'-dish.mu',str(parameter_dictionary['mu_ratio']),'-out',CLUSTER_FILENAME])
+            	str(parameter_dictionary['epsilon']),'-dish.mu',str(mu),'-out',CLUSTER_FILENAME])
 
         if result == 0:
         	print "Cluster detection finished!"
