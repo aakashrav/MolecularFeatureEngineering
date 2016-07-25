@@ -4,8 +4,8 @@ import numpy as np
 import config
 import subprocess
 
-def find_clusters(CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,
-    num_active_molecules,num_inactive_molecules,parameter_dictionary,ALG_TYPE):
+def find_clusters(parameter_dictionary,ALG_TYPE,CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,
+    num_active_molecules,num_inactive_molecules):
     
     with open(CLUSTER_FILENAME,'w+') as f_handle:
         
