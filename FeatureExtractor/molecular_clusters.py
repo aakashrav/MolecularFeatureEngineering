@@ -22,8 +22,8 @@ def find_clusters(parameter_dictionary,ALG_TYPE,CLUSTER_FILENAME,FEATURE_MATRIX_
         num_binding_sites = 5
         # mu = int(np.ceil(num_active_molecules/num_binding_sites))
         
-        print "Computed epsilon for molecular matrix: %5.5f" % parameter_dictionary['epsilon']
-        print "Computed mu for molecular matrix: %d" % mu
+        # print "Computed epsilon for molecular matrix: %5.5f" % parameter_dictionary['epsilon']
+        # print "Computed mu for molecular matrix: %d" % mu
         
         # Call DiSH via ELKI
         if ALG_TYPE == 'DeLiClu':
