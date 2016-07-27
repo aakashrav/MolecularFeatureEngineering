@@ -798,6 +798,60 @@ def main():
                                 AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
                                 f_handle.write(str(AUC_SCORE))
                                 f_handle.write("\n")
+        elif ALG_TYPE == 'DeLiClu':
+            # for mu_ratio in [.2,.4,.6,.8]:
+            for minpts_ratio in [.2,.6,.9]: # NEW
+            # for mu_ratio in [.2]: # 5HT2B
+            # for mu_ratio in [.2,.4,.9]: # Another test
+            # for mu_ratio in [.4]: # V2R
+            # for mu_ratio in [0.8]: # DRD1
+                # for epsilon in [.1,.4,.6,.8]:
+                for epsilon in [.2,.6,.9]: # NEW
+                # for epsilon in [.1]: #5HT2B
+                # for epsilon in [.1,.5,.7]: # Another test 
+                # for epsilon in [.1]: #V2R
+                # for epsilon in [0.4]: #DRD1
+                    # for DIVERSITY_THRESHOLD in [.1,.2,.3,.5,.6,.7,.8,.9,1.0]: # CONCISE THIS FOR EACH DATASET...
+                    for DIVERSITY_THRESHOLD in [.2,.6,.9]: # NEW
+                    # for DIVERSITY_THRESHOLD in [.3]: # 5HT2B
+                    # for DIVERSITY_THRESHOLD in [.2,.4]: # Another test
+                    # for DIVERSITY_THRESHOLD in [1.0]: #V2R
+                    # for DIVERSITY_THRESHOLD in [0.8]: # DRD1
+                        # for PURITY_THRESHOLD in [.2,.4,.6,.8]:
+                        for PURITY_THRESHOLD in [.2,.6,.9]: # NEW
+                        # for PURITY_THRESHOLD in [.2]: #5HT2B
+                        # for PURITY_THRESHOLD in [.1,.4,.7]: # Another test
+                        # for PURITY_THRESHOLD in [.2]: #V2R
+                        # for PURITY_THRESHOLD in [0.2]: #DRD1
+                            for scoring_method in [1,2]: # NEW
+                            # for scoring_method in [2]: #5HT2B
+                            # for scoring_method in [1,2]: # Another test
+                            # for scoring_method in [1]: #V2R 
+                            # for scoring_method in [2]: # DRD1
+
+                                parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
+                                    "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
+                                    "minpts_ratio":minpts_ratio}
+
+                                # Create the molecular model
+                                [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE)
+
+                                print("Finished creating molecular feature model, beginning testing...")
+
+                                testing_molecules = training_test_molecules["data"]["test"]
+
+                                # Combined active and inactive molecular fragments
+                                full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
+
+                                print("Getting AUC Score for current dataset...")
+                                # Get the AUC score for the testing data
+                                f_handle.write("AUC Score for the current parameters:\n")
+                                json.dump(parameter_dictionary, f_handle)
+                                f_handle.write("\n")
+                                AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
+                                f_handle.write(str(AUC_SCORE))
+                                f_handle.write("\n")
+
     
     print("Finished computation of AUCs.")
 if __name__ == '__main__':
