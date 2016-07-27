@@ -21,8 +21,6 @@ def find_clusters(parameter_dictionary,ALG_TYPE,CLUSTER_FILENAME,FEATURE_MATRIX_
         # For now set binding sites to 5, TODO: Customize this number
         num_binding_sites = 5
         # mu = int(np.ceil(num_active_molecules/num_binding_sites))
-
-        minpts = int(np.ceil(num_active_molecules * parameter_dictionary['mu_ratio']))
         
         print "Computed epsilon for molecular matrix: %5.5f" % parameter_dictionary['epsilon']
         print "Computed mu for molecular matrix: %d" % mu
