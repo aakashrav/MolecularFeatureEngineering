@@ -29,13 +29,13 @@ def find_clusters(parameter_dictionary,ALG_TYPE,CLUSTER_FILENAME,FEATURE_MATRIX_
         
         # Call DiSH via ELKI
         if ALG_TYPE == 'DeLiClu':
-            minpts = int(np.ceil(num_active_molecules * parameter_dictionary['mu_ratio']))
+            minpts = int(np.ceil(num_active_molecules * parameter_dictionary['minpts_ratio']))
             result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
                 'FixedDBIDsFilter','-time','-algorithm','de.lmu.ifi.dbs.elki.algorithm.clustering.optics.DeLiClu','-db.index',\
                 'de.lmu.ifi.dbs.elki.index.tree.spatial.rstarvariants.deliclu.DeLiCluTreeFactory', '-deliclu.minpts','-dish.mu',str(minpts),'-out',CLUSTER_FILENAME])
         # elif ALG_TYPE == 'DISH':
         else:
-            mu = int(np.ceil(num_active_molecules * parameter_dictionary['minpts_ratio']))
+            mu = int(np.ceil(num_active_molecules * parameter_dictionary['mu_ratio']))
             result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
             	'FixedDBIDsFilter','-time','-algorithm','clustering.subspace.DiSH','-dish.epsilon',\
             	str(parameter_dictionary['epsilon']),'-dish.mu',str(mu),'-out',CLUSTER_FILENAME])
