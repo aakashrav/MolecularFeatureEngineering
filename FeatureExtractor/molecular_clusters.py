@@ -35,6 +35,11 @@ def find_clusters(parameter_dictionary,ALG_TYPE,CLUSTER_FILENAME,FEATURE_MATRIX_
             result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
                 'FixedDBIDsFilter','-time','-algorithm','de.lmu.ifi.dbs.elki.algorithm.clustering.subspace.P3C','-p3c.alpha',\
                 str(parameter_dictionary['alpha']),'-out',CLUSTER_FILENAME])
+        elif ALG_TYPE == 'HiSC':
+            k = int(np.ceil(num_active_molecules * parameter_dictionary['k_ratio']))
+            result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
+                'FixedDBIDsFilter','-time','-algorithm','de.lmu.ifi.dbs.elki.algorithm.clustering.subspace.HiSC','-hisc.alpha',\
+                str(parameter_dictionary['alpha']),'-hisc.k',str(k),'-out',CLUSTER_FILENAME])
         else: # Default is DiSH
             mu = int(np.ceil(num_active_molecules * parameter_dictionary['mu_ratio']))
             result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
