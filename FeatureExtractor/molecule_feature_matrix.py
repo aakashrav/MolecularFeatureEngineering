@@ -978,7 +978,7 @@ def main():
 
                                 parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
                                     "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
-                                    "mu_ratio":k_ratio,"alpha":alpha}
+                                    "mu_ratio":mu_ratio,"alpha":alpha}
 
                                 # Create the molecular model
                                 [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE)
