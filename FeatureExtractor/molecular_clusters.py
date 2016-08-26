@@ -30,11 +30,15 @@ def find_clusters(parameter_dictionary,ALG_TYPE,CLUSTER_FILENAME,FEATURE_MATRIX_
             minpts = int(np.ceil(num_active_molecules * parameter_dictionary['minpts_ratio']))
             result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
                 'FixedDBIDsFilter','-time','-algorithm','de.lmu.ifi.dbs.elki.algorithm.clustering.optics.DeLiClu','-db.index',\
-                'de.lmu.ifi.dbs.elki.index.tree.spatial.rstarvariants.deliclu.DeLiCluTreeFactory', '-deliclu.minpts','-dish.mu',str(minpts),'-out',CLUSTER_FILENAME])
+                'de.lmu.ifi.dbs.elki.index.tree.spatial.rstarvariants.deliclu.DeLiCluTreeFactory', '-deliclu.minpts',str(minpts),'-out',CLUSTER_FILENAME])
         elif ALG_TYPE == 'P3C':
+            # result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
+            #     'FixedDBIDsFilter','-time','-algorithm','de.lmu.ifi.dbs.elki.algorithm.clustering.subspace.P3C','-p3c.alpha',\
+            #     str(parameter_dictionary['alpha']),'-out',CLUSTER_FILENAME])
             result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
-                'FixedDBIDsFilter','-time','-algorithm','de.lmu.ifi.dbs.elki.algorithm.clustering.subspace.P3C','-p3c.alpha',\
-                str(parameter_dictionary['alpha']),'-out',CLUSTER_FILENAME])
+                'FixedDBIDsFilter','-time','-algorithm','de.lmu.ifi.dbs.elki.algorithm.clustering.subspace.P3C','-out',CLUSTER_FILENAME])
+            result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
+                'FixedDBIDsFilter','-time','-algorithm','de.lmu.ifi.dbs.elki.algorithm.clustering.subspace.P3C','-p3c.em.maxiter',str(parameter_dictionary['iterations']),'-out',CLUSTER_FILENAME])
         elif ALG_TYPE == 'HiSC':
             k = int(np.ceil(num_active_molecules * parameter_dictionary['k_ratio']))
             result = subprocess.call(['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
