@@ -849,7 +849,7 @@ def main():
                             f_handle.write("\n")
         elif ALG_TYPE == 'P3C':
             # for mu_ratio in [.2,.4,.6,.8]:
-            for alpha in [.2,.6,.9]: # NEW
+            for iterations in [10,20,50,100]: # NEW
             # for mu_ratio in [.2]: # 5HT2B
             # for mu_ratio in [.2,.4,.9]: # Another test
             # for mu_ratio in [.4]: # V2R
@@ -874,7 +874,7 @@ def main():
 
                             parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
                                 "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
-                                "alpha":alpha}
+                                "iterations":iterations}
 
                             # Create the molecular model
                             [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE)
