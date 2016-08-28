@@ -136,6 +136,7 @@ def extract_clusters_from_file_P3C(filename,dimensions):
 
             clusters.append(new_cluster)
 
+    clusters = [cluster for cluster in clusters if not all(v == 0 for v in cluster.get_subspace_mask())]
     return clusters
 
 
@@ -192,6 +193,7 @@ def extract_clusters_from_file(filename):
 
             clusters.append(new_cluster)
     
+    clusters = [cluster for cluster in clusters if not all(v == 0 for v in cluster.get_subspace_mask())]
     return clusters
 
 def prune_clusters(clusters, fragment_name_number_mapping, active_fragment_molecule_mapping, inactive_fragment_molecule_mapping, \
