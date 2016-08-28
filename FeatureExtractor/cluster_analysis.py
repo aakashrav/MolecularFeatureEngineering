@@ -84,25 +84,22 @@ def extract_clusters_from_file_P3C(filename,dimensions):
 
             new_cluster = Cluster()
             point_tuples = []
-            point_id_array = []
+            point_id_array = [] 
 
-            # Get to the subspaces
-            for j in range(0,6):
-                i+=1   
-
-            # print i
-            # print(lines[i].split(' ')[2]+lines[i].split(' ')[3])
-
-            if (lines[i][0:8]!='Subspace'): 
-                # Noise Cluster
-                i-=3
+            print(lines[i])
+            if(lines[i].split(' ')[1] == 'Noise'):
+                # Get to the subspaces
+                for j in range(0,3):
+                    i+=1  
                 subspace_tuple = ()
                 for dimension in range(dimensions):
                     subspace_tuple+=(0,)
             else:
                 # Regular cluster
                 # Define the subspaces for which the cluster is defined
-                # subspace = ast.literal_eval(lines[i].split(' ')[2]+lines[i].split(' ')[3])
+                # Get to the subspaces
+                for j in range(0,6):
+                    i+=1  
                 subspace = ast.literal_eval(lines[i][22:])
 
                 subspace_tuple = ()
