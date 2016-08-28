@@ -1,4 +1,4 @@
-from __future__ import division
+# from __future__ import division
 import numpy as np
 import os
 import pickle
@@ -62,6 +62,84 @@ class Cluster:
     
     def set_descriptor_averages(self, new_values):
         self.descriptor_averages = new_values
+
+
+def extract_clusters_from_file_P3C(filename,dimensions):
+    clusters = []
+
+    with open(filename,"r") as f_handle:
+        lines = f_handle.read().splitlines()
+
+        for i in range(len(lines)):
+            lines[i] = lines[i].lstrip('#')
+            lines[i] = lines[i].lstrip(' ')
+
+        i = 0
+        while (i != len(lines)):
+            while (i < len(lines) and lines[i][0:7]!="Cluster"):
+                i+=1
+
+            if (i == len(lines)):
+                break
+
+            new_cluster = Cluster()
+            point_tuples = []
+            point_id_array = []
+
+            # Get to the subspaces
+            for j in range(0,6):
+                i+=1   
+
+            # print i
+            # print(lines[i].split(' ')[2]+lines[i].split(' ')[3])
+
+            if (lines[i][0:8]!='Subspace'): 
+                # Noise Cluster
+                i-=3
+                subspace_tuple = ()
+                for dimension in range(dimensions):
+                    subspace_tuple+=(0,)
+            else:
+                # Regular cluster
+                # Define the subspaces for which the cluster is defined
+                # subspace = ast.literal_eval(lines[i].split(' ')[2]+lines[i].split(' ')[3])
+                subspace = ast.literal_eval(lines[i][22:])
+
+                subspace_tuple = ()
+                for dimension in range(1,dimensions+1):
+                    if dimension in subspace:
+                        subspace_tuple += (1,)
+                    else:
+                        subspace_tuple += (0,)
+
+            new_cluster.set_subspace_mask(subspace_tuple)
+            
+            while(i < len(lines) and lines[i][0:2]!="ID"):
+                i+=1
+
+            while(i < len(lines) and lines[i][0:2] == "ID"):
+                string_arr = lines[i].split(' ')
+                curr_tuple = ()
+
+                # Add the ID of the fragment vector
+                id = string_arr[0].split('=')[1]
+                point_id_array.append(int(id))
+
+                for j in range(1,len(string_arr)):
+                    try:
+                        curr_tuple += (float(string_arr[j]),)
+                    except ValueError:
+                        curr_tuple += ((string_arr[j]),)
+
+                point_tuples.append(curr_tuple)
+                i+=1
+
+            new_cluster.set_points(point_tuples)
+            new_cluster.set_id_points(point_id_array)
+
+            clusters.append(new_cluster)
+
+    return clusters
 
 
 def extract_clusters_from_file(filename):
@@ -278,7 +356,7 @@ def check_subspace_dimensions_match(list,tuple):
     return True
 
 
-def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversity_percentage):
+def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversity_percentage, ALG_TYPE='DISH',dimensions=None):
 
     DATA_DIRECTORY = config.DATA_DIRECTORY
 
@@ -287,7 +365,10 @@ def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversi
         shutil.rmtree(CLUSTER_DIRECTORY, ignore_errors=True)
     os.makedirs(CLUSTER_DIRECTORY)
 
-    clusters = extract_clusters_from_file(os.path.join(DATA_DIRECTORY,"detected_clusters"))
+    if ALG_TYPE == 'DISH':
+        clusters = extract_clusters_from_file(os.path.join(DATA_DIRECTORY,"detected_clusters"))
+    else:
+        clusters = extract_clusters_from_file_P3C(os.path.join(DATA_DIRECTORY,"detected_clusters"),dimensions)
 
     with open(os.path.join(DATA_DIRECTORY,"fragment_number_name_mapping.pkl"), 'rb') as f_handle:
         fragment_number_name_mapping = pickle.load(f_handle)
@@ -479,6 +560,7 @@ def dish_main():
     # plt.show()
 
 if __name__ == "__main__":
-    dish_main()
+    # dish_main()
+    extract_clusters_from_file("../ELKI/sample_output")
     # create_cluster_centroid_model(.6, 20, False)
         
