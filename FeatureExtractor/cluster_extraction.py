@@ -455,6 +455,12 @@ if __name__ == "__main__":
             detected_clusters+=1
 
         final_score_current_set = float(detected_clusters/generated_clusters)
-        print(detected_clusters)
-        print(generated_clusters)
-        print(final_score_current_set)
+        with open("./p3c_results",'w+') as p3c_handle:
+            p3c_handle.write(str(detected_clusters))
+            p3c_handle.write("\n")
+            p3c_handle.write(str(generated_clusters))
+            p3c_handle.write("\n")
+            p3c_handle.write(str(final_score_current_set))
+            p3c_handle.write("\n")
+            p3c_handle("\n")
+        print("Done with one! \n")
