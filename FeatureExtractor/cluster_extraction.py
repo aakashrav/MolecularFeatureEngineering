@@ -461,6 +461,5 @@ if __name__ == "__main__":
             p3c_handle.write(str(generated_clusters))
             p3c_handle.write("\n")
             p3c_handle.write(str(final_score_current_set))
-            p3c_handle.write("\n")
-            p3c_handle("\n")
+            p3c_handle.write("\n\n")
         print("Done with one! \n")
