@@ -409,10 +409,16 @@ if __name__ == "__main__":
 
         max_feature_vals, min_feature_vals = normalize_features("test_molecular_feature_matrix.csv",os.path.join("../TestFragmentDescriptorData", str(i)))
 
-        result = subprocess.call(['java', '-jar', "../ELKI/elki-bundle-0.7.0.jar",'KDDCLIApplication','-dbc.in',str(os.path.join("../TestFragmentDescriptorData", str(i), "test_molecular_feature_matrix.csv")),'-dbc.filter', \
-        'FixedDBIDsFilter','-time','-algorithm','de.lmu.ifi.dbs.elki.algorithm.clustering.subspace.P3C','-p3c.threshold',str(.0000000000000001),'-out',"./output_p3c"])
+        # result = subprocess.call(['java', '-jar', "../ELKI/elki-bundle-0.7.0.jar",'KDDCLIApplication','-dbc.in',str(os.path.join("../TestFragmentDescriptorData", str(i), "test_molecular_feature_matrix.csv")),'-dbc.filter', \
+        # 'FixedDBIDsFilter','-time','-algorithm','de.lmu.ifi.dbs.elki.algorithm.clustering.subspace.P3C','-p3c.threshold',str(.0000000000000001),'-out',"./output_p3c"])
 
-        clusters_p3c = extract_clusters_from_file_P3C("./output_p3c",100)
+        # clusters_p3c = extract_clusters_from_file_P3C("./output_p3c",100)
+
+        result = subprocess.call(['java', '-jar', "../ELKI/elki-bundle-0.7.0.jar",'KDDCLIApplication','-dbc.in',str(os.path.join("../TestFragmentDescriptorData", str(i), "test_molecular_feature_matrix.csv")),'-dbc.filter', \
+        'FixedDBIDsFilter','-time','-algorithm','clustering.subspace.DiSH','-dish.epsilon',str(float(parameters["epsilon"])),'-dish.mu',str(int(parameters["mu"])),'-out',"./output_dish"])
+
+        clusters_p3c = extract_clusters_from_file("./output_dish")
+
         # for cluster in clusters_p3c:
         #     print(cluster.get_subspace_mask())
 
