@@ -412,7 +412,7 @@ if __name__ == "__main__":
         result = subprocess.call(['java', '-jar', "../ELKI/elki-bundle-0.7.0.jar",'KDDCLIApplication','-dbc.in',str(os.path.join("../TestFragmentDescriptorData", str(i), "test_molecular_feature_matrix.csv")),'-dbc.filter', \
         'FixedDBIDsFilter','-time','-algorithm','de.lmu.ifi.dbs.elki.algorithm.clustering.subspace.P3C','-p3c.threshold',str(.0000000000000001),'-out',"./output_p3c"])
 
-        clusters_p3c = extract_clusters_from_file_P3C("./output_p3c",50)
+        clusters_p3c = extract_clusters_from_file_P3C("./output_p3c",100)
         # for cluster in clusters_p3c:
         #     print(cluster.get_subspace_mask())
 
