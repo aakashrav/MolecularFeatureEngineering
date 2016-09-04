@@ -331,37 +331,37 @@ def GenerateTestClusters():
 
     for CURRENT_ICD in [250,300,400,500]: #25
         for CURRENT_DENSITY in [5,50,75,100]: # 250,500
-            for CURRENT_EPSILON in [.002,.02,.03,.04]:
-                for CURRENT_MU in [3,6,9,10]:
-                    for NUM_CLUSTERED_DIMENSIONS in [2,8,15,20]:
-                    # for POISSON_THRESHOLD in [.0000000000001,.0000000000000000000000001,.0000000000000000000000000000000000001]:
-                    # for POISSON_THRESHOLD in [.0000000000000000000000001,.0000000000000000000000000000000000001,.0000000000000000000000000000000000000000000000001]:
-                    # for POISSON_THRESHOLD in [.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001,
-                    #         .0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001,
-                    #         .000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001]:
+            # for CURRENT_EPSILON in [.002,.02,.03,.04]:
+            #     for CURRENT_MU in [3,6,9,10]:
+            for NUM_CLUSTERED_DIMENSIONS in [2,8,15,20]:
+            # for POISSON_THRESHOLD in [.0000000000001,.0000000000000000000000001,.0000000000000000000000000000000000001]:
+            # for POISSON_THRESHOLD in [.0000000000000000000000001,.0000000000000000000000000000000000001,.0000000000000000000000000000000000000000000000001]:
+            # for POISSON_THRESHOLD in [.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001,
+            #         .0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001,
+            #         .000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001]:
 
-                        CURRENT_DIR = os.path.join(BASE_DIR,str(CURRENT_CLUSTER))
+                CURRENT_DIR = os.path.join(BASE_DIR,str(CURRENT_CLUSTER))
 
-                        if os.path.exists(CURRENT_DIR):
-                            shutil.rmtree(CURRENT_DIR)
-                        os.makedirs(CURRENT_DIR)
+                if os.path.exists(CURRENT_DIR):
+                    shutil.rmtree(CURRENT_DIR)
+                os.makedirs(CURRENT_DIR)
 
-                        try:
-                            GenerateClusterAndFlush(2500,5,10000,CURRENT_ICD,CURRENT_DENSITY,NUM_CLUSTERED_DIMENSIONS,100,20,CURRENT_DIR)
-                        except ValueError:
-                            print("Parameters: %f %f %f %f" % (CURRENT_ICD, CURRENT_DENSITY, CURRENT_EPSILON, CURRENT_MU))
-                            shutil.rmtree(CURRENT_DIR)
-                            DEFUNCT_PARAM_COUNT+=1
-                            continue
+                try:
+                    GenerateClusterAndFlush(2500,5,10000,CURRENT_ICD,CURRENT_DENSITY,NUM_CLUSTERED_DIMENSIONS,100,20,CURRENT_DIR)
+                except ValueError:
+                    print("Parameters: %f %f %f %f" % (CURRENT_ICD, CURRENT_DENSITY, CURRENT_EPSILON, CURRENT_MU))
+                    shutil.rmtree(CURRENT_DIR)
+                    DEFUNCT_PARAM_COUNT+=1
+                    continue
 
-                        parameters = {'icd':CURRENT_ICD,'density':CURRENT_DENSITY,'epsilon':CURRENT_EPSILON, 'mu':CURRENT_MU}
+                parameters = {'icd':CURRENT_ICD,'density':CURRENT_DENSITY,'epsilon':CURRENT_EPSILON, 'mu':CURRENT_MU}
 
-                        with open(os.path.join(CURRENT_DIR,"parameters.pkl"),'wb+') as f_handle:
-                            pickle.dump(parameters, f_handle, pickle.HIGHEST_PROTOCOL)
+                with open(os.path.join(CURRENT_DIR,"parameters.pkl"),'wb+') as f_handle:
+                    pickle.dump(parameters, f_handle, pickle.HIGHEST_PROTOCOL)
 
 
-                        CURRENT_CLUSTER+=1
-                        print("Generated a cluster")
+                CURRENT_CLUSTER+=1
+                print("Generated a cluster")
 
     print "Amount of bad cluster parameters: %d" % DEFUNCT_PARAM_COUNT
 
