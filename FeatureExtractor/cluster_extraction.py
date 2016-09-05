@@ -417,7 +417,7 @@ if __name__ == "__main__":
         result = subprocess.call(['java', '-jar', "../ELKI/elki-bundle-0.7.0.jar",'KDDCLIApplication','-dbc.in',str(os.path.join("../TestFragmentDescriptorData", str(i), "test_molecular_feature_matrix.csv")),'-dbc.filter', \
         'FixedDBIDsFilter','-time','-algorithm','clustering.subspace.DiSH','-dish.epsilon',str(float(parameters["epsilon"])),'-dish.mu',str(int(parameters["mu"])),'-out',"./output_dish"])
 
-        clusters_p3c = extract_clusters_from_file_DISH("./output_dish")
+        clusters_p3c = extract_clusters_from_file_DiSH("./output_dish")
 
         # for cluster in clusters_p3c:
         #     print(cluster.get_subspace_mask())
