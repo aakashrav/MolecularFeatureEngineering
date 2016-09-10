@@ -551,7 +551,7 @@ def get_activity(molecule):
 #         sorted_activity_list.append({"score":score,"activity":test_molecule["activity"]})
 
 #     sorted_activity_list = sorted(sorted_activity_list,key=get_score)
-#     return Scoring.CalcAUC(sorted_activity_list, "activity")
+#     return len(molecular_cluster_model), Scoring.CalcAUC(sorted_activity_list, "activity")
 
 # Cluster ranking
 def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
@@ -672,7 +672,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
     # final_sorted_activity_list = sorted(final_sorted_activity_list,key=get_activity,reverse=True)
     # Then sort based on the primary key, the average ranking.
     final_sorted_activity_list = sorted(final_sorted_activity_list, key=get_ranking)
-    return Scoring.CalcAUC(final_sorted_activity_list, "activity")
+    return len(molecular_cluster_model), Scoring.CalcAUC(final_sorted_activity_list, "activity")
 
 
 def _molecular_model_creation(active_fragments,inactive_fragments,features_map, \
@@ -997,8 +997,10 @@ def main():
                                 f_handle.write("AUC Score for the current parameters:\n")
                                 json.dump(parameter_dictionary, f_handle)
                                 f_handle.write("\n")
-                                AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
+                                num_clusters, AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
                                 f_handle.write(str(AUC_SCORE))
+                                f_handle.write(" ")
+                                f_handle.write(str(num_clusters))
                                 f_handle.write("\n")
 
     
