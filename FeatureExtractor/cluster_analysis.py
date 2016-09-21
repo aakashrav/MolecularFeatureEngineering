@@ -359,7 +359,7 @@ def check_subspace_dimensions_match(list,tuple):
 
 
 def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversity_percentage, ALG_TYPE='DISH',dimensions=None, \
-    DIVRSITY_CHECK=True, PURITY_CHECK=True):
+    DIVERSITY_CHECK=True, PURITY_CHECK=True):
 
     DATA_DIRECTORY = config.DATA_DIRECTORY
 
