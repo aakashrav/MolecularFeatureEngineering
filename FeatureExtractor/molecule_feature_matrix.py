@@ -676,7 +676,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 
     # Get the most important features
     important_features_full = []
-    with open(os.path.join(os.path.dirname(MODEL_DIRECTORY),'all_descriptors.csv'),'r') as f_handle:
+    with open('all_descriptors.csv','r') as f_handle:
         reader = csv.reader(f_handle, delimiter=',')
         features = next(reader)
         features = features[1:len(features)-1]
