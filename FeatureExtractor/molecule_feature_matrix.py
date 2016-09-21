@@ -779,31 +779,31 @@ def main():
                             # for scoring_method in [1,2]: # Another test
                             # for scoring_method in [1]: #V2R 
                             # for scoring_method in [2]: # DRD1
-                            for DIVERSITY_CHECK in [True, False]:
-                                for PURITY_CHECK in [True, False]:
+                                for DIVERSITY_CHECK in [True, False]:
+                                    for PURITY_CHECK in [True, False]:
 
-                                    parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
-                                        "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
-                                        "mu_ratio":mu_ratio,"epsilon":epsilon}
+                                        parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
+                                            "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
+                                            "mu_ratio":mu_ratio,"epsilon":epsilon}
 
-                                    # Create the molecular model
-                                    [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK)
+                                        # Create the molecular model
+                                        [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK)
 
-                                    print("Finished creating molecular feature model, beginning testing...")
+                                        print("Finished creating molecular feature model, beginning testing...")
 
-                                    testing_molecules = training_test_molecules["data"]["test"]
+                                        testing_molecules = training_test_molecules["data"]["test"]
 
-                                    # Combined active and inactive molecular fragments
-                                    full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
+                                        # Combined active and inactive molecular fragments
+                                        full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
 
-                                    print("Getting AUC Score for current dataset...")
-                                    # Get the AUC score for the testing data
-                                    f_handle.write("AUC Score for the current parameters:\n")
-                                    json.dump(parameter_dictionary, f_handle)
-                                    f_handle.write("\n")
-                                    AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
-                                    f_handle.write(str(AUC_SCORE))
-                                    f_handle.write("\n")
+                                        print("Getting AUC Score for current dataset...")
+                                        # Get the AUC score for the testing data
+                                        f_handle.write("AUC Score for the current parameters:\n")
+                                        json.dump(parameter_dictionary, f_handle)
+                                        f_handle.write("\n")
+                                        AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
+                                        f_handle.write(str(AUC_SCORE))
+                                        f_handle.write("\n")
         elif ALG_TYPE == 'DeLiClu':
             # for mu_ratio in [.2,.4,.6,.8]:
             for minpts_ratio in [.2,.6,.9]: # NEW
@@ -828,34 +828,34 @@ def main():
                         # for scoring_method in [1,2]: # Another test
                         # for scoring_method in [1]: #V2R 
                         # for scoring_method in [2]: # DRD1
-                        for DIVERSITY_CHECK in [True, False]:
-                            for PURITY_CHECK in [True, False]:
+                            for DIVERSITY_CHECK in [True, False]:
+                                for PURITY_CHECK in [True, False]:
 
-                                parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
-                                    "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
-                                    "minpts_ratio":minpts_ratio}
+                                    parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
+                                        "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
+                                        "minpts_ratio":minpts_ratio}
 
-                                # Create the molecular model
-                                [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK)
+                                    # Create the molecular model
+                                    [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK)
 
-                                print("Finished creating molecular feature model, beginning testing...")
+                                    print("Finished creating molecular feature model, beginning testing...")
 
-                                testing_molecules = training_test_molecules["data"]["test"]
+                                    testing_molecules = training_test_molecules["data"]["test"]
 
-                                # Combined active and inactive molecular fragments
-                                full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
+                                    # Combined active and inactive molecular fragments
+                                    full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
 
-                                print("Getting AUC Score for current dataset...")
-                                # Get the AUC score for the testing data
-                                f_handle.write("AUC Score for the current parameters:\n")
-                                json.dump(parameter_dictionary, f_handle)
-                                f_handle.write("\n")
-                                AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
-                                f_handle.write(str(AUC_SCORE))
-                                f_handle.write("\n")
+                                    print("Getting AUC Score for current dataset...")
+                                    # Get the AUC score for the testing data
+                                    f_handle.write("AUC Score for the current parameters:\n")
+                                    json.dump(parameter_dictionary, f_handle)
+                                    f_handle.write("\n")
+                                    AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
+                                    f_handle.write(str(AUC_SCORE))
+                                    f_handle.write("\n")
         elif ALG_TYPE == 'P3C':
             # for mu_ratio in [.2,.4,.6,.8]:
-            for iterations in [10,20,50,100]: # NEW
+            for threshold in [.00001,.0000000001,.0000000000000001]: # NEW
             # for mu_ratio in [.2]: # 5HT2B
             # for mu_ratio in [.2,.4,.9]: # Another test
             # for mu_ratio in [.4]: # V2R
@@ -877,31 +877,31 @@ def main():
                         # for scoring_method in [1,2]: # Another test
                         # for scoring_method in [1]: #V2R 
                         # for scoring_method in [2]: # DRD1
-                        for DIVERSITY_CHECK in [True, False]:
-                            for PURITY_CHECK in [True, False]:
+                            for DIVERSITY_CHECK in [True, False]:
+                                for PURITY_CHECK in [True, False]:
 
-                                parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
-                                    "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
-                                    "iterations":iterations}
+                                    parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
+                                        "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
+                                        "threshold":threshold}
 
-                                # Create the molecular model
-                                [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK)
+                                    # Create the molecular model
+                                    [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK)
 
-                                print("Finished creating molecular feature model, beginning testing...")
+                                    print("Finished creating molecular feature model, beginning testing...")
 
-                                testing_molecules = training_test_molecules["data"]["test"]
+                                    testing_molecules = training_test_molecules["data"]["test"]
 
-                                # Combined active and inactive molecular fragments
-                                full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
+                                    # Combined active and inactive molecular fragments
+                                    full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
 
-                                print("Getting AUC Score for current dataset...")
-                                # Get the AUC score for the testing data
-                                f_handle.write("AUC Score for the current parameters:\n")
-                                json.dump(parameter_dictionary, f_handle)
-                                f_handle.write("\n")
-                                AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
-                                f_handle.write(str(AUC_SCORE))
-                                f_handle.write("\n")
+                                    print("Getting AUC Score for current dataset...")
+                                    # Get the AUC score for the testing data
+                                    f_handle.write("AUC Score for the current parameters:\n")
+                                    json.dump(parameter_dictionary, f_handle)
+                                    f_handle.write("\n")
+                                    AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
+                                    f_handle.write(str(AUC_SCORE))
+                                    f_handle.write("\n")
         elif ALG_TYPE == 'HiSC':
             # for mu_ratio in [.2,.4,.6,.8]:
             for k_ratio in [.2,.6,.9]: # NEW
