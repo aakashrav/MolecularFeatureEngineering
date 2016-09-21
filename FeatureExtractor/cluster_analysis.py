@@ -198,7 +198,8 @@ def extract_clusters_from_file(filename):
 
 def prune_clusters(clusters, fragment_name_number_mapping, active_fragment_molecule_mapping, inactive_fragment_molecule_mapping, \
     diversity_threshold = 5, percentage = False, \
-    purity_threshold = .3, test = False):
+    purity_threshold = .3, DIVERSITY_CHECK=True,  PURITY_CHECK=True, \
+    test = False):
 
     print("Clusters before %d" % (len(clusters)))
 
@@ -213,61 +214,63 @@ def prune_clusters(clusters, fragment_name_number_mapping, active_fragment_molec
     
     degenerate_clusters = []
     
-    # First prune clusters that are not diverse enough with respect to activity
-    for i in range(len(clusters)):
-        all_points = clusters[i].get_points()
-        unique_active_molecules = []
-        for j in range(len(all_points)):
-            # In test versions we don't have the fragment name to number mapping
-            if not test:
-                point_fragment_id = clusters[i].get_id_points()[j]
-                fragment_name = fragment_name_number_mapping[point_fragment_id]
-            else:
-                fragment_name = clusters[i].get_id_points()[j]
+    if DIVERSITY_CHECK:
+        # First prune clusters that are not diverse enough with respect to activity
+        for i in range(len(clusters)):
+            all_points = clusters[i].get_points()
+            unique_active_molecules = []
+            for j in range(len(all_points)):
+                # In test versions we don't have the fragment name to number mapping
+                if not test:
+                    point_fragment_id = clusters[i].get_id_points()[j]
+                    fragment_name = fragment_name_number_mapping[point_fragment_id]
+                else:
+                    fragment_name = clusters[i].get_id_points()[j]
 
-            try:
-                molecules_of_fragment = active_fragment_molecule_mapping[fragment_name]
-            except KeyError:
-                # Fragment only occurs in inactive molecules
-                continue
+                try:
+                    molecules_of_fragment = active_fragment_molecule_mapping[fragment_name]
+                except KeyError:
+                    # Fragment only occurs in inactive molecules
+                    continue
+                    
+                for molecule in molecules_of_fragment:
+                    if molecule not in unique_active_molecules:
+                        unique_active_molecules.append(molecule)
+
+            if len(unique_active_molecules) < diversity_threshold:
+                degenerate_clusters.append(i)
+
+    if PURITY_CHECK:
+        # Then prune clusters that are not pure enough
+        for i in range(len(clusters)):
+            all_points = clusters[i].get_points()
+            num_actives_in_cluster = 0
+            num_inactives_in_cluster = 0
+            for j in range(len(all_points)):
+                point_fragment_id = clusters[i].get_id_points()[j]
                 
-            for molecule in molecules_of_fragment:
-                if molecule not in unique_active_molecules:
-                    unique_active_molecules.append(molecule)
+                if not test:
+                    point_fragment_id = clusters[i].get_id_points()[j]
+                    fragment_name = fragment_name_number_mapping[point_fragment_id]
+                else:
+                    fragment_name = clusters[i].get_id_points()[j]
 
-        if len(unique_active_molecules) < diversity_threshold:
-            degenerate_clusters.append(i)
+                try:
+                    molecules_of_fragment = active_fragment_molecule_mapping[fragment_name]
+                    num_actives_in_cluster+=len(molecules_of_fragment)
+                except KeyError:
+                    # Clear exception data and continue
+                    sys.exc_clear()
 
-    # Then prune clusters that are not pure enough
-    for i in range(len(clusters)):
-        all_points = clusters[i].get_points()
-        num_actives_in_cluster = 0
-        num_inactives_in_cluster = 0
-        for j in range(len(all_points)):
-            point_fragment_id = clusters[i].get_id_points()[j]
+                try:
+                    molecules_of_fragment = inactive_fragment_molecule_mapping[fragment_name]
+                    num_inactives_in_cluster+=len(molecules_of_fragment)
+                except KeyError:
+                    continue
             
-            if not test:
-                point_fragment_id = clusters[i].get_id_points()[j]
-                fragment_name = fragment_name_number_mapping[point_fragment_id]
-            else:
-                fragment_name = clusters[i].get_id_points()[j]
-
-            try:
-                molecules_of_fragment = active_fragment_molecule_mapping[fragment_name]
-                num_actives_in_cluster+=len(molecules_of_fragment)
-            except KeyError:
-                # Clear exception data and continue
-                sys.exc_clear()
-
-            try:
-                molecules_of_fragment = inactive_fragment_molecule_mapping[fragment_name]
-                num_inactives_in_cluster+=len(molecules_of_fragment)
-            except KeyError:
-                continue
-        
-        cluster_activity = num_actives_in_cluster/(num_actives_in_cluster + num_inactives_in_cluster)
-        if (cluster_activity < purity_threshold):
-            degenerate_clusters.append(i)
+            cluster_activity = num_actives_in_cluster/(num_actives_in_cluster + num_inactives_in_cluster)
+            if (cluster_activity < purity_threshold):
+                degenerate_clusters.append(i)
     
     # Get final unique list of all non-significant clusters
     degenerate_clusters = np.unique(degenerate_clusters)
@@ -355,7 +358,8 @@ def check_subspace_dimensions_match(list,tuple):
     return True
 
 
-def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversity_percentage, ALG_TYPE='DISH',dimensions=None):
+def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversity_percentage, ALG_TYPE='DISH',dimensions=None, \
+    DIVRSITY_CHECK=True, PURITY_CHECK=True):
 
     DATA_DIRECTORY = config.DATA_DIRECTORY
 
@@ -380,7 +384,8 @@ def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversi
 
     clusters = prune_clusters(clusters, fragment_number_name_mapping, \
         active_fragment_molecule_mapping, inactive_fragment_molecule_mapping,\
-         diversity_threshold=diversity_threshold, percentage=diversity_percentage, purity_threshold=purity_threshold)
+         diversity_threshold=diversity_threshold, percentage=diversity_percentage, purity_threshold=purity_threshold, \
+         DIVERSITY_CHECK = DIVERSITY_CHECK, PURITY_CHECK = PURITY_CHECK)
 
     molecular_cluster_model = []
     for cluster in clusters:
