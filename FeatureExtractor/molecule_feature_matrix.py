@@ -555,7 +555,7 @@ def get_activity(molecule):
 
 # Cluster ranking
 def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
-    global_median_cache,used_features,scoring_method):
+    global_median_cache,used_features,scoring_method,descriptor_csv_file):
     
     cluster_rankings_list = []
     final_sorted_activity_list = []
@@ -676,7 +676,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 
     # Get the most important features
     important_features_full = []
-    with open('all_descriptors.csv','r') as f_handle:
+    with open(descriptor_csv_file,'r') as f_handle:
         reader = csv.reader(f_handle, delimiter=',')
         features = next(reader)
         features = features[1:len(features)-1]
@@ -727,6 +727,7 @@ def main():
     training_test_split_file = sys.argv[4]
     results_file = sys.argv[5]
     ALG_TYPE = sys.argv[6]
+    descriptor_csv_file = sys.argv[7]
     MOLECULAR_MODEL_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
 
     with open(training_test_split_file,"r+") as f_handle:
@@ -819,7 +820,7 @@ def main():
                             f_handle.write("Purity Check: ")
                             f_handle.write(PURITY_CHECK)
                             f_handle.write("\n")
-                            AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
+                            AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"],descriptor_csv_file)
                             f_handle.write(str(AUC_SCORE))
                             f_handle.write("\n")
                             f_handle.write("\n")
