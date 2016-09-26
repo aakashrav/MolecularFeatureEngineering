@@ -797,6 +797,7 @@ def main():
 
                             DIVERSITY_THRESHOLD = .5
                             PURITY_THRESHOLD = .5
+                            PURITY_CHECK = False
 
                             parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
                                 "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
