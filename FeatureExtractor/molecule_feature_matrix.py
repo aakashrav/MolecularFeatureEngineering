@@ -679,7 +679,6 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
     with open(descriptor_csv_file,'r') as f_handle:
         reader = csv.reader(f_handle, delimiter=',')
         features = next(reader)
-        features = features[1:len(features)-1]
         for cluster_model in molecular_cluster_model:
             important_features = [features[index] for index,el in enumerate(cluster_model['subspace']) if el != 0]
             important_features_full.append(important_features)
