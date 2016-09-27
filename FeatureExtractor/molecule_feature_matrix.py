@@ -555,7 +555,7 @@ def get_activity(molecule):
 
 # Cluster ranking
 def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
-    global_median_cache,used_features,scoring_method,descriptor_csv_file):
+    global_median_cache,used_features,scoring_method,descriptor_csv_file, bayes_subspace = None, bayes_centroid = None):
     
     cluster_rankings_list = []
     final_sorted_activity_list = []
@@ -570,6 +570,83 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
     if len(molecular_cluster_model) == 0:
         print "No clusters found in model; can't evaluate any new test molecules..."
         return -1
+
+    if (bayes_subspace is not None) and (bayes_centroid is not None):
+
+        for feature in range(bayes_subspace):
+            feature_max[feature] = 0
+            feature_min[feature] = float("inf")
+
+        for test_molecule in molecule_names_and_activity:
+            full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
+                                if molecule["name"] == test_molecule["name"]]
+
+            # First index is actual fragments, since there 
+            # can exist only one key value pair for the molecule and its fragments
+            full_fragments = full_fragments[0]
+            fragments = [fragment["smiles"] for fragment in full_fragments]
+
+            found_fragments = []
+            feature_matrix = np.empty((0,len(used_features)))
+
+            # Create the feature matrix for the fragments of this particular molecule
+            for f in fragments:
+                # If we already found the fragment, we continue on; will save us time and space
+                if f in found_fragments:
+                    continue
+                else:
+                    found_fragments.append(f)
+                    
+                    try:
+                        ix_f = descriptors_map[f]
+                        current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
+                        # Append this fragment to our feature matrix
+                        feature_matrix = np.vstack((feature_matrix,current_fragment))
+
+                        # Add new maxes and mins
+                        for feature in current_fragment:
+                            if current_fragment[feature] < feature_min[feature]:
+                                feature_min[feature] = current_fragment[feature]
+                            if current_fragment[feature] > feature_max[feature]:
+                                feature_max[feature] = current_fragment[feature]
+
+                    except KeyError:
+                        print("Key error during AUC calculation!")
+                        continue
+
+            molecule_fragment_matrices[test_molecule["name"]] = feature_matrix
+
+        # Normalize the test molecule fragment matrices
+        for m_name, feature_matrix in molecule_fragment_matrices.iteritems():
+            for row in range(feature_matrix.shape[0]):
+                for feature in range(feature_matrix.shape[1]):
+                    feature_matrix[row,feature] = (feature_matrix[row,feature] - feature_min[feature]) / (feature_max[feature] - feature_min[feature])
+                    if not (np.isfinite(feature_matrix[row,feature])):
+                        feature_matrix[row,feature] = feature_max[feature]
+
+        bayes_sorted_activity_list = []
+        distance_array = []
+
+        for test_molecule in molecule_names_and_activity:
+
+            for i in range(molecule_fragment_matrices[test_molecule["name"]].shape[0]):
+                current_centroid_distance = _compute_subspace_distance(molecule_fragment_matrices[test_molecule["name"]][i],bayes_centroid,bayes_subspace)
+                distance_array.append(current_centroid_distance)
+            
+            # No fragments are found for this molecule, so we continue since we can't evaluate it.
+            if (len(distance_array) == 0):
+                continue
+
+            if scoring_method == 1:
+                score = np.mean(np.asarray(distance_array))
+            else:
+                score = np.min(np.asarray(distance_array))
+
+            score = np.around(score, decimals=10)
+            bayes_sorted_activity_list.append({"name":test_molecule["name"],"score":score,"activity":test_molecule["activity"]})
+        
+        bayes_sorted_activity_list = sorted(bayes_sorted_activity_list,key=get_score)
+        return Scoring.CalcAUC(bayes_sorted_activity_list)
 
     for test_molecule in molecule_names_and_activity:
         full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
@@ -613,6 +690,13 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                 except KeyError:
                     print("Key error during AUC calculation!")
                     continue
+
+        # Normalize the test molecule fragments
+        for row in range(feature_matrix.shape[0]):
+            for feature in range(feature_matrix.shape[1]):
+                feature_matrix[row,feature] = (feature_matrix[row,feature] - feature_min[feature]) / (feature_max[feature] - feature_min[feature])
+                if not (np.isfinite(feature_matrix[row,feature])):
+                    feature_matrix[row,feature] = feature_max[feature]
 
         molecule_fragment_matrices[test_molecule["name"]] = feature_matrix
 
@@ -727,6 +811,12 @@ def main():
     results_file = sys.argv[5]
     ALG_TYPE = sys.argv[6]
     descriptor_csv_file = sys.argv[7]
+    
+    try:
+        bayes_model_file = sys.argv[8]
+    except IndexError:
+        bayes_model_file = None
+
     MOLECULAR_MODEL_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
 
     with open(training_test_split_file,"r+") as f_handle:
@@ -759,7 +849,37 @@ def main():
     features = MolecularPreprocessing.remove_constant_features(features)
 
     print("Creating molecular feature model...")
-    
+
+    if bayes_model_file is not None:
+
+        with open(descriptor_csv_file,'r') as f_handle:
+            reader = csv.reader(f_handle, delimiter=',')
+            features = next(reader)
+            bayes_subspace = 0 * len(features)
+            bayes_centroid = None * len(features)
+
+            with open(bayes_model_file,'r') as bayes_handle:
+                bayes_features = csv.reader(bayes_handle, delimiter=',')
+                for row in bayes_features:
+                    bayes_subspace[features.index(row[0])] = 1
+                    bayes_centroid[features.index(row[0])] = row[1]
+
+                testing_molecules = training_test_molecules["data"]["test"]
+                full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
+
+                AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,None,None,1,descriptor_csv_file,bayes_subspace,bayes_centroid)
+                print("Bayes scoring method 1: ")
+                print(AUC_SCORE)
+                print("\n")
+                AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,None,None,2,descriptor_csv_file,bayes_subspace,bayes_centroid)
+                print("Bayes scoring method 2: ")
+                print(AUC_SCORE)
+                print("\n")
+
+        return
+
+
+
     with open(results_file,'w+') as f_handle:
         if ALG_TYPE == 'DISH':
             # for mu_ratio in [.2,.4,.6,.8]:
