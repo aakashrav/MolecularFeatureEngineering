@@ -895,7 +895,7 @@ def main():
             # for mu_ratio in [.4]: # V2R
             # for mu_ratio in [0.8]: # DRD1
                 # for epsilon in [.1,.4,.6,.8]:
-                for epsilon in [.0000005,.00005,.0005]: # NEW
+                for epsilon in [.000000005,.0000005,.000005]: # NEW
                 # for epsilon in [.1]: #5HT2B
                 # for epsilon in [.1,.5,.7]: # Another test 
                 # for epsilon in [.1]: #V2R
