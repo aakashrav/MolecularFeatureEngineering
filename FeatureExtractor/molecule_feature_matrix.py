@@ -856,7 +856,7 @@ def main():
                                         "PURITY_THRESHOLD":.5,"scoring_method":1,
                                         "minpts_ratio":.4}
 
-        [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, DISH, False, False)
+        [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, False, False)
 
         with open(descriptor_csv_file,'r') as f_handle:
             reader = csv.reader(f_handle, delimiter=',')
