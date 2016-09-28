@@ -573,7 +573,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 
     if (bayes_subspace is not None) and (bayes_centroid is not None):
 
-        for feature in range(bayes_subspace):
+        for feature in range(len(bayes_subspace)):
             feature_max[feature] = 0
             feature_min[feature] = float("inf")
 
