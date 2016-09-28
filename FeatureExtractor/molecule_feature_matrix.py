@@ -867,11 +867,11 @@ def main():
                 testing_molecules = training_test_molecules["data"]["test"]
                 full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
 
-                AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,descriptors_map=features_map,descriptors=features,MOLECULAR_MODEL_DIRECTORY,None,None,1,descriptor_csv_file,bayes_subspace,bayes_centroid)
+                AUC_SCORE = get_AUC(molecule_names_and_activity=testing_molecules,molecules_to_fragments=full_molecules_to_fragments,descriptors_map=features_map,descriptors=features,MODEL_DIRECTORY=MOLECULAR_MODEL_DIRECTORY,global_median_cache=None,used_features=None,scoring_method=1,descriptor_csv_file=descriptor_csv_file,bayes_subspace=bayes_subspace,bayes_centroid=bayes_centroid)
                 print("Bayes scoring method 1: ")
                 print(AUC_SCORE)
                 print("\n")
-                AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,descriptors_map=features_map,descriptors=features,MOLECULAR_MODEL_DIRECTORY,None,None,2,descriptor_csv_file,bayes_subspace,bayes_centroid)
+                AUC_SCORE = get_AUC(molecule_names_and_activity=testing_molecules,molecules_to_fragments=full_molecules_to_fragments,descriptors_map=features_map,descriptors=features,MODEL_DIRECTORY=MOLECULAR_MODEL_DIRECTORY,global_median_cache=None,used_features=None,scoring_method=2,descriptor_csv_file=descriptor_csv_file,bayes_subspace=bayes_subspace,bayes_centroid=bayes_centroid)
                 print("Bayes scoring method 2: ")
                 print(AUC_SCORE)
                 print("\n")
