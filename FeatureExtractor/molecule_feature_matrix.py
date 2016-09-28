@@ -855,8 +855,8 @@ def main():
         with open(descriptor_csv_file,'r') as f_handle:
             reader = csv.reader(f_handle, delimiter=',')
             features = next(reader)
-            bayes_subspace = 0 * len(features)
-            bayes_centroid = None * len(features)
+            bayes_subspace = [0] * len(features)
+            bayes_centroid = [None] * len(features)
 
             with open(bayes_model_file,'r') as bayes_handle:
                 bayes_features = csv.reader(bayes_handle, delimiter=',')
