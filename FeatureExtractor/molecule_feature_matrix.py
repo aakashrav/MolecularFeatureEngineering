@@ -599,8 +599,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                     
                     try:
                         ix_f = descriptors_map[f]
-                        print(ix_f)
-                        descriptors[ix_f]
+                        print(len(descriptors))
                         current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
                         # Append this fragment to our feature matrix
                         feature_matrix = np.vstack((feature_matrix,current_fragment))
