@@ -599,7 +599,6 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                     
                     try:
                         ix_f = descriptors_map[f]
-                        print(len(descriptors))
                         current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
                         # Append this fragment to our feature matrix
                         feature_matrix = np.vstack((feature_matrix,current_fragment))
@@ -852,6 +851,12 @@ def main():
     print("Creating molecular feature model...")
 
     if bayes_model_file is not None:
+
+        parameter_dictionary = {"DIVERSITY_THRESHOLD":.5, \
+                                        "PURITY_THRESHOLD":.5,"scoring_method":1,
+                                        "minpts_ratio":.4}
+
+        [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, DISH, False, False)
 
         with open(descriptor_csv_file,'r') as f_handle:
             reader = csv.reader(f_handle, delimiter=',')
