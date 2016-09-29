@@ -852,12 +852,6 @@ def main():
 
     if bayes_model_file is not None:
 
-        parameter_dictionary = {"DIVERSITY_THRESHOLD":.5, \
-                                "PURITY_THRESHOLD":.5,"scoring_method":1,
-                                "mu_ratio":.5,"epsilon":.2}
-
-        [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, False, False)
-
         with open(descriptor_csv_file,'r') as f_handle:
             reader = csv.reader(f_handle, delimiter=',')
             features = next(reader)
