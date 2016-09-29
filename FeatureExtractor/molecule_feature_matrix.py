@@ -564,13 +564,6 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
     for test_molecule in molecule_names_and_activity:
         final_sorted_activity_list.append({"name":test_molecule["name"],"ranking":0,"activity":test_molecule["activity"]})
 
-    with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
-        molecular_cluster_model = pickle.load(f_handle)
-
-    if len(molecular_cluster_model) == 0:
-        print "No clusters found in model; can't evaluate any new test molecules..."
-        return -1
-
     if (bayes_subspace is not None) and (bayes_centroid is not None):
 
         for feature in range(len(bayes_subspace)):
@@ -648,6 +641,13 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         bayes_sorted_activity_list = sorted(bayes_sorted_activity_list,key=get_score)
         return Scoring.CalcAUC(bayes_sorted_activity_list)
 
+    with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
+        molecular_cluster_model = pickle.load(f_handle)
+
+    if len(molecular_cluster_model) == 0:
+        print "No clusters found in model; can't evaluate any new test molecules..."
+        return -1
+    
     for test_molecule in molecule_names_and_activity:
         full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
                             if molecule["name"] == test_molecule["name"]]
