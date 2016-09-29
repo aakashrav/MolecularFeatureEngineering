@@ -647,7 +647,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
     if len(molecular_cluster_model) == 0:
         print "No clusters found in model; can't evaluate any new test molecules..."
         return -1
-    
+
     for test_molecule in molecule_names_and_activity:
         full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
                             if molecule["name"] == test_molecule["name"]]
@@ -670,6 +670,8 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                 
                 try:
                     ix_f = descriptors_map[f]
+                    print("Length! ")
+                    print(len(descriptors))
                     current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
 
                     # Obtain all feature values that have non-numerical values for this fragment
