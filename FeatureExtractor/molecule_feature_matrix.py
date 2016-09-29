@@ -672,6 +672,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                     ix_f = descriptors_map[f]
                     print("Length! ")
                     print(len(descriptors))
+                    sys.exit(0)
                     current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
 
                     # Obtain all feature values that have non-numerical values for this fragment
