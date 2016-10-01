@@ -844,6 +844,9 @@ def main():
     
     print("Reading the features file into memory...")
 
+    print(features_file)
+    sys.exit(0)
+    
     features_map, features = _read_descriptor_file(features_file)
     
     print("Removing constant features in feature matrix...")
