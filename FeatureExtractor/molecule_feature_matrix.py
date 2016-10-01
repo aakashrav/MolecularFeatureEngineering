@@ -849,6 +849,9 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     return [global_median_cache,used_features]
 
 def main():
+    print sys.argv
+    sys.exit(0)
+    
     actives_fragment_file = sys.argv[1] 
     inactives_fragment_file = sys.argv[2] 
     features_file = sys.argv[3]
