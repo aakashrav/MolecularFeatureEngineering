@@ -461,6 +461,10 @@ def _compute_subspace_distance(point_1,point_2,subspace):
     for i in range(len(point_1)):
         if subspace[i] == 1:
             # distance+=(np.subtract(np.asarray(point_1[i]),np.asarray(point_2[i]))**2)
+            print(point_1[i])
+            print("\n")
+            print(point_2[i])
+            print("\n")
             distance+=(point_1[i]-point_2[i])**2
     
     # Return the square root of the aggregated distance
