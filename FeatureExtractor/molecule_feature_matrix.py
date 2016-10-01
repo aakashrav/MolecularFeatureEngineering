@@ -665,6 +665,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         fragments = [fragment["smiles"] for fragment in full_fragments]
 
         found_fragments = []
+
         if (bayes_subspace is not None) and (bayes_centroid is not None):
             feature_matrix = np.empty((0,len(bayes_subspace)))
         else:
@@ -710,7 +711,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                     if not (np.isfinite(feature_matrix[row,feature])):
                         feature_matrix[row,feature] = feature_max[feature]
 
-            molecule_fragment_matrices[test_molecule["name"]] = feature_matrix
+        molecule_fragment_matrices[test_molecule["name"]] = feature_matrix
 
     if (bayes_subspace is not None) and (bayes_centroid is not None):
         # Normalize the test molecule fragment matrices
