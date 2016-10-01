@@ -816,14 +816,14 @@ def main():
         with open(descriptor_csv_file,'r') as f_handle:
             reader = csv.reader(f_handle, delimiter=',')
             features_next = next(reader)
-            bayes_subspace = [0] * len(features_next)
-            bayes_centroid = [0] * len(features_next)
+            bayes_subspace = [np.float(0)] * len(features_next)
+            bayes_centroid = [np.float(0)] * len(features_next)
 
             with open(bayes_model_file,'r') as bayes_handle:
                 bayes_features = csv.reader(bayes_handle, delimiter=',')
                 for row in bayes_features:
                     bayes_subspace[features_next.index(row[0])] = 1
-                    bayes_centroid[features_next.index(row[0])] = row[1]
+                    bayes_centroid[features_next.index(row[0])] = np.float(row[1])
 
                 testing_molecules = training_test_molecules["data"]["test"]
                 full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
