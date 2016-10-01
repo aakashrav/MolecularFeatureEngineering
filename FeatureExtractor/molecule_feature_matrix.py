@@ -584,6 +584,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 
         for test_molecule in molecule_names_and_activity:
 
+            # Loop over fragments of the molecule
             for i in range(molecule_fragment_matrices[test_molecule["name"]].shape[0]):
                 # closest_centroid_distance = np.min([ _compute_subspace_distance(feature_matrix[i],molecular_cluster_model[j]['centroid'],molecular_cluster_model[j]['subspace']) \
                 #     for j in range(len(molecular_cluster_model))])
@@ -603,9 +604,6 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
             score = np.around(score, decimals=10)
             cluster_sorted_activity_list.append({"name":test_molecule["name"],"score":score,"activity":test_molecule["activity"]})
 
-        # First sort based on the secondary key, the activity in reverse.
-        # cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_activity,reverse=True)
-        # Then sort based on the primary key, the score.
         cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_score)
         # Append the current cluster's ranking to the cluster ranking list.
         cluster_rankings_list.append(cluster_sorted_activity_list)
@@ -747,11 +745,9 @@ def main():
                 AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,None,None,1,descriptor_csv_file,bayes_subspace,bayes_centroid)
                 print("Bayes scoring method 1: ")
                 print(AUC_SCORE)
-                print("\n")
                 AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,None,None,2,descriptor_csv_file,bayes_subspace,bayes_centroid)
                 print("Bayes scoring method 2: ")
                 print(AUC_SCORE)
-                print("\n")
 
         return
 
