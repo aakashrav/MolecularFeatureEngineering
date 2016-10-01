@@ -459,7 +459,7 @@ def _compute_subspace_distance(point_1,point_2,subspace):
     
     distance = 0
     for i in range(len(point_1)):
-        if i in subspace:
+        if subspace[i] == 1:
             distance+=((point_1[i] - point_2[i])**2)
     
     # Return the square root of the aggregated distance
@@ -563,83 +563,6 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 
     for test_molecule in molecule_names_and_activity:
         final_sorted_activity_list.append({"name":test_molecule["name"],"ranking":0,"activity":test_molecule["activity"]})
-
-    # if (bayes_subspace is not None) and (bayes_centroid is not None):
-
-    #     for feature in range(len(bayes_subspace)):
-    #         feature_max[feature] = 0
-    #         feature_min[feature] = float("inf")
-
-    #     for test_molecule in molecule_names_and_activity:
-    #         full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
-    #                             if molecule["name"] == test_molecule["name"]]
-
-    #         # First index is actual fragments, since there 
-    #         # can exist only one key value pair for the molecule and its fragments
-    #         full_fragments = full_fragments[0]
-    #         fragments = [fragment["smiles"] for fragment in full_fragments]
-
-    #         found_fragments = []
-    #         feature_matrix = np.empty((0,len(bayes_subspace)))
-
-    #         # Create the feature matrix for the fragments of this particular molecule
-    #         for f in fragments:
-    #             # If we already found the fragment, we continue on; will save us time and space
-    #             if f in found_fragments:
-    #                 continue
-    #             else:
-    #                 found_fragments.append(f)
-                    
-    #                 try:
-    #                     ix_f = descriptors_map[f]
-    #                     current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
-    #                     # Append this fragment to our feature matrix
-    #                     feature_matrix = np.vstack((feature_matrix,current_fragment))
-
-    #                     # Add new maxes and mins
-    #                     for feature in current_fragment:
-    #                         if current_fragment[feature] < feature_min[feature]:
-    #                             feature_min[feature] = current_fragment[feature]
-    #                         if current_fragment[feature] > feature_max[feature]:
-    #                             feature_max[feature] = current_fragment[feature]
-
-    #                 except KeyError:
-    #                     print("Key error during AUC calculation!")
-    #                     continue
-
-    #         molecule_fragment_matrices[test_molecule["name"]] = feature_matrix
-
-    #     # Normalize the test molecule fragment matrices
-    #     for m_name, feature_matrix in molecule_fragment_matrices.iteritems():
-    #         for row in range(feature_matrix.shape[0]):
-    #             for feature in range(feature_matrix.shape[1]):
-    #                 feature_matrix[row,feature] = (feature_matrix[row,feature] - feature_min[feature]) / (feature_max[feature] - feature_min[feature])
-    #                 if not (np.isfinite(feature_matrix[row,feature])):
-    #                     feature_matrix[row,feature] = feature_max[feature]
-
-    #     bayes_sorted_activity_list = []
-    #     distance_array = []
-
-    #     for test_molecule in molecule_names_and_activity:
-
-    #         for i in range(molecule_fragment_matrices[test_molecule["name"]].shape[0]):
-    #             current_centroid_distance = _compute_subspace_distance(molecule_fragment_matrices[test_molecule["name"]][i],bayes_centroid,bayes_subspace)
-    #             distance_array.append(current_centroid_distance)
-            
-    #         # No fragments are found for this molecule, so we continue since we can't evaluate it.
-    #         if (len(distance_array) == 0):
-    #             continue
-
-    #         if scoring_method == 1:
-    #             score = np.mean(np.asarray(distance_array))
-    #         else:
-    #             score = np.min(np.asarray(distance_array))
-
-    #         score = np.around(score, decimals=10)
-    #         bayes_sorted_activity_list.append({"name":test_molecule["name"],"score":score,"activity":test_molecule["activity"]})
-        
-    #     bayes_sorted_activity_list = sorted(bayes_sorted_activity_list,key=get_score)
-    #     return Scoring.CalcAUC(bayes_sorted_activity_list)
 
     with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
         molecular_cluster_model = pickle.load(f_handle)
