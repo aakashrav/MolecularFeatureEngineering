@@ -849,9 +849,6 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     return [global_median_cache,used_features]
 
 def main():
-    print sys.argv
-    sys.exit(0)
-    
     actives_fragment_file = sys.argv[1] 
     inactives_fragment_file = sys.argv[2] 
     features_file = sys.argv[3]
@@ -902,15 +899,15 @@ def main():
 
         with open(descriptor_csv_file,'r') as f_handle:
             reader = csv.reader(f_handle, delimiter=',')
-            features = next(reader)
-            bayes_subspace = [0] * len(features)
-            bayes_centroid = [None] * len(features)
+            features_next = next(reader)
+            bayes_subspace = [0] * len(features_next)
+            bayes_centroid = [None] * len(features_next)
 
             with open(bayes_model_file,'r') as bayes_handle:
                 bayes_features = csv.reader(bayes_handle, delimiter=',')
                 for row in bayes_features:
-                    bayes_subspace[features.index(row[0])] = 1
-                    bayes_centroid[features.index(row[0])] = row[1]
+                    bayes_subspace[features_next.index(row[0])] = 1
+                    bayes_centroid[features_next.index(row[0])] = row[1]
 
                 testing_molecules = training_test_molecules["data"]["test"]
                 full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
