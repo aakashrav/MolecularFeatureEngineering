@@ -564,51 +564,152 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
     for test_molecule in molecule_names_and_activity:
         final_sorted_activity_list.append({"name":test_molecule["name"],"ranking":0,"activity":test_molecule["activity"]})
 
+    # if (bayes_subspace is not None) and (bayes_centroid is not None):
+
+    #     for feature in range(len(bayes_subspace)):
+    #         feature_max[feature] = 0
+    #         feature_min[feature] = float("inf")
+
+    #     for test_molecule in molecule_names_and_activity:
+    #         full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
+    #                             if molecule["name"] == test_molecule["name"]]
+
+    #         # First index is actual fragments, since there 
+    #         # can exist only one key value pair for the molecule and its fragments
+    #         full_fragments = full_fragments[0]
+    #         fragments = [fragment["smiles"] for fragment in full_fragments]
+
+    #         found_fragments = []
+    #         feature_matrix = np.empty((0,len(bayes_subspace)))
+
+    #         # Create the feature matrix for the fragments of this particular molecule
+    #         for f in fragments:
+    #             # If we already found the fragment, we continue on; will save us time and space
+    #             if f in found_fragments:
+    #                 continue
+    #             else:
+    #                 found_fragments.append(f)
+                    
+    #                 try:
+    #                     ix_f = descriptors_map[f]
+    #                     current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
+    #                     # Append this fragment to our feature matrix
+    #                     feature_matrix = np.vstack((feature_matrix,current_fragment))
+
+    #                     # Add new maxes and mins
+    #                     for feature in current_fragment:
+    #                         if current_fragment[feature] < feature_min[feature]:
+    #                             feature_min[feature] = current_fragment[feature]
+    #                         if current_fragment[feature] > feature_max[feature]:
+    #                             feature_max[feature] = current_fragment[feature]
+
+    #                 except KeyError:
+    #                     print("Key error during AUC calculation!")
+    #                     continue
+
+    #         molecule_fragment_matrices[test_molecule["name"]] = feature_matrix
+
+    #     # Normalize the test molecule fragment matrices
+    #     for m_name, feature_matrix in molecule_fragment_matrices.iteritems():
+    #         for row in range(feature_matrix.shape[0]):
+    #             for feature in range(feature_matrix.shape[1]):
+    #                 feature_matrix[row,feature] = (feature_matrix[row,feature] - feature_min[feature]) / (feature_max[feature] - feature_min[feature])
+    #                 if not (np.isfinite(feature_matrix[row,feature])):
+    #                     feature_matrix[row,feature] = feature_max[feature]
+
+    #     bayes_sorted_activity_list = []
+    #     distance_array = []
+
+    #     for test_molecule in molecule_names_and_activity:
+
+    #         for i in range(molecule_fragment_matrices[test_molecule["name"]].shape[0]):
+    #             current_centroid_distance = _compute_subspace_distance(molecule_fragment_matrices[test_molecule["name"]][i],bayes_centroid,bayes_subspace)
+    #             distance_array.append(current_centroid_distance)
+            
+    #         # No fragments are found for this molecule, so we continue since we can't evaluate it.
+    #         if (len(distance_array) == 0):
+    #             continue
+
+    #         if scoring_method == 1:
+    #             score = np.mean(np.asarray(distance_array))
+    #         else:
+    #             score = np.min(np.asarray(distance_array))
+
+    #         score = np.around(score, decimals=10)
+    #         bayes_sorted_activity_list.append({"name":test_molecule["name"],"score":score,"activity":test_molecule["activity"]})
+        
+    #     bayes_sorted_activity_list = sorted(bayes_sorted_activity_list,key=get_score)
+    #     return Scoring.CalcAUC(bayes_sorted_activity_list)
+
+    with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
+        molecular_cluster_model = pickle.load(f_handle)
+
+    if len(molecular_cluster_model) == 0:
+        print "No clusters found in model; can't evaluate any new test molecules..."
+        return -1
+
     if (bayes_subspace is not None) and (bayes_centroid is not None):
 
         for feature in range(len(bayes_subspace)):
             feature_max[feature] = 0
             feature_min[feature] = float("inf")
 
-        for test_molecule in molecule_names_and_activity:
-            full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
-                                if molecule["name"] == test_molecule["name"]]
+    for test_molecule in molecule_names_and_activity:
 
-            # First index is actual fragments, since there 
-            # can exist only one key value pair for the molecule and its fragments
-            full_fragments = full_fragments[0]
-            fragments = [fragment["smiles"] for fragment in full_fragments]
+        full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
+                            if molecule["name"] == test_molecule["name"]]
 
-            found_fragments = []
-            feature_matrix = np.empty((0,len(bayes_subspace)))
+        # First index is actual fragments, since there 
+        # can exist only one key value pair for the molecule and its fragments
+        full_fragments = full_fragments[0]
+        fragments = [fragment["smiles"] for fragment in full_fragments]
 
-            # Create the feature matrix for the fragments of this particular molecule
-            for f in fragments:
-                # If we already found the fragment, we continue on; will save us time and space
-                if f in found_fragments:
+        found_fragments = []
+        feature_matrix = np.empty((0,len(used_features)))
+
+        # Create the feature matrix for the fragments of this particular molecule
+        for f in fragments:
+            # If we already found the fragment, we continue on; will save us time and space
+            if f in found_fragments:
+                continue
+            else:
+                found_fragments.append(f)
+                
+                try:
+                    ix_f = descriptors_map[f]
+                    current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
+
+                    if not ((bayes_subspace is not None) and (bayes_centroid is not None)):
+                        # Obtain all feature values that have non-numerical values for this fragment
+                        nan_descriptors = np.where(np.isfinite(current_fragment) != True)
+
+                        # Impute these non-numerical values with the values from the global median cache
+                        # which was again, obtained from the training set.
+                        for j in nan_descriptors:
+                            current_fragment[0,j] = global_median_cache[0,j]
+
+                        # Finally, project the features of the current fragment into only the non-degenerate
+                        # feature space as learned from the training set.
+                        current_fragment = current_fragment[:,used_features]
+
+                    # Append this fragment to our feature matrix
+                    feature_matrix = np.vstack((feature_matrix,current_fragment))
+
+                except KeyError:
+                    print("Key error during AUC calculation!")
                     continue
-                else:
-                    found_fragments.append(f)
-                    
-                    try:
-                        ix_f = descriptors_map[f]
-                        current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
-                        # Append this fragment to our feature matrix
-                        feature_matrix = np.vstack((feature_matrix,current_fragment))
 
-                        # Add new maxes and mins
-                        for feature in current_fragment:
-                            if current_fragment[feature] < feature_min[feature]:
-                                feature_min[feature] = current_fragment[feature]
-                            if current_fragment[feature] > feature_max[feature]:
-                                feature_max[feature] = current_fragment[feature]
-
-                    except KeyError:
-                        print("Key error during AUC calculation!")
-                        continue
+        if not ((bayes_subspace is not None) and (bayes_centroid is not None)):
+            # Normalize the test molecule fragments
+            for row in range(feature_matrix.shape[0]):
+                for feature in range(feature_matrix.shape[1]):
+                    feature_matrix[row,feature] = (feature_matrix[row,feature] - feature_min[feature]) / (feature_max[feature] - feature_min[feature])
+                    if not (np.isfinite(feature_matrix[row,feature])):
+                        feature_matrix[row,feature] = feature_max[feature]
 
             molecule_fragment_matrices[test_molecule["name"]] = feature_matrix
 
+    if (bayes_subspace is not None) and (bayes_centroid is not None):
         # Normalize the test molecule fragment matrices
         for m_name, feature_matrix in molecule_fragment_matrices.iteritems():
             for row in range(feature_matrix.shape[0]):
@@ -640,68 +741,6 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         
         bayes_sorted_activity_list = sorted(bayes_sorted_activity_list,key=get_score)
         return Scoring.CalcAUC(bayes_sorted_activity_list)
-
-    with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
-        molecular_cluster_model = pickle.load(f_handle)
-
-    if len(molecular_cluster_model) == 0:
-        print "No clusters found in model; can't evaluate any new test molecules..."
-        return -1
-
-    for test_molecule in molecule_names_and_activity:
-        full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
-                            if molecule["name"] == test_molecule["name"]]
-
-        # First index is actual fragments, since there 
-        # can exist only one key value pair for the molecule and its fragments
-        full_fragments = full_fragments[0]
-        fragments = [fragment["smiles"] for fragment in full_fragments]
-
-        found_fragments = []
-        feature_matrix = np.empty((0,len(used_features)))
-
-        # Create the feature matrix for the fragments of this particular molecule
-        for f in fragments:
-            # If we already found the fragment, we continue on; will save us time and space
-            if f in found_fragments:
-                continue
-            else:
-                found_fragments.append(f)
-                
-                try:
-                    ix_f = descriptors_map[f]
-                    print("Length! ")
-                    print(len(descriptors))
-                    sys.exit(0)
-                    current_fragment = descriptors[ix_f].reshape(1,len(descriptors[ix_f]))
-
-                    # Obtain all feature values that have non-numerical values for this fragment
-                    nan_descriptors = np.where(np.isfinite(current_fragment) != True)
-
-                    # Impute these non-numerical values with the values from the global median cache
-                    # which was again, obtained from the training set.
-                    for j in nan_descriptors:
-                        current_fragment[0,j] = global_median_cache[0,j]
-
-                    # Finally, project the features of the current fragment into only the non-degenerate
-                    # feature space as learned from the training set.
-                    current_fragment = current_fragment[:,used_features]
-
-                    # Append this fragment to our feature matrix
-                    feature_matrix = np.vstack((feature_matrix,current_fragment))
-
-                except KeyError:
-                    print("Key error during AUC calculation!")
-                    continue
-
-        # Normalize the test molecule fragments
-        for row in range(feature_matrix.shape[0]):
-            for feature in range(feature_matrix.shape[1]):
-                feature_matrix[row,feature] = (feature_matrix[row,feature] - feature_min[feature]) / (feature_max[feature] - feature_min[feature])
-                if not (np.isfinite(feature_matrix[row,feature])):
-                    feature_matrix[row,feature] = feature_max[feature]
-
-        molecule_fragment_matrices[test_molecule["name"]] = feature_matrix
 
     for cluster_model in molecular_cluster_model:
         
@@ -844,9 +883,6 @@ def main():
     
     print("Reading the features file into memory...")
 
-    print(features_file)
-    sys.exit(0)
-    
     features_map, features = _read_descriptor_file(features_file)
     
     print("Removing constant features in feature matrix...")
