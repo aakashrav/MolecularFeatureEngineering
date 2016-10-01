@@ -460,7 +460,8 @@ def _compute_subspace_distance(point_1,point_2,subspace):
     distance = 0
     for i in range(len(point_1)):
         if subspace[i] == 1:
-            distance+=(np.subtract(np.asarray(point_1[i]),np.asarray(point_2[i]))**2)
+            # distance+=(np.subtract(np.asarray(point_1[i]),np.asarray(point_2[i]))**2)
+            distance+=(point_1[i]-point_2[i])**2
     
     # Return the square root of the aggregated distance
     return np.sqrt(distance)
@@ -571,12 +572,6 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         print "No clusters found in model; can't evaluate any new test molecules..."
         return -1
 
-    if (bayes_subspace is not None) and (bayes_centroid is not None):
-
-        for feature in range(len(bayes_subspace)):
-            feature_max[feature] = 0
-            feature_min[feature] = float("inf")
-
     for test_molecule in molecule_names_and_activity:
 
         full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
@@ -637,13 +632,6 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         molecule_fragment_matrices[test_molecule["name"]] = feature_matrix
 
     if (bayes_subspace is not None) and (bayes_centroid is not None):
-        # Normalize the test molecule fragment matrices
-        for m_name, feature_matrix in molecule_fragment_matrices.iteritems():
-            for row in range(feature_matrix.shape[0]):
-                for feature in range(feature_matrix.shape[1]):
-                    feature_matrix[row,feature] = (feature_matrix[row,feature] - feature_min[feature]) / (feature_max[feature] - feature_min[feature])
-                    if not (np.isfinite(feature_matrix[row,feature])):
-                        feature_matrix[row,feature] = feature_max[feature]
 
         bayes_sorted_activity_list = []
         distance_array = []
