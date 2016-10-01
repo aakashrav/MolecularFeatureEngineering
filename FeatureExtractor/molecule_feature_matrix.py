@@ -665,7 +665,10 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         fragments = [fragment["smiles"] for fragment in full_fragments]
 
         found_fragments = []
-        feature_matrix = np.empty((0,len(used_features)))
+        if (bayes_subspace is not None) and (bayes_centroid is not None):
+            feature_matrix = np.empty((0,len(bayes_subspace)))
+        else:
+            feature_matrix = np.empty((0,len(used_features)))
 
         # Create the feature matrix for the fragments of this particular molecule
         for f in fragments:
