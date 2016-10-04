@@ -641,7 +641,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         reader = csv.reader(f_handle, delimiter=',')
         features = next(reader)
         for cluster_model in molecular_cluster_model:
-            important_features = [features[index] for index,el in enumerate(cluster_model['subspace']) if el != 0]
+            important_features = [ [features[index], cluster_model['centroid'][index]] for index,el in enumerate(cluster_model['subspace']) if el != 0]
             important_features_full.append(important_features)
 
     return len(molecular_cluster_model), Scoring.CalcAUC(final_sorted_activity_list, "activity"), important_features_full
@@ -764,7 +764,7 @@ def main():
             # for mu_ratio in [.4]: # V2R
             # for mu_ratio in [0.8]: # DRD1
                 # for epsilon in [.1,.4,.6,.8]:
-                for epsilon in [.000000005,.0000005,.000005]: # NEW
+                for epsilon in [.0000000000005,.00000000005,.0000000005]: # NEW
                 # for epsilon in [.1]: #5HT2B
                 # for epsilon in [.1,.5,.7]: # Another test 
                 # for epsilon in [.1]: #V2R
