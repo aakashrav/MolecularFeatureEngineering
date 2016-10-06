@@ -1,0 +1,9 @@
+# MolecularFeatureEngineering
+
+This set of libraries contains various features, with more to be added and existing code to be updated.
+
+In the FeatureExtractor and DetectCorrelations module we have methods to create a molecular feature matrix based on actives and inactives with respect tto a specific target, and perform the necessary imputations to obtain clean data. sample_usage.py provides an example on how to use this part of the library
+
+DataGenerator provides methods for generating subspace clusters: vectors that are clustered along certain dimensions but not others in high dimensional data, which is very similar to the molecular feature space.
+
+NOTE: The library assumes that the user has NumPy and scikitlearn installed on their development environment.
