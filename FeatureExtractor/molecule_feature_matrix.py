@@ -663,7 +663,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 
     for cluster_model in molecular_cluster_model:
         common_dimensions = []
-        for i in range(bayes_subspace):
+        for i in range(len(bayes_subspace)):
             if (bayes_subspace[i] == 1) and (cluster_model['centroid'] == 1):
                 common_dimensions.append(1)
             else:
