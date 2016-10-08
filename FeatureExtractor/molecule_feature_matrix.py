@@ -644,7 +644,35 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
             important_features = [ [features[index], ((feature_max[index] - feature_min[index]) * cluster_model['centroid'][index]) + feature_min[index]] for index,el in enumerate(cluster_model['subspace']) if el != 0]
             important_features_full.append(important_features)
 
-    return len(molecular_cluster_model), Scoring.CalcAUC(final_sorted_activity_list, "activity"), important_features_full
+    with open(descriptor_csv_file,'r') as f_handle:
+        reader = csv.reader(f_handle, delimiter=',')
+        features_next = next(reader)
+        bayes_subspace = [np.float(0)] * len(features_next)
+        bayes_centroid = [np.float(0)] * len(features_next)
+
+        with open('../../bayes_cluster_model_5HT2B','r') as bayes_handle:
+            bayes_features = csv.reader(bayes_handle, delimiter=',')
+            for row in bayes_features:
+                bayes_subspace[features_next.index(row[0])] = 1
+                bayes_centroid[features_next.index(row[0])] = (np.float(row[1]) - feature_min[features_next.index(row[0])]) / (feature_max[features_next.index(row[0])] - feature_min[features_next.index(row[0])])
+                if not (np.isfinite(bayes_centroid[features_next.index(row[0])])):
+                    bayes_centroid[features_next.index(row[0])] = feature_max[features_next.index(row[0])]
+
+    num_common_dimensions_array = []
+    centroid_distance_array = []
+
+    for cluster_model in molecular_cluster_model:
+        common_dimensions = []
+        for i in range(bayes_subspace):
+            if (bayes_subspace[i] == 1) and (cluster_model['centroid'] == 1):
+                common_dimensions.append(1)
+            else:
+                common_dimensions.append(0)
+
+        num_common_dimensions_array.append(common_dimensions.count(1))
+        centroid_distance_array.append(_compute_subspace_distance(cluster_model['centroid'],bayes_centroid,common_dimensions)/common_dimensions.count(1))
+
+    return len(molecular_cluster_model), np.mean(num_common_dimensions_array), np.mean(centroid_distance_array), np.std(num_common_dimensions_array), np.std(centroid_distance_array), Scoring.CalcAUC(final_sorted_activity_list, "activity")
 
 
 def _molecular_model_creation(active_fragments,inactive_fragments,features_map, \
