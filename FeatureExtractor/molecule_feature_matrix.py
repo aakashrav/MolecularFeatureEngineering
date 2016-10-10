@@ -670,7 +670,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                 common_dimensions.append(0)
 
         num_common_dimensions_array.append(common_dimensions.count(1))
-        if (common_dimensions.count(1) == 0)
+        if (common_dimensions.count(1) == 0):
             c_distance = _compute_subspace_distance(cluster_model['centroid'],bayes_centroid,common_dimensions)/common_dimensions.count(1)
             centroid_distance_array.append(c_distance)
 
