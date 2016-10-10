@@ -664,13 +664,15 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
     for cluster_model in molecular_cluster_model:
         common_dimensions = []
         for i in range(len(bayes_subspace)):
-            if (bayes_subspace[i] == 1) and (cluster_model['centroid'] == 1):
+            if (bayes_subspace[i] == 1) and (cluster_model['subspace'][i] == 1):
                 common_dimensions.append(1)
             else:
                 common_dimensions.append(0)
 
         num_common_dimensions_array.append(common_dimensions.count(1))
-        centroid_distance_array.append(_compute_subspace_distance(cluster_model['centroid'],bayes_centroid,common_dimensions)/common_dimensions.count(1))
+        if (common_dimensions.count(1) == 0)
+            c_distance = _compute_subspace_distance(cluster_model['centroid'],bayes_centroid,common_dimensions)/common_dimensions.count(1)
+            centroid_distance_array.append(c_distance)
 
     return len(molecular_cluster_model), np.mean(num_common_dimensions_array), np.mean(centroid_distance_array), np.std(num_common_dimensions_array), np.std(centroid_distance_array), Scoring.CalcAUC(final_sorted_activity_list, "activity")
 
@@ -792,7 +794,7 @@ def main():
             # for mu_ratio in [.4]: # V2R
             # for mu_ratio in [0.8]: # DRD1
                 # for epsilon in [.1,.4,.6,.8]:
-                for epsilon in [.0000000000005,.00000000005,.0000000005]: # NEW
+                for epsilon in [.000000005,.0000005,.000005]: # NEW
                 # for epsilon in [.1]: #5HT2B
                 # for epsilon in [.1,.5,.7]: # Another test 
                 # for epsilon in [.1]: #V2R
