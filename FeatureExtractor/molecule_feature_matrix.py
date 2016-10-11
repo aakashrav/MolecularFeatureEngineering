@@ -650,7 +650,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         bayes_subspace = [np.float(0)] * len(features_next)
         bayes_centroid = [np.float(0)] * len(features_next)
 
-        with open('../../../bayes_cluster_model_V2R','r') as bayes_handle:
+        with open('../../bayes_cluster_model_V2R','r') as bayes_handle:
             bayes_features = csv.reader(bayes_handle, delimiter=',')
             for row in bayes_features:
                 bayes_subspace[features_next.index(row[0])] = 1
@@ -670,7 +670,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                 common_dimensions.append(0)
 
         num_common_dimensions_array.append(common_dimensions.count(1))
-        if (common_dimensions.count(1) == 0):
+        if (common_dimensions.count(1) != 0):
             c_distance = _compute_subspace_distance(cluster_model['centroid'],bayes_centroid,common_dimensions)/common_dimensions.count(1)
             centroid_distance_array.append(c_distance)
 
@@ -820,7 +820,7 @@ def main():
                             # for PURITY_CHECK in [True, False]:
 
                             DIVERSITY_THRESHOLD = .5
-                            PURITY_THRESHOLD = .3
+                            PURITY_THRESHOLD = .7
                             PURITY_CHECK = True
 
                             parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
