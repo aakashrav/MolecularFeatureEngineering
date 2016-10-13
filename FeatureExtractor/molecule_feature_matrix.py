@@ -729,7 +729,7 @@ def main():
 
     try:
         bayes_scoring = sys.argv[9]
-    else:
+    except:
         bayes_scoring = None
 
     MOLECULAR_MODEL_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
@@ -844,7 +844,7 @@ def main():
                             # for PURITY_CHECK in [True, False]:
 
                             DIVERSITY_THRESHOLD = .5
-                            PURITY_THRESHOLD = .5
+                            PURITY_THRESHOLD = .7
                             PURITY_CHECK = True
 
                             parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
