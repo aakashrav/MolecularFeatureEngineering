@@ -875,8 +875,6 @@ def main():
                             with open(os.path.join(MOLECULAR_MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'w+') as model_f_handle:
                                 pickle.dump(best_cluster_model, model_f_handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-
-
                             print("Getting AUC Score for current dataset...")
                             # Get the AUC score for the testing data
                             f_handle.write("AUC Score for the current parameters:\n")
@@ -888,7 +886,7 @@ def main():
                             f_handle.write("Purity Check: ")
                             f_handle.write(str(PURITY_CHECK))
                             f_handle.write("\n")
-                            AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"],descriptor_csv_file, bayes_feature_file = bayes_model_file)
+                            AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"],descriptor_csv_file, single_cluster_model=None, bayes_feature_file = bayes_model_file)
                             f_handle.write(str(AUC_SCORE))
                             f_handle.write("\n")
                             f_handle.write("\n")
