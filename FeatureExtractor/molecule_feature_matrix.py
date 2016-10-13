@@ -477,7 +477,7 @@ def get_activity(molecule):
 # Cluster ranking
 def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
     global_median_cache,used_features,scoring_method, descriptor_csv_file, active_cv_molecules, inactive_cv_molecules, \
-    bayes_subspace = None, bayes_centroid = None, single_cluster_model = None):
+    bayes_subspace = None, bayes_centroid = None, single_cluster_model = None, bayes_feature_file = None):
     
     cluster_rankings_list = []
     final_sorted_activity_list = []
@@ -654,7 +654,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         bayes_subspace = [np.float(0)] * len(features_next)
         bayes_centroid = [np.float(0)] * len(features_next)
 
-        with open('../../../bayes_cluster_model_V2R','r') as bayes_handle:
+        with open(bayes_feature_file,'r') as bayes_handle:
             bayes_features = csv.reader(bayes_handle, delimiter=',')
             for row in bayes_features:
                 bayes_subspace[features_next.index(row[0])] = 1
@@ -725,11 +725,12 @@ def main():
     results_file = sys.argv[5]
     ALG_TYPE = sys.argv[6]
     descriptor_csv_file = sys.argv[7]
-    
+    bayes_model_file = sys.argv[8]
+
     try:
-        bayes_model_file = sys.argv[8]
-    except IndexError:
-        bayes_model_file = None
+        bayes_scoring = sys.argv[9]
+    else:
+        bayes_scoring = None
 
     MOLECULAR_MODEL_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
 
@@ -742,10 +743,10 @@ def main():
     total_active_mols = len(active_training_molecule_names)
     total_inactive_mols = len(inactive_training_molecule_names)
 
-    active_training_molecule_names_train = [0:int(.9*total_active_mols)]
-    active_training_molecule_names_cv = [int(.9*total_active_mols):total_active_mols-1]
-    inactive_training_molecule_names_train = [0:int(.9*total_inactive_mols)]
-    inactive_training_molecule_names_cv = [int(.9*total_inactive_mols):total_inactive_mols-1]
+    active_training_molecule_names_train = active_training_molecule_names[0:int(.9*total_active_mols)]
+    active_training_molecule_names_cv = active_training_molecule_names[int(.9*total_active_mols):total_active_mols-1]
+    inactive_training_molecule_names_train = inactive_training_molecule_names[0:int(.9*total_inactive_mols)]
+    inactive_training_molecule_names_cv = inactive_training_molecule_names[int(.9*total_inactive_mols):total_inactive_mols-1]
 
     full_cv_molecules = active_training_molecule_names_cv + inactive_training_molecule_names_cv
 
@@ -774,7 +775,7 @@ def main():
 
     print("Creating molecular feature model...")
 
-    if bayes_model_file is not None:
+    if bayes_scoring is not None:
 
         with open(descriptor_csv_file,'r') as f_handle:
             reader = csv.reader(f_handle, delimiter=',')
@@ -867,7 +868,7 @@ def main():
                             best_cluster_model = None
                             best_AUC_score = 0
                             for cluster_model in molecular_cluster_model:
-                                AUC_SCORE = get_AUC(full_cv_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"],descriptor_csv_file, single_cluster_model=cluster_model)
+                                AUC_SCORE = get_AUC(full_cv_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"],descriptor_csv_file, single_cluster_model=cluster_model, bayes_feature_file = bayes_model_file)
                                 if AUC_SCORE > best_AUC_score:
                                     best_cluster_model = cluster_model
 
@@ -887,7 +888,7 @@ def main():
                             f_handle.write("Purity Check: ")
                             f_handle.write(str(PURITY_CHECK))
                             f_handle.write("\n")
-                            AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"],descriptor_csv_file)
+                            AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"],descriptor_csv_file, bayes_feature_file = bayes_model_file)
                             f_handle.write(str(AUC_SCORE))
                             f_handle.write("\n")
                             f_handle.write("\n")
