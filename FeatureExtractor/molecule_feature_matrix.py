@@ -476,7 +476,8 @@ def get_activity(molecule):
 
 # Cluster ranking
 def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
-    global_median_cache,used_features,scoring_method,descriptor_csv_file, bayes_subspace = None, bayes_centroid = None):
+    global_median_cache,used_features,scoring_method, descriptor_csv_file, active_cv_molecules, inactive_cv_molecules, \
+    bayes_subspace = None, bayes_centroid = None, single_cluster_model = None):
     
     cluster_rankings_list = []
     final_sorted_activity_list = []
@@ -487,8 +488,11 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 
     if not ((bayes_subspace is not None) and (bayes_centroid is not None)):
         
-        with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
-            molecular_cluster_model = pickle.load(f_handle)
+        if single_cluster_model is not None:
+            molecular_cluster_model = [single_cluster_model]
+        else:
+            with open(os.path.join(MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
+                molecular_cluster_model = pickle.load(f_handle)
 
         if len(molecular_cluster_model) == 0:
             print "No clusters found in model; can't evaluate any new test molecules..."
@@ -650,7 +654,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         bayes_subspace = [np.float(0)] * len(features_next)
         bayes_centroid = [np.float(0)] * len(features_next)
 
-        with open('../../bayes_cluster_model_5HT2B','r') as bayes_handle:
+        with open('../../../bayes_cluster_model_V2R','r') as bayes_handle:
             bayes_features = csv.reader(bayes_handle, delimiter=',')
             for row in bayes_features:
                 bayes_subspace[features_next.index(row[0])] = 1
@@ -674,7 +678,10 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
             c_distance = _compute_subspace_distance(cluster_model['centroid'],bayes_centroid,common_dimensions)/common_dimensions.count(1)
             centroid_distance_array.append(c_distance)
 
-    return len(molecular_cluster_model), np.mean(num_common_dimensions_array), np.mean(centroid_distance_array), np.std(num_common_dimensions_array), np.std(centroid_distance_array), Scoring.CalcAUC(final_sorted_activity_list, "activity")
+    if single_cluster_model is not None:
+        return Scoring.CalcAUC(final_sorted_activity_list, "activity")
+    else: 
+        return len(molecular_cluster_model), np.mean(num_common_dimensions_array), np.mean(centroid_distance_array), np.std(num_common_dimensions_array), np.std(centroid_distance_array), Scoring.CalcAUC(final_sorted_activity_list, "activity")
 
 
 def _molecular_model_creation(active_fragments,inactive_fragments,features_map, \
@@ -732,6 +739,16 @@ def main():
     active_training_molecule_names = [molecule["name"] for molecule in training_test_molecules["data"]["train"]["ligands"]]
     inactive_training_molecule_names = [molecule["name"] for molecule in training_test_molecules["data"]["train"]["decoys"]]
 
+    total_active_mols = len(active_training_molecule_names)
+    total_inactive_mols = len(inactive_training_molecule_names)
+
+    active_training_molecule_names_train = [0:int(.9*total_active_mols)]
+    active_training_molecule_names_cv = [int(.9*total_active_mols):total_active_mols-1]
+    inactive_training_molecule_names_train = [0:int(.9*total_inactive_mols)]
+    inactive_training_molecule_names_cv = [int(.9*total_inactive_mols):total_inactive_mols-1]
+
+    full_cv_molecules = active_training_molecule_names_cv + inactive_training_molecule_names_cv
+
     with open(actives_fragment_file,"r+") as f_handle:
         actives_molecule_to_fragments = json.load(f_handle)
     with open(inactives_fragment_file,"r+") as f_handle:
@@ -740,10 +757,10 @@ def main():
     print("Extracting active and inactive training molecules...")
 
     active_training_molecules = [molecule for molecule in actives_molecule_to_fragments \
-                                    if molecule["name"] in active_training_molecule_names]
+                                    if molecule["name"] in active_training_molecule_names_train]
     
     inactive_training_molecules = [molecule for molecule in inactives_molecule_to_fragments \
-                                    if molecule["name"] in inactive_training_molecule_names]
+                                    if molecule["name"] in inactive_training_molecule_names_train]
 
     
     print("Reading the features file into memory...")
@@ -773,6 +790,12 @@ def main():
 
                 testing_molecules = training_test_molecules["data"]["test"]
                 full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
+
+                active_cv_molecules = [molecule for molecule in actives_molecule_to_fragments \
+                                    if molecule["name"] in active_training_molecule_names_cv]
+    
+                inactive_cv_molecules = [molecule for molecule in inactives_molecule_to_fragments \
+                                    if molecule["name"] in inactive_training_molecule_names_cv]
 
                 AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,None,None,1,descriptor_csv_file,bayes_subspace,bayes_centroid)
                 print("Bayes scoring method 1: ")
@@ -820,7 +843,7 @@ def main():
                             # for PURITY_CHECK in [True, False]:
 
                             DIVERSITY_THRESHOLD = .5
-                            PURITY_THRESHOLD = .7
+                            PURITY_THRESHOLD = .5
                             PURITY_CHECK = True
 
                             parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
@@ -836,6 +859,22 @@ def main():
 
                             # Combined active and inactive molecular fragments
                             full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
+
+                            # HERE: Choose the cluster from the centroid model that exhibits the best AUC, that will be our new model.
+                            with open(os.path.join(MOLECULAR_MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
+                                molecular_cluster_model = pickle.load(f_handle)
+
+                            best_cluster_model = None
+                            best_AUC_score = 0
+                            for cluster_model in molecular_cluster_model:
+                                AUC_SCORE = get_AUC(full_cv_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"],descriptor_csv_file, single_cluster_model=cluster_model)
+                                if AUC_SCORE > best_AUC_score:
+                                    best_cluster_model = cluster_model
+
+                            with open(os.path.join(MOLECULAR_MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'w+') as f_handle:
+                                pickle.dump(best_cluster_model, f_handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 
                             print("Getting AUC Score for current dataset...")
                             # Get the AUC score for the testing data
