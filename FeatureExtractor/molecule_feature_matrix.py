@@ -862,8 +862,8 @@ def main():
                             full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
 
                             # HERE: Choose the cluster from the centroid model that exhibits the best AUC, that will be our new model.
-                            with open(os.path.join(MOLECULAR_MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as f_handle:
-                                molecular_cluster_model = pickle.load(f_handle)
+                            with open(os.path.join(MOLECULAR_MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'r') as model_f_handle:
+                                molecular_cluster_model = pickle.load(model_f_handle)
 
                             best_cluster_model = None
                             best_AUC_score = 0
@@ -872,8 +872,8 @@ def main():
                                 if AUC_SCORE > best_AUC_score:
                                     best_cluster_model = cluster_model
 
-                            with open(os.path.join(MOLECULAR_MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'w+') as f_handle:
-                                pickle.dump(best_cluster_model, f_handle, protocol=pickle.HIGHEST_PROTOCOL)
+                            with open(os.path.join(MOLECULAR_MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'w+') as model_f_handle:
+                                pickle.dump(best_cluster_model, model_f_handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 
