@@ -873,6 +873,12 @@ def main():
                                     best_cluster_model = cluster_model
                                     best_AUC_score = AUC_SCORE
 
+                            # Handle case where no clusters are found
+                            if best_cluster_model is None:
+                                best_cluster_model = []
+                            else:
+                                best_cluster_model = [best_cluster_model]
+
                             with open(os.path.join(MOLECULAR_MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'w+') as model_f_handle:
                                 pickle.dump(best_cluster_model, model_f_handle, protocol=pickle.HIGHEST_PROTOCOL)
 
