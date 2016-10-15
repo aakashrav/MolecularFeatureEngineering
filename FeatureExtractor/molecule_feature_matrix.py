@@ -737,18 +737,12 @@ def main():
     with open(training_test_split_file,"r+") as f_handle:
         training_test_molecules = json.load(f_handle)
 
-    active_training_molecule_names = [molecule["name"] for molecule in training_test_molecules["data"]["train"]["ligands"]]
-    inactive_training_molecule_names = [molecule["name"] for molecule in training_test_molecules["data"]["train"]["decoys"]]
+    active_training_molecule_names = [molecule["name"] for index,molecule in enumerate(training_test_molecules["data"]["train"]["ligands"]) if (index<=int(.9*len(training_test_molecules["data"]["train"]["ligands"])))]
+    inactive_training_molecule_names = [molecule["name"] for index,molecule in enumerate(training_test_molecules["data"]["train"]["decoys"]) if (index<=int(.9*len(training_test_molecules["data"]["train"]["decoys"])))]
+    active_cv_molecule_names = [molecule for index,molecule in enumerate(training_test_molecules["data"]["train"]["ligands"]) if (index>int(.9*len(training_test_molecules["data"]["train"]["ligands"])))]
+    inactive_cv_molecule_names = [molecule for index,molecule in enumerate(training_test_molecules["data"]["train"]["decoys"]) if (index>int(.9*len(training_test_molecules["data"]["train"]["decoys"])))]
 
-    total_active_mols = len(active_training_molecule_names)
-    total_inactive_mols = len(inactive_training_molecule_names)
-
-    active_training_molecule_names_train = active_training_molecule_names[0:int(.9*total_active_mols)]
-    active_training_molecule_names_cv = active_training_molecule_names[int(.9*total_active_mols):total_active_mols-1]
-    inactive_training_molecule_names_train = inactive_training_molecule_names[0:int(.9*total_inactive_mols)]
-    inactive_training_molecule_names_cv = inactive_training_molecule_names[int(.9*total_inactive_mols):total_inactive_mols-1]
-
-    full_cv_molecules = active_training_molecule_names_cv + inactive_training_molecule_names_cv
+    full_cv_molecules = active_cv_molecule_names + inactive_cv_molecule_names
 
     with open(actives_fragment_file,"r+") as f_handle:
         actives_molecule_to_fragments = json.load(f_handle)
@@ -758,10 +752,10 @@ def main():
     print("Extracting active and inactive training molecules...")
 
     active_training_molecules = [molecule for molecule in actives_molecule_to_fragments \
-                                    if molecule["name"] in active_training_molecule_names_train]
+                                    if molecule["name"] in active_training_molecule_names]
     
     inactive_training_molecules = [molecule for molecule in inactives_molecule_to_fragments \
-                                    if molecule["name"] in inactive_training_molecule_names_train]
+                                    if molecule["name"] in inactive_training_molecule_names]
 
     
     print("Reading the features file into memory...")
