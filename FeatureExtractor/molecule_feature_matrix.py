@@ -714,6 +714,8 @@ def get_AUC_Single(active_cv_molecules, inactive_cv_molecules, molecules_to_frag
             print "No clusters found in model; can't evaluate any new test molecules..."
             return -1
 
+    molecule_names_and_activity = active_cv_molecules + inactive_cv_molecules
+
     for test_molecule in molecule_names_and_activity:
 
         full_fragments = [molecule["fragments"] for molecule in molecules_to_fragments 
