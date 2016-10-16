@@ -826,7 +826,7 @@ def get_AUC_Single(active_cv_molecules, inactive_cv_molecules, molecules_to_frag
                 score = np.min(np.asarray(distance_array))
 
             score = np.around(score, decimals=10)
-            cluster_sorted_activity_list.append({"name":test_molecule["name"],"score":score,"activity":test_molecule["activity"]})
+            cluster_sorted_activity_list.append({"name":test_molecule["name"],"score":score})
 
         cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_score)
         # Append the current cluster's ranking to the cluster ranking list.
