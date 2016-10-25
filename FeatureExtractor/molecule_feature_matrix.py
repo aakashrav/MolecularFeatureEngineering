@@ -899,7 +899,7 @@ def get_AUC_Single(active_cv_molecules, inactive_cv_molecules, molecules_to_frag
     if single_cluster_model is not None:
         return Scoring.CalcAUC(final_sorted_activity_list, "activity")
     else: 
-        return len(molecular_cluster_model), np.mean(num_common_dimensions_array), np.mean(centroid_distance_array), np.std(num_common_dimensions_array), np.std(centroid_distance_array), Scoring.CalcAUC(final_sorted_activity_list, "activity")
+        return [len(molecular_cluster_model), np.mean(num_common_dimensions_array), np.mean(centroid_distance_array), np.std(num_common_dimensions_array), np.std(centroid_distance_array), Scoring.CalcAUC(final_sorted_activity_list, "activity")]
 
 
 def _molecular_model_creation(active_fragments,inactive_fragments,features_map, \
@@ -936,20 +936,11 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     return [global_median_cache,used_features]
 
 def main():
-    actives_fragment_file = sys.argv[1] 
-    inactives_fragment_file = sys.argv[2] 
-    features_file = sys.argv[3]
-    training_test_split_file = sys.argv[4]
-    results_file = sys.argv[5]
-    ALG_TYPE = sys.argv[6]
-    descriptor_csv_file = sys.argv[7]
-    bayes_model_file = sys.argv[8]
+    config_file = sys.argv[1]
+    from config_file import *
+    training_test_split_file = sys.argv[2]
 
-    try:
-        bayes_scoring = sys.argv[9]
-    except:
-        bayes_scoring = None
-
+    shutil.rmtree(DATA_DIRECTORY)
     MOLECULAR_MODEL_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
 
     with open(training_test_split_file,"r+") as f_handle:
@@ -1056,7 +1047,7 @@ def main():
                             # for PURITY_CHECK in [True, False]:
 
                             DIVERSITY_THRESHOLD = .5
-                            PURITY_THRESHOLD = .5
+                            PURITY_THRESHOLD = .3
                             PURITY_CHECK = True
 
                             parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
@@ -1109,6 +1100,7 @@ def main():
                             f_handle.write(str(AUC_SCORE))
                             f_handle.write("\n")
                             f_handle.write("\n")
+                            return AUC_SCORE[5]
         elif ALG_TYPE == 'DeLiClu':
             # for mu_ratio in [.2,.4,.6,.8]:
             for minpts_ratio in [.2,.6,.9]: # NEW
