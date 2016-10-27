@@ -937,7 +937,9 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     return [global_median_cache,used_features]
 
 def main():
-    config_file = importlib.import_module(sys.argv[1])
+    sys.path.append(sys.argv[1])
+    config_file = importlib.import_module('params.py')
+    
     from config_file import *
     training_test_split_file = sys.argv[2]
 
