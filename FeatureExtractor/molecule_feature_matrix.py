@@ -938,9 +938,10 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
 
 def main():
     sys.path.append(sys.argv[1])
-    config_file = importlib.import_module('params.py')
-    
-    from config_file import *
+    # config_file = importlib.import_module('params.py')
+
+    # from config_file import *
+    from params import *
     training_test_split_file = sys.argv[2]
 
     shutil.rmtree(DATA_DIRECTORY)
