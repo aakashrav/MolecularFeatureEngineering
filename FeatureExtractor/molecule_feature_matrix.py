@@ -937,8 +937,7 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     return [global_median_cache,used_features]
 
 def main():
-    print os.getcwd()
-    sys.path.append(os.getcwd())
+    sys.path.append(os.path.dirname(sys.argv[1]))
     # config_file = importlib.import_module('params.py')
 
     # from config_file import *
