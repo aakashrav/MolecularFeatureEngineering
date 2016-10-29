@@ -916,7 +916,7 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     print "Starting search for molecular clusters..."
     # Find the clusters using ELKI
     molecular_clusters.find_clusters(parameter_dictionary, ALG_TYPE, CLUSTER_FILENAME = os.path.join(DATA_DIRECTORY,"detected_clusters"),
-        FEATURE_MATRIX_FILE = os.path.join(config.DATA_DIRECTORY,"molecular_feature_matrix.csv"),
+        FEATURE_MATRIX_FILE = os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),
         ELKI_EXECUTABLE=config.ELKI_EXECUTABLE,num_active_molecules=num_active_molecules,num_inactive_molecules=num_inactive_molecules)
         # epsilon=parameter_dictionary["epsilon"],mu_ratio=parameter_dictionary["mu_ratio"], ALG_TYPE)
 
