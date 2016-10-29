@@ -2,8 +2,8 @@ import os
 
 DEBUG = True
 
-DATA_DIRECTORY = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),"FragmentDescriptorData")
-TEST_DATA_DIRECTORY = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),"TestFragmentDescriptorData")
+DATA_DIRECTORY = os.path.join(os.getcwd(),"FragmentDescriptorData")
+TEST_DATA_DIRECTORY = os.path.join(os.getcwd(),"TestFragmentDescriptorData")
 ELKI_EXECUTABLE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),"ELKI/elki-bundle-0.7.0.jar")
 INPUT_DATA_DIRECTORY = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),'MUV-JSON')
 
