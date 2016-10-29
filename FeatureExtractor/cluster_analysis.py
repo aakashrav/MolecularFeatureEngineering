@@ -358,7 +358,7 @@ def check_subspace_dimensions_match(list,tuple):
     return True
 
 
-def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversity_percentage, ALG_TYPE='DISH',dimensions=None, DATA_DIRECTORY, \
+def create_cluster_centroid_model(purity_threshold, diversity_threshold, diversity_percentage, DATA_DIRECTORY, ALG_TYPE='DISH',dimensions=None, \
     DIVERSITY_CHECK=True, PURITY_CHECK=True):
 
     CLUSTER_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
