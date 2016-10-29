@@ -944,11 +944,6 @@ def main():
     from params import *
     training_test_split_file = sys.argv[2]
 
-    try:
-        shutil.rmtree(DATA_DIRECTORY)
-    except:
-        pass
-    
     MOLECULAR_MODEL_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
 
     with open(training_test_split_file,"r+") as f_handle:
