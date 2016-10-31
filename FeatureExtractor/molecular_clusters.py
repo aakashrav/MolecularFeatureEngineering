@@ -51,9 +51,11 @@ def find_clusters(parameter_dictionary,ALG_TYPE,CLUSTER_FILENAME,FEATURE_MATRIX_
                 str(parameter_dictionary['alpha']),'-hico.mu',str(mu),'-out',CLUSTER_FILENAME])
         else: # Default is DiSH
             mu = int(np.ceil(num_active_molecules * parameter_dictionary['mu_ratio']))
-            result = subprocess.call([config.JAVA_EXECUTABLE, '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
-            	'FixedDBIDsFilter','-time','-algorithm','clustering.subspace.DiSH','-dish.epsilon',\
-            	str(parameter_dictionary['epsilon']),'-dish.mu',str(mu),'-out',CLUSTER_FILENAME])
+            call_args = [config.JAVA_EXECUTABLE, '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
+                'FixedDBIDsFilter','-time','-algorithm','clustering.subspace.DiSH','-dish.epsilon',\
+                str(parameter_dictionary['epsilon']),'-dish.mu',str(mu),'-out',CLUSTER_FILENAME]
+            print "Executing:",call_args
+            result = subprocess.call(call_args)
 
         if result == 0:
         	print "Cluster detection finished!"
