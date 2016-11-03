@@ -941,7 +941,19 @@ def main():
     # config_file = importlib.import_module('params.py')
 
     # from config_file import *
-    from params import *
+    # from params import *
+    with open(sys.argv[1],'r') as params_handle:
+        params_file = json.load(params_handle)
+
+    actives_fragment_file = params_file['actives_fragment_file']
+    inactives_fragment_file = params_file['inactives_fragment_file']
+    features_file = params_file['features_file']
+    descriptor_csv_file = params_file['descriptor_csv_file']
+    bayes_model_file = params_file['bayes_model_file']
+    results_file = params_file['results_file']
+    ALG_TYPE = params_file['ALG_TYPE']
+    bayes_scoring = params_file['bayes_scoring']
+
     training_test_split_file = sys.argv[2]
 
     print "I'm loading file",training_test_split_file
