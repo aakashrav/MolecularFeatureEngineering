@@ -952,7 +952,9 @@ def main():
     bayes_model_file = params_file['bayes_model_file']
     results_file = params_file['results_file']
     ALG_TYPE = params_file['ALG_TYPE']
-    bayes_scoring = params_file['bayes_scoring']
+    
+    if params_file['bayes_scoring']=="":
+        bayes_scoring = None
 
     training_test_split_file = sys.argv[2]
 
