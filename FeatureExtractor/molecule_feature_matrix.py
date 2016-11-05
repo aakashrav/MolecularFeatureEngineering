@@ -447,7 +447,7 @@ def _create_feature_matrix(active_fragments,inactive_fragments,descriptors_map,d
 
     print("Normalizing feature matrix...")
     # Normalize the features
-    _normalize_features(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),DATA_DIRECTORY,feature_max,feature_min)
+    _normalize_features("molecular_feature_matrix.csv",DATA_DIRECTORY,feature_max,feature_min)
 
     # Flush statistics on molecules
     _flush_metadata(global_median_cache, used_features)
