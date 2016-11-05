@@ -27,7 +27,7 @@ FLUSH_BUFFER_SIZE = config.FLUSH_BUFFER_SIZE
 DESCRIPTOR_TO_RAM = config.DESCRIPTOR_TO_RAM
 NUM_FEATURES = config.NUM_FEATURES
 CORRELATION_THRESHOLD = config.CORRELATION_THRESHOLD
-DATA_DIRECTORY = os.path.join(os.path.dirname(sys.argv[1]),"FragmentDescriptorData")
+# DATA_DIRECTORY = os.path.join(os.path.dirname(sys.argv[1]),"FragmentDescriptorData")
 DEBUG = config.DEBUG
 
 # Store feature max and min for feature normalization
@@ -930,7 +930,7 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     DIVERSITY_THRESHOLD = num_active_molecules * .5
     # DIVERSITY_THRESHOLD = num_active_molecules * parameter_dictionary["DIVERSITY_THRESHOLD"]
     DIVERSITY_PERCENTAGE = False
-    cluster_analysis.create_cluster_centroid_model(PURITY_THRESHOLD, DIVERSITY_THRESHOLD, DIVERSITY_PERCENTAGE, ALG_TYPE, len(used_features), DIVERSITY_CHECK, PURITY_CHECK, DATA_DIRECTORY=DATA_DIRECTORY)
+    cluster_analysis.create_cluster_centroid_model(PURITY_THRESHOLD, DIVERSITY_THRESHOLD, DIVERSITY_PERCENTAGE, DATA_DIRECTORY=DATA_DIRECTORY, ALG_TYPE, len(used_features), DIVERSITY_CHECK, PURITY_CHECK)
     print "Finished analysis and pruning of clusters! Clusters' model available in data directory for querying with \
     new test molecules..."
 
@@ -952,11 +952,12 @@ def main():
     bayes_model_file = params_file['bayes_model_file']
     results_file = params_file['results_file']
     ALG_TYPE = params_file['ALG_TYPE']
-    
+
     if params_file['bayes_scoring']=="":
         bayes_scoring = None
 
     training_test_split_file = sys.argv[2]
+    DATA_DIRECTORY = sys.argv[3]
 
     print "I'm loading file",training_test_split_file
 
