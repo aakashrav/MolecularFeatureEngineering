@@ -27,7 +27,7 @@ FLUSH_BUFFER_SIZE = config.FLUSH_BUFFER_SIZE
 DESCRIPTOR_TO_RAM = config.DESCRIPTOR_TO_RAM
 NUM_FEATURES = config.NUM_FEATURES
 CORRELATION_THRESHOLD = config.CORRELATION_THRESHOLD
-# DATA_DIRECTORY = os.path.join(os.path.dirname(sys.argv[1]),"FragmentDescriptorData")
+DATA_DIRECTORY = None
 DEBUG = config.DEBUG
 
 # Store feature max and min for feature normalization
