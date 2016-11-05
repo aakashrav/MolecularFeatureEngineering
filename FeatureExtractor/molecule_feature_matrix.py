@@ -930,7 +930,7 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     DIVERSITY_THRESHOLD = num_active_molecules * .5
     # DIVERSITY_THRESHOLD = num_active_molecules * parameter_dictionary["DIVERSITY_THRESHOLD"]
     DIVERSITY_PERCENTAGE = False
-    cluster_analysis.create_cluster_centroid_model(PURITY_THRESHOLD, DIVERSITY_THRESHOLD, DIVERSITY_PERCENTAGE, DATA_DIRECTORY=DATA_DIRECTORY, ALG_TYPE, len(used_features), DIVERSITY_CHECK, PURITY_CHECK)
+    cluster_analysis.create_cluster_centroid_model(PURITY_THRESHOLD, DIVERSITY_THRESHOLD, DIVERSITY_PERCENTAGE, DATA_DIRECTORY=DATA_DIRECTORY, ALG_TYPE=ALG_TYPE, dimensions=len(used_features), DIVERSITY_CHECK=DIVERSITY_CHECK, PURITY_CHECK=PURITY_CHECK)
     print "Finished analysis and pruning of clusters! Clusters' model available in data directory for querying with \
     new test molecules..."
 
