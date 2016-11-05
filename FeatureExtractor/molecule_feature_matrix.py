@@ -421,7 +421,7 @@ def _normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_ma
     os.rename(os.path.join(DATA_DIRECTORY,"temp_file"), molecule_feature_matrix_file)
     return [max_feature_array,min_feature_array]
 
-def _create_feature_matrix(active_fragments,inactive_fragments,descriptors_map,descriptors):
+def _create_feature_matrix(active_fragments,inactive_fragments,descriptors_map,descriptors, DATA_DIRECTORY):
     #TODO: description
 
     if not os.path.exists(DATA_DIRECTORY):
@@ -905,12 +905,12 @@ def get_AUC_Single(active_cv_molecules, inactive_cv_molecules, molecules_to_frag
 
 def _molecular_model_creation(active_fragments,inactive_fragments,features_map, \
     features_matrix,num_active_molecules,num_inactive_molecules,parameter_dictionary, ALG_TYPE, \
-    DIVERSITY_CHECK=True, PURITY_CHECK=True):
+    DIVERSITY_CHECK=True, PURITY_CHECK=True, DATA_DIRECTORY=None):
 
     # Retrieve the molecular feature matrix corresponding to our dataset and 
     # flush it to file
     print("Creating molecular feature matrix...")
-    [global_median_cache,used_features] = _create_feature_matrix(active_fragments, inactive_fragments,features_map,features_matrix)
+    [global_median_cache,used_features] = _create_feature_matrix(active_fragments, inactive_fragments,features_map,features_matrix,DATA_DIRECTORY)
     print("Finished molecular feature matrix creation...")
 
     print "Starting search for molecular clusters..."
@@ -1075,7 +1075,7 @@ def main():
                                 "mu_ratio":mu_ratio,"epsilon":epsilon}
 
                             # Create the molecular model
-                            [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK)
+                            [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK, DATA_DIRECTORY)
 
                             print("Finished creating molecular feature model, beginning testing...")
 
