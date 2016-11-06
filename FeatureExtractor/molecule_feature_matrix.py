@@ -417,8 +417,9 @@ def _normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_ma
 
     # Rename the temporary file as the original matrix, to be consistent
     # TODO:FIND BETTER WORKAROUND FOR THIS
-    os.remove(os.path.join(DATA_DIRECTORY,molecule_feature_matrix_file))
-    os.rename(os.path.join(DATA_DIRECTORY,"temp_file"), molecule_feature_matrix_file)
+    # os.remove(os.path.join(DATA_DIRECTORY,molecule_feature_matrix_file))
+    # os.rename(os.path.join(DATA_DIRECTORY,"temp_file"), molecule_feature_matrix_file)
+    shutil.move(os.path.join(DATA_DIRECTORY,"temp_file"), os.path.join(DATA_DIRECTORY,molecule_feature_matrix_file))
     return [max_feature_array,min_feature_array]
 
 def _create_feature_matrix(active_fragments,inactive_fragments,descriptors_map,descriptors, DATA_DIRECTORY):
