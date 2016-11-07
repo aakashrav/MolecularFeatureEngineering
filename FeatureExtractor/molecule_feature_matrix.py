@@ -683,7 +683,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
     if single_cluster_model is not None:
         return Scoring.CalcAUC(final_sorted_activity_list, "activity")
     else: 
-        return len(molecular_cluster_model), np.mean(num_common_dimensions_array), np.mean(centroid_distance_array), np.std(num_common_dimensions_array), np.std(centroid_distance_array), Scoring.CalcAUC(final_sorted_activity_list, "activity")
+        return [len(molecular_cluster_model), np.mean(num_common_dimensions_array), np.mean(centroid_distance_array), np.std(num_common_dimensions_array), np.std(centroid_distance_array), Scoring.CalcAUC(final_sorted_activity_list, "activity")]
 
 
 # Cluster ranking
