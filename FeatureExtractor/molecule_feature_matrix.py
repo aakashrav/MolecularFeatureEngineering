@@ -1118,10 +1118,12 @@ def main():
                             f_handle.write(str(PURITY_CHECK))
                             f_handle.write("\n")
                             AUC_SCORE = get_AUC(molecule_names_and_activity=testing_molecules,molecules_to_fragments=full_molecules_to_fragments,descriptors_map=features_map,descriptors=features,MODEL_DIRECTORY=MOLECULAR_MODEL_DIRECTORY,global_median_cache=global_median_cache,used_features=used_features,scoring_method=parameter_dictionary["scoring_method"],descriptor_csv_file=descriptor_csv_file,bayes_subspace=None,bayes_centroid=None,single_cluster_model = None, bayes_feature_file = bayes_model_file)
+                            print "AUC obtained",AUC_SCORE
                             f_handle.write(str(AUC_SCORE))
                             f_handle.write("\n")
                             f_handle.write("\n")
-                            return AUC_SCORE[5]
+                            if AUC_SCORE != -1:
+                                return AUC_SCORE[5]
         elif ALG_TYPE == 'DeLiClu':
             # for mu_ratio in [.2,.4,.6,.8]:
             for minpts_ratio in [.2,.6,.9]: # NEW
