@@ -28,7 +28,7 @@ DESCRIPTOR_TO_RAM = config.DESCRIPTOR_TO_RAM
 NUM_FEATURES = config.NUM_FEATURES
 CORRELATION_THRESHOLD = config.CORRELATION_THRESHOLD
 DATA_DIRECTORY = sys.argv[3]
-DEBUG = config.DEBUG
+DEBUG = False
 
 # Store feature max and min for feature normalization
 feature_max = {}
@@ -75,7 +75,8 @@ def _compute_feature_median(non_imputed_feature_matrix, descriptor_indice, molec
 def _actives_feature_impute(feature_matrix):
     
     if (feature_matrix is None):
-        print("Empty matrix; no standard imputation done, continuing...")
+        if DEBUG:
+            print("Empty matrix; no standard imputation done, continuing...")
         return [None,None,None]
 
     # Keep track of indices corresponding to the molecule of each fragment- just the first column
@@ -91,7 +92,8 @@ def _actives_feature_impute(feature_matrix):
     # Cache globally imputed descriptors
     global_median_cache = np.empty([1,feature_matrix.shape[1]], dtype=np.float)
 
-    print("Starting creation of global median cache...")
+    if DEBUG:
+        print("Starting creation of global median cache...")
 
     for descriptor in range(0,feature_matrix.shape[1]):
         global_descriptor_median = _compute_feature_median(feature_matrix, descriptor,
@@ -100,7 +102,8 @@ def _actives_feature_impute(feature_matrix):
             degenerate_features.append(descriptor)
         global_median_cache[0,descriptor] = global_descriptor_median
     
-    print("Imputing fragments according to global median cache...")
+    if DEBUG:
+        print("Imputing fragments according to global median cache...")
 
     # Now, loop through the fragments and impute using the global median cache
     for fragment in range(1, len(feature_matrix)):
@@ -111,7 +114,8 @@ def _actives_feature_impute(feature_matrix):
 
     # Then remove all the degenerate features from the feature matrix
     feature_matrix = np.delete(feature_matrix, degenerate_features, 1)
-    print "Actives imputation: removed degenerate features, now have %d features" % (feature_matrix.shape[1])
+    if DEBUG:
+        print "Actives imputation: removed degenerate features, now have %d features" % (feature_matrix.shape[1])
 
     # # Compute the significant features using the correlation neighborhoods method
     # if DESCRIPTOR_TO_RAM:
@@ -146,8 +150,9 @@ def _actives_feature_impute(feature_matrix):
     return [global_median_cache, degenerate_features, used_features]
 
 def _read_descriptor_file(descriptor_file_name):
-    print("[{}] Reading descriptors file...".format(str(datetime.now())))
-    print("Descriptor file name: %s" % descriptor_file_name)
+    if DEBUG:
+        print("[{}] Reading descriptors file...".format(str(datetime.now())))
+        print("Descriptor file name: %s" % descriptor_file_name)
 
     # Read in fragments descriptors into an NP array
     descriptors = None
@@ -246,8 +251,9 @@ def _load_matrix_sdf(molecules_to_fragments,
 
                 FRAGMENT_COUNT+=1
             except KeyError:
-                print("Key error extracting actives from feature matrix.")
-                print("Affected fragment %s" % f)
+                if DEBUG:
+                    print("Key error extracting actives from feature matrix.")
+                    print("Affected fragment %s" % f)
                 continue
 
         molecule_index += 1
@@ -322,8 +328,9 @@ def _inactives_load_impute_sdf(degenerate_features, \
                 FRAGMENT_COUNT+=1
 
             except KeyError:
-                print("Key error extracting inactives from feature matrix.")
-                print("Affected fragment: %s" % f)
+                if DEBUG:
+                    print("Key error extracting inactives from feature matrix.")
+                    print("Affected fragment: %s" % f)
                 continue
 
         molecule_index += 1
@@ -435,18 +442,21 @@ def _create_feature_matrix(active_fragments,inactive_fragments,descriptors_map,d
     [non_imputed_feature_matrix,FRAGMENT_COUNT] = _load_matrix_sdf(active_fragments, 
         descriptors_map = descriptors_map, descriptors=descriptors)
 
-    print("Beginning imputation of actives feature matrix and creation of global median cache...")
+    if DEBUG:
+        print("Beginning imputation of actives feature matrix and creation of global median cache...")
     # Impute the actives, keeping track of degenerate features and any global medians
     global_median_cache,degenerate_features,used_features = _actives_feature_impute(non_imputed_feature_matrix)
 
     
-    print("Beginning creation of inactives feature matrix using significant features...")
+    if DEBUG:
+        print("Beginning creation of inactives feature matrix using significant features...")
     # Load inactives matrix using the results from the actives imputation to impute the inactives matrix
     _inactives_load_impute_sdf(degenerate_features,
         global_median_cache, inactive_fragments, FRAGMENT_COUNT, \
         descriptors_map = descriptors_map, descriptors= descriptors)
 
-    print("Normalizing feature matrix...")
+    if DEBUG:
+        print("Normalizing feature matrix...")
     # Normalize the features
     _normalize_features("molecular_feature_matrix.csv",DATA_DIRECTORY,feature_max,feature_min)
 
@@ -497,7 +507,8 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                 molecular_cluster_model = pickle.load(f_handle)
 
         if len(molecular_cluster_model) == 0:
-            print "No clusters found in model; can't evaluate any new test molecules..."
+            if DEBUG:
+                print "No clusters found in model; can't evaluate any new test molecules..."
             return -1
 
     for test_molecule in molecule_names_and_activity:
@@ -546,7 +557,8 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                     feature_matrix = np.vstack((feature_matrix,current_fragment))
 
                 except KeyError:
-                    print("Key error during AUC calculation!")
+                    if DEBUG:
+                        print("Key error during AUC calculation!")
                     continue
 
         if not ((bayes_subspace is not None) and (bayes_centroid is not None)):
@@ -713,7 +725,8 @@ def get_AUC_Single(active_cv_molecules, inactive_cv_molecules, molecules_to_frag
                 molecular_cluster_model = pickle.load(f_handle)
 
         if len(molecular_cluster_model) == 0:
-            print "No clusters found in model; can't evaluate any new test molecules..."
+            if DEBUG:
+                print "No clusters found in model; can't evaluate any new test molecules..."
             return -1
 
     molecule_names_and_activity = active_cv_molecules + inactive_cv_molecules
@@ -764,7 +777,8 @@ def get_AUC_Single(active_cv_molecules, inactive_cv_molecules, molecules_to_frag
                     feature_matrix = np.vstack((feature_matrix,current_fragment))
 
                 except KeyError:
-                    print("Key error during AUC calculation!")
+                    if DEBUG:
+                        print("Key error during AUC calculation!")
                     continue
 
         if not ((bayes_subspace is not None) and (bayes_centroid is not None)):
@@ -915,21 +929,26 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
 
     # Retrieve the molecular feature matrix corresponding to our dataset and 
     # flush it to file
-    print("Creating molecular feature matrix...")
+    if DEBUG:
+        print("Creating molecular feature matrix...")
     [global_median_cache,used_features] = _create_feature_matrix(active_fragments, inactive_fragments,features_map,features_matrix,DATA_DIRECTORY)
-    print("Finished molecular feature matrix creation...")
+    if DEBUG:
+        print("Finished molecular feature matrix creation...")
 
-    print "Starting search for molecular clusters..."
+    if DEBUG:
+        print "Starting search for molecular clusters..."
     # Find the clusters using ELKI
     molecular_clusters.find_clusters(parameter_dictionary, ALG_TYPE, CLUSTER_FILENAME = os.path.join(DATA_DIRECTORY,"detected_clusters"),
         FEATURE_MATRIX_FILE = os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),
         ELKI_EXECUTABLE=config.ELKI_EXECUTABLE,num_active_molecules=num_active_molecules,num_inactive_molecules=num_inactive_molecules)
         # epsilon=parameter_dictionary["epsilon"],mu_ratio=parameter_dictionary["mu_ratio"], ALG_TYPE)
+    
+    if DEBUG:
+        print "Finished search for molecular clusters..."
 
-    print "Finished search for molecular clusters..."
-
+    if DEBUG:
     # Analyze the clusters and output the most pure and diverse ones
-    print "Starting analysis and pruning of found clusters..."
+        print "Starting analysis and pruning of found clusters..."
     # PURITY_THRESHOLD = .5
     # PURITY_THRESHOLD = parameter_dictionary["PURITY_THRESHOLD"]
     PURITY_THRESHOLD = .5
@@ -937,7 +956,8 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     # DIVERSITY_THRESHOLD = num_active_molecules * parameter_dictionary["DIVERSITY_THRESHOLD"]
     DIVERSITY_PERCENTAGE = False
     cluster_analysis.create_cluster_centroid_model(PURITY_THRESHOLD, DIVERSITY_THRESHOLD, DIVERSITY_PERCENTAGE, DATA_DIRECTORY=DATA_DIRECTORY, ALG_TYPE=ALG_TYPE, dimensions=len(used_features), DIVERSITY_CHECK=DIVERSITY_CHECK, PURITY_CHECK=PURITY_CHECK)
-    print "Finished analysis and pruning of clusters! Clusters' model available in data directory for querying with \
+    if DEBUG:
+        print "Finished analysis and pruning of clusters! Clusters' model available in data directory for querying with \
     new test molecules..."
 
     return [global_median_cache,used_features]
@@ -965,7 +985,8 @@ def main():
     training_test_split_file = sys.argv[2]
     DATA_DIRECTORY = sys.argv[3]
 
-    print "I'm loading file",training_test_split_file
+    if DEBUG:
+        print "I'm loading file",training_test_split_file
 
     MOLECULAR_MODEL_DIRECTORY = os.path.join(DATA_DIRECTORY,"ClustersModel")
 
@@ -984,7 +1005,8 @@ def main():
     with open(inactives_fragment_file,"r+") as f_handle:
         inactives_molecule_to_fragments = json.load(f_handle)
 
-    print("Extracting active and inactive training molecules...")
+    if DEBUG:
+        print("Extracting active and inactive training molecules...")
 
     active_training_molecules = [molecule for molecule in actives_molecule_to_fragments \
                                     if molecule["name"] in active_training_molecule_names]
@@ -993,16 +1015,19 @@ def main():
                                     if molecule["name"] in inactive_training_molecule_names]
 
     
-    print("Reading the features file into memory...")
+    if DEBUG:
+        print("Reading the features file into memory...")
 
     features_map, features = _read_descriptor_file(features_file)
     
-    print("Removing constant features in feature matrix...")
+    if DEBUG:
+        print("Removing constant features in feature matrix...")
 
     # Preprocessing: remove constant features
     features = MolecularPreprocessing.remove_constant_features(features)
 
-    print("Creating molecular feature model...")
+    if DEBUG:
+        print("Creating molecular feature model...")
 
     if bayes_scoring is not None:
 
@@ -1083,7 +1108,8 @@ def main():
                             # Create the molecular model
                             [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK, DATA_DIRECTORY)
 
-                            print("Finished creating molecular feature model, beginning testing...")
+                            if DEBUG:
+                                print("Finished creating molecular feature model, beginning testing...")
 
                             testing_molecules = training_test_molecules["data"]["test"]
 
@@ -1111,7 +1137,8 @@ def main():
                             with open(os.path.join(MOLECULAR_MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'w+') as model_f_handle:
                                 pickle.dump(best_cluster_model, model_f_handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-                            print("Getting AUC Score for current dataset...")
+                            if DEBUG:
+                                print("Getting AUC Score for current dataset...")
                             # Get the AUC score for the testing data
                             f_handle.write("AUC Score for the current parameters:\n")
                             json.dump(parameter_dictionary, f_handle)
@@ -1123,12 +1150,16 @@ def main():
                             f_handle.write(str(PURITY_CHECK))
                             f_handle.write("\n")
                             AUC_SCORE = get_AUC(molecule_names_and_activity=testing_molecules,molecules_to_fragments=full_molecules_to_fragments,descriptors_map=features_map,descriptors=features,MODEL_DIRECTORY=MOLECULAR_MODEL_DIRECTORY,global_median_cache=global_median_cache,used_features=used_features,scoring_method=parameter_dictionary["scoring_method"],descriptor_csv_file=descriptor_csv_file,bayes_subspace=None,bayes_centroid=None,single_cluster_model = None, bayes_feature_file = bayes_model_file)
-                            print AUC_SCORE
+                            # print AUC_SCORE
                             f_handle.write(str(AUC_SCORE))
                             f_handle.write("\n")
                             f_handle.write("\n")
-                            if AUC_SCORE != -1:
-                                return AUC_SCORE[5]
+                            # if AUC_SCORE != -1:
+                            #     return AUC_SCORE[5]
+                            # else:
+                            #     return "No clusters detected"
+                            print("\n")
+                            return AUC_SCORE
         elif ALG_TYPE == 'DeLiClu':
             # for mu_ratio in [.2,.4,.6,.8]:
             for minpts_ratio in [.2,.6,.9]: # NEW
