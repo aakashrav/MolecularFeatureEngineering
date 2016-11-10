@@ -16,6 +16,8 @@ import time
 # import matplotlib.patches as mpatches
 # import matplotlib.mlab as mlab
 
+DEBUG = False
+
 
 class Cluster:
     def __init__(self):
@@ -85,7 +87,7 @@ def extract_clusters_from_file_P3C(filename,dimensions):
             new_cluster = Cluster()
             point_tuples = []
             point_id_array = [] 
-
+            
             print(lines[i])
             if(lines[i].split(' ')[1] == 'Noise'):
                 # Get to the subspaces
@@ -200,8 +202,9 @@ def prune_clusters(clusters, fragment_name_number_mapping, active_fragment_molec
     diversity_threshold = 5, percentage = False, \
     purity_threshold = .3, DIVERSITY_CHECK=True,  PURITY_CHECK=True, \
     test = False):
-
-    print("Clusters before %d" % (len(clusters)))
+    
+    if DEBUG:
+        print("Clusters before %d" % (len(clusters)))
 
     if percentage:
         diversity_threshold = diversity_threshold * len(active_fragment_molecule_mapping) 
@@ -210,7 +213,8 @@ def prune_clusters(clusters, fragment_name_number_mapping, active_fragment_molec
     purity_threshold_weighting = compute_threshold_weighting(active_fragment_molecule_mapping, inactive_fragment_molecule_mapping)
     purity_threshold /= purity_threshold_weighting
 
-    print("Purity threshold with weighting: %f" % purity_threshold)
+    if DEBUG:
+        print("Purity threshold with weighting: %f" % purity_threshold)
     
     degenerate_clusters = []
     
@@ -275,10 +279,12 @@ def prune_clusters(clusters, fragment_name_number_mapping, active_fragment_molec
     # Get final unique list of all non-significant clusters
     degenerate_clusters = np.unique(degenerate_clusters)
 
-    print("Degenerate clusters: %s" % degenerate_clusters)
+    if DEBUG:
+        print("Degenerate clusters: %s" % degenerate_clusters)
     significant_clusters = [cluster for index, cluster in enumerate(clusters) if index not in degenerate_clusters]
 
-    print("Clusters after %d" % (len(significant_clusters)))
+    if DEBUG:
+        print("Clusters after %d" % (len(significant_clusters)))
     return significant_clusters
 
 
@@ -350,7 +356,8 @@ def check_cube_intersection(cluster1extremes,cluster2extremes,cluster_subspace_m
         return False
 
 def check_subspace_dimensions_match(list,tuple):
-    print(tuple)
+    if DEBUG:
+        print(tuple)
     for i in range(len(tuple)):
         if tuple[i] != list[0][i]:
             return False
@@ -450,9 +457,9 @@ def dish_main():
         with open(os.path.join(CURRENT_DATA_DIRECTORY,"test_inactives_fragment_molecule_mapping.pkl"),'rb') as f_handle:
             inactive_fragment_molecule_mapping = pickle.load(f_handle)
 
-        
-        print("Clusters detected %d" % len(clusters))
-        print("Clusters generated %d" % len(clusters_metadata["centroids"]))
+        if DEBUG:
+            print("Clusters detected %d" % len(clusters))
+            print("Clusters generated %d" % len(clusters_metadata["centroids"]))
 
         detected_clusters = 0
         generated_clusters = (len(clusters_metadata["centroids"]))
@@ -479,7 +486,8 @@ def dish_main():
                     nearest_centroid_distance = current_centroid_distance
                     minimum_centroid_index = intersecting_centroids[i]
 
-            print("Detected a cluster! Centroid distance: %d", nearest_centroid_distance)
+            if DEBUG:
+                print("Detected a cluster! Centroid distance: %d", nearest_centroid_distance)
 
             del clusters_metadata["centroids"][minimum_centroid_index]
             del clusters_metadata["cluster_subspace_dimensions"][minimum_centroid_index]
@@ -505,7 +513,8 @@ def dish_main():
         else:
             pass
 
-        print("Final score for current set of clusters %.2f" % final_score_current_set)
+        if DEBUG:
+            print("Final score for current set of clusters %.2f" % final_score_current_set)
         
         scatterplot_scores_num[row_dict[parameters[PARAM_1]],col_dict[parameters[PARAM_2]]] +=1
         scatterplot_scores[row_dict[parameters[PARAM_1]],col_dict[parameters[PARAM_2]]] += final_score_current_set
@@ -515,10 +524,11 @@ def dish_main():
         with open('./final_clustering_score','a') as f_handle:
             f_handle.write("%f,%f,%f,%f,%f\n" % (parameters["icd"],parameters["density"],parameters["epsilon"],parameters["mu"],final_score_current_set))
 
-    print("Final mean score over all datasets: %.2f\n" % np.mean(dataset_scores))
-    print("Final variance score over all datasets %.2f\n" % np.var(dataset_scores))
-    print("Final maximum score over all datasets %.2f\n" % np.amax(dataset_scores))
-    print("Final minimum score over all datasets % .2f\n" % np.amin(dataset_scores))
+    if DEBUG:
+        print("Final mean score over all datasets: %.2f\n" % np.mean(dataset_scores))
+        print("Final variance score over all datasets %.2f\n" % np.var(dataset_scores))
+        print("Final maximum score over all datasets %.2f\n" % np.amax(dataset_scores))
+        print("Final minimum score over all datasets % .2f\n" % np.amin(dataset_scores))
 
     with open('./final_clustering_score','a') as f_handle:
             f_handle.write("\nMaximum score and corresponding parameters:\n")
@@ -532,8 +542,9 @@ def dish_main():
     # Take the average
     scatterplot_scores = scatterplot_scores/scatterplot_scores_num
 
-    print(scatterplot_x)
-    print(scatterplot_y)
+    if DEBUG:
+        print(scatterplot_x)
+        print(scatterplot_y)
 
     # #setup the 2D grid with Numpy
     # x, y = np.meshgrid(scatterplot_x, scatterplot_y)

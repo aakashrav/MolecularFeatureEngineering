@@ -4,6 +4,8 @@ import numpy as np
 import config
 import subprocess
 
+DEBUG = False
+
 def find_clusters(parameter_dictionary,ALG_TYPE,CLUSTER_FILENAME,FEATURE_MATRIX_FILE,ELKI_EXECUTABLE,
     num_active_molecules,num_inactive_molecules):
     
@@ -54,13 +56,15 @@ def find_clusters(parameter_dictionary,ALG_TYPE,CLUSTER_FILENAME,FEATURE_MATRIX_
             call_args = ['java', '-jar', ELKI_EXECUTABLE,'KDDCLIApplication','-dbc.in',FEATURE_MATRIX_FILE,'-dbc.filter', \
                 'FixedDBIDsFilter','-time','-algorithm','clustering.subspace.DiSH','-dish.epsilon',\
                 str(parameter_dictionary['epsilon']),'-dish.mu',str(mu),'-out',CLUSTER_FILENAME]
-            print "Executing:",call_args
+            if DEBUG:
+                print "Executing:",call_args
             result = subprocess.call(call_args)
 
-        if result == 0:
-        	print "Cluster detection finished!"
-        else:
-            print "Error in cluster detection"
+        if DEBUG:
+            if result == 0:
+            	print "Cluster detection finished!"
+            else:
+                print "Error in cluster detection"
 
 def main():
     CLUSTER_FILENAME = os.path.join(config.DATA_DIRECTORY,"detected_clusters")

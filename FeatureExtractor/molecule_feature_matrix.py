@@ -1159,6 +1159,7 @@ def main():
                             # else:
                             #     return "No clusters detected"
                             print("\n")
+                            print AUC_SCORE
                             return AUC_SCORE
         elif ALG_TYPE == 'DeLiClu':
             # for mu_ratio in [.2,.4,.6,.8]:
