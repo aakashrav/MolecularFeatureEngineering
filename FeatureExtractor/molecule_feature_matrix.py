@@ -1097,6 +1097,7 @@ def main():
                     # for scoring_method in [2]: # DRD1
                         for DIVERSITY_CHECK in [True, False]:
                             # for PURITY_CHECK in [True, False]:
+                            f_handle.write("Got in here once\n")
 
                             DIVERSITY_THRESHOLD = .5
                             PURITY_THRESHOLD = .3
