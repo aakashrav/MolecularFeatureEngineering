@@ -1063,7 +1063,7 @@ def main():
 
 
 
-    with open(results_file,'w+') as f_handle:
+    with open(results_file,'a') as f_handle:
         f_handle.write("\nNext training/test split!\n")
         if ALG_TYPE == 'DISH':
             # for mu_ratio in [.2,.4,.6,.8]:
