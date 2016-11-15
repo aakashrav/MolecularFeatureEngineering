@@ -671,10 +671,13 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         with open(bayes_feature_file,'r') as bayes_handle:
             bayes_features = csv.reader(bayes_handle, delimiter=',')
             for row in bayes_features:
-                bayes_subspace[features_next.index(row[0])] = 1
-                bayes_centroid[features_next.index(row[0])] = (np.float(row[1]) - feature_min[features_next.index(row[0])]) / (feature_max[features_next.index(row[0])] - feature_min[features_next.index(row[0])])
-                if not (np.isfinite(bayes_centroid[features_next.index(row[0])])):
-                    bayes_centroid[features_next.index(row[0])] = feature_max[features_next.index(row[0])]
+                try:
+                    bayes_subspace[features_next.index(row[0])] = 1
+                    bayes_centroid[features_next.index(row[0])] = (np.float(row[1]) - feature_min[features_next.index(row[0])]) / (feature_max[features_next.index(row[0])] - feature_min[features_next.index(row[0])])
+                    if not (np.isfinite(bayes_centroid[features_next.index(row[0])])):
+                        bayes_centroid[features_next.index(row[0])] = feature_max[features_next.index(row[0])]
+                except ValueError:
+                    continue
 
     num_common_dimensions_array = []
     centroid_distance_array = []
@@ -890,16 +893,16 @@ def get_AUC_Single(active_cv_molecules, inactive_cv_molecules, molecules_to_frag
 
         # Need to put it exception catching since we didn't check bayes features are in real
         # features for metacentrum tests. Put it in again later. 
-        try:
-            with open(bayes_feature_file,'r') as bayes_handle:
-                bayes_features = csv.reader(bayes_handle, delimiter=',')
-                for row in bayes_features:
+        with open(bayes_feature_file,'r') as bayes_handle:
+            bayes_features = csv.reader(bayes_handle, delimiter=',')
+            for row in bayes_features:
+                try:
                     bayes_subspace[features_next.index(row[0])] = 1
                     bayes_centroid[features_next.index(row[0])] = (np.float(row[1]) - feature_min[features_next.index(row[0])]) / (feature_max[features_next.index(row[0])] - feature_min[features_next.index(row[0])])
                     if not (np.isfinite(bayes_centroid[features_next.index(row[0])])):
                         bayes_centroid[features_next.index(row[0])] = feature_max[features_next.index(row[0])]
-        except ValueError:
-            pass
+                except ValueError:
+                    continue
 
     num_common_dimensions_array = []
     centroid_distance_array = []
