@@ -698,7 +698,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
     if single_cluster_model is not None:
         return Scoring.CalcAUC(final_sorted_activity_list, "activity")
     else: 
-        return [len(molecular_cluster_model), np.mean(num_common_dimensions_array), np.mean(centroid_distance_array), np.std(num_common_dimensions_array), np.std(centroid_distance_array), Scoring.CalcAUC(final_sorted_activity_list, "activity")]
+        return [len(molecular_cluster_model), np.mean(num_common_dimensions_array), np.mean(centroid_distance_array), np.std(num_common_dimensions_array), np.std(centroid_distance_array), Scoring.CalcAUC(final_sorted_activity_list, "activity"), np.median(centroid_distance_array)]
 
 
 # Cluster ranking
@@ -1070,6 +1070,9 @@ def main():
         f_handle.write("\nNext training/test split!\n")
         if ALG_TYPE == 'DISH':
             BEST_AUC_SCORE = -1
+            LOW_BAYES_COMMON_DIMENSIONS = 0
+            LOW_BAYES_DISTANCE = 0
+            LOW_BAYES_MEDIAN_DISTANCE = 0
             # for mu_ratio in [.2,.4,.6,.8]:
             for mu_ratio in [.2,.6,.9]: # NEW
             # for mu_ratio in [.2]: # 5HT2B
@@ -1161,10 +1164,16 @@ def main():
                             if AUC_SCORE != -1:
                                 if AUC_SCORE[5] > BEST_AUC_SCORE:
                                     BEST_AUC_SCORE = AUC_SCORE[5]
+                                    LOW_BAYES_COMMON_DIMENSIONS = AUC_SCORE[1]
+                                    LOW_BAYES_DISTANCE = AUC_SCORE[2]
+                                    LOW_BAYES_MEDIAN_DISTANCE = AUC_SCORE[6]
                             print("\n")
                             print AUC_SCORE
 
             f_handle.write(str(BEST_AUC_SCORE))
+            f_handle.write(str(LOW_BAYES_COMMON_DIMENSIONS))
+            f_handle.write(str(LOW_BAYES_DISTANCE))
+            f_handle.write(str(LOW_BAYES_MEDIAN_DISTANCE))
 
         elif ALG_TYPE == 'DeLiClu':
             # for mu_ratio in [.2,.4,.6,.8]:
