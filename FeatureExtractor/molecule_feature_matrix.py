@@ -668,16 +668,16 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
         bayes_subspace = [np.float(0)] * len(features_next)
         bayes_centroid = [np.float(0)] * len(features_next)
 
-        # with open(bayes_feature_file,'r') as bayes_handle:
-        #     bayes_features = csv.reader(bayes_handle, delimiter=',')
-        #     for row in bayes_features:
-        #         try:
-        #             bayes_subspace[features_next.index(row[0])] = 1
-        #             bayes_centroid[features_next.index(row[0])] = (np.float(row[1]) - feature_min[features_next.index(row[0])]) / (feature_max[features_next.index(row[0])] - feature_min[features_next.index(row[0])])
-        #             if not (np.isfinite(bayes_centroid[features_next.index(row[0])])):
-        #                 bayes_centroid[features_next.index(row[0])] = feature_max[features_next.index(row[0])]
-        #         except ValueError:
-        #             continue
+        with open(bayes_feature_file,'r') as bayes_handle:
+            bayes_features = csv.reader(bayes_handle, delimiter=',')
+            for row in bayes_features:
+                try:
+                    bayes_subspace[features_next.index(row[0])] = 1
+                    bayes_centroid[features_next.index(row[0])] = (np.float(row[1]) - feature_min[features_next.index(row[0])]) / (feature_max[features_next.index(row[0])] - feature_min[features_next.index(row[0])])
+                    if not (np.isfinite(bayes_centroid[features_next.index(row[0])])):
+                        bayes_centroid[features_next.index(row[0])] = feature_max[features_next.index(row[0])]
+                except ValueError:
+                    continue
 
     num_common_dimensions_array = []
     centroid_distance_array = []
@@ -893,16 +893,16 @@ def get_AUC_Single(active_cv_molecules, inactive_cv_molecules, molecules_to_frag
 
         # Need to put it exception catching since we didn't check bayes features are in real
         # features for metacentrum tests. Put it in again later. 
-        # with open(bayes_feature_file,'r') as bayes_handle:
-        #     bayes_features = csv.reader(bayes_handle, delimiter=',')
-        #     for row in bayes_features:
-        #         try:
-        #             bayes_subspace[features_next.index(row[0])] = 1
-        #             bayes_centroid[features_next.index(row[0])] = (np.float(row[1]) - feature_min[features_next.index(row[0])]) / (feature_max[features_next.index(row[0])] - feature_min[features_next.index(row[0])])
-        #             if not (np.isfinite(bayes_centroid[features_next.index(row[0])])):
-        #                 bayes_centroid[features_next.index(row[0])] = feature_max[features_next.index(row[0])]
-        #         except ValueError:
-        #             continue
+        with open(bayes_feature_file,'r') as bayes_handle:
+            bayes_features = csv.reader(bayes_handle, delimiter=',')
+            for row in bayes_features:
+                try:
+                    bayes_subspace[features_next.index(row[0])] = 1
+                    bayes_centroid[features_next.index(row[0])] = (np.float(row[1]) - feature_min[features_next.index(row[0])]) / (feature_max[features_next.index(row[0])] - feature_min[features_next.index(row[0])])
+                    if not (np.isfinite(bayes_centroid[features_next.index(row[0])])):
+                        bayes_centroid[features_next.index(row[0])] = feature_max[features_next.index(row[0])]
+                except ValueError:
+                    continue
 
     num_common_dimensions_array = []
     centroid_distance_array = []
@@ -1171,9 +1171,13 @@ def main():
                             print AUC_SCORE
 
             f_handle.write(str(BEST_AUC_SCORE))
+            f_handle.write("\n")
             f_handle.write(str(LOW_BAYES_COMMON_DIMENSIONS))
+            f_handle.write("\n")
             f_handle.write(str(LOW_BAYES_DISTANCE))
+            f_handle.write("\n")
             f_handle.write(str(LOW_BAYES_MEDIAN_DISTANCE))
+            f_handle.write("\n")
 
         elif ALG_TYPE == 'DeLiClu':
             # for mu_ratio in [.2,.4,.6,.8]:
