@@ -48,6 +48,7 @@ def isfloat(x):
         return True
 
 def _compute_feature_median(non_imputed_feature_matrix, descriptor_indice, molecule_keys):
+    "Computes the global median over all fragments of all molecules for FFM imputation."
     global_descriptor_average_array = []
     # Get the unique molecule keys
     unique_molecules = np.unique(molecule_keys)
@@ -73,6 +74,7 @@ def _compute_feature_median(non_imputed_feature_matrix, descriptor_indice, molec
         return np.median(global_descriptor_average_array)
 
 def _actives_feature_impute(feature_matrix):
+    "Imputes the actives' FFM."
     
     if (feature_matrix is None):
         if DEBUG:
@@ -117,17 +119,6 @@ def _actives_feature_impute(feature_matrix):
     if DEBUG:
         print "Actives imputation: removed degenerate features, now have %d features" % (feature_matrix.shape[1])
 
-    # # Compute the significant features using the correlation neighborhoods method
-    # if DESCRIPTOR_TO_RAM:
-    #     neighborhood_extractor.extract_features(NUM_FEATURES,feature_matrix,CORRELATION_THRESHOLD)
-
-    # significant_features = np.genfromtxt(os.path.join(config.DATA_DIRECTORY,'significant_features'),delimiter=',')
-    # redundant_features = [i for i in range(feature_matrix.shape[1]) if i not in significant_features]
-
-    # # Remove the redundant features from the feature matrix
-    # feature_matrix = np.delete(feature_matrix, redundant_features, 1)
-    # print "Actives imputation: removed %d features with constant features and covariance neighborhoods, now have %d features, with the NUM_FEATURES parameters set to %d" % (len(redundant_features), len(significant_features), NUM_FEATURES)
-
     # Remove existing dataset files and flush new actives data
     with open(os.path.join(DATA_DIRECTORY,"molecular_feature_matrix.csv"),'w+') as f_handle:
         np.savetxt(f_handle, feature_matrix[1:,:], delimiter=',',fmt='%5.5f')
@@ -150,6 +141,7 @@ def _actives_feature_impute(feature_matrix):
     return [global_median_cache, degenerate_features, used_features]
 
 def _read_descriptor_file(descriptor_file_name):
+    "Reads and loads the physio-chemical feature file."
     if DEBUG:
         print("[{}] Reading descriptors file...".format(str(datetime.now())))
         print("Descriptor file name: %s" % descriptor_file_name)
@@ -161,10 +153,6 @@ def _read_descriptor_file(descriptor_file_name):
     with open(descriptor_file_name, 'r') as descriptor_file:
         #Header serves to find out the number of descriptors
         header = descriptor_file.readline().rstrip().split(',')
-
-        # if DEBUG:
-        #     with open(os.path.join(DATA_DIRECTORY,'all_descriptors.csv'),'wb+') as f_handle:
-        #         csv.writer(f_handle).writerow(header)
 
         descriptors = np.empty((0, len(header)-1), np.float)
         #Adding rows into the NP array one by one is expensive. Therefore we read rows
@@ -214,6 +202,7 @@ def _flush_metadata(global_median_cache, used_features):
 
 def _load_matrix_sdf(molecules_to_fragments,
     descriptors_map, descriptors):
+    "Loads fragments from SDF file."
 
     # Keep a list of already found fragments for metadata storage
     found_fragments = []
@@ -263,6 +252,8 @@ def _load_matrix_sdf(molecules_to_fragments,
 def _inactives_load_impute_sdf(degenerate_features, \
     global_median_cache, molecules_to_fragments, \
     FRAGMENT_COUNT, descriptors_map, descriptors):
+    "Loads inactive fragments from SDF file, and imputes them using the imputation data obtained from \
+    actives' imputation."
 
     # For debugging purposes
     OLD_FRAGMENT_COUNT = FRAGMENT_COUNT
@@ -358,6 +349,7 @@ def _inactives_load_impute_sdf(degenerate_features, \
 
 
 def _normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_max=None, feature_min=None):
+    "Normalization of feature values to interval [0,1]."
     
     # Remove any existing temp file
     open(os.path.join(DATA_DIRECTORY,"temp_file"),'w+')
@@ -430,7 +422,7 @@ def _normalize_features(molecule_feature_matrix_file, DATA_DIRECTORY, feature_ma
     return [max_feature_array,min_feature_array]
 
 def _create_feature_matrix(active_fragments,inactive_fragments,descriptors_map,descriptors, DATA_DIRECTORY):
-    #TODO: description
+    "Loads all data to create feature matrix, imputes it, and prepares it for subspace clustering."
 
     if not os.path.exists(DATA_DIRECTORY):
         os.makedirs(DATA_DIRECTORY)
@@ -490,6 +482,8 @@ def get_activity(molecule):
 def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
     global_median_cache,used_features,scoring_method, descriptor_csv_file, \
     bayes_subspace = None, bayes_centroid = None, single_cluster_model = None, bayes_feature_file = None):
+    "For a set of candidate molecules and a given centroid model, creates a ranking of the candidates \
+    based on activity and scores them."
     
     cluster_rankings_list = []
     final_sorted_activity_list = []
@@ -648,8 +642,7 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
                     num_rankings+=1
         molecule["ranking"] = int(total_ranking/num_rankings)
 
-    # First sort based on the secondary key, the activity in reverse.
-    # final_sorted_activity_list = sorted(final_sorted_activity_list,key=get_activity,reverse=True)
+
     # Then sort based on the primary key, the average ranking.
     final_sorted_activity_list = sorted(final_sorted_activity_list, key=get_ranking)
 
@@ -705,7 +698,8 @@ def get_AUC(molecule_names_and_activity, molecules_to_fragments, descriptors_map
 def get_AUC_Single(active_cv_molecules, inactive_cv_molecules, molecules_to_fragments, descriptors_map, descriptors, MODEL_DIRECTORY, \
     global_median_cache,used_features,scoring_method, descriptor_csv_file, \
     bayes_subspace = None, bayes_centroid = None, single_cluster_model = None, bayes_feature_file = None):
-    
+    "Creates a ranking and scores it, based on a model with only a single cluster."
+
     cluster_rankings_list = []
     final_sorted_activity_list = []
     molecule_fragment_matrices = {}
@@ -850,15 +844,6 @@ def get_AUC_Single(active_cv_molecules, inactive_cv_molecules, molecules_to_frag
         cluster_sorted_activity_list = sorted(cluster_sorted_activity_list,key=get_score)
         # Append the current cluster's ranking to the cluster ranking list.
         cluster_rankings_list.append(cluster_sorted_activity_list)
-        
-        # unique,counts = np.unique(cluster_model['subspace'],return_counts=True)
-        
-        # print cluster_model['subspace']
-        # try:
-        #     print(dict(zip(unique,counts))[1])
-        # except KeyError:
-        #     print(0)
-        # print(cluster_sorted_activity_list[0:400])
 
     # Compute the average ranking of each molecule from all the cluster rankings.
     for molecule in final_sorted_activity_list:
@@ -871,8 +856,6 @@ def get_AUC_Single(active_cv_molecules, inactive_cv_molecules, molecules_to_frag
                     num_rankings+=1
         molecule["ranking"] = int(total_ranking/num_rankings)
 
-    # First sort based on the secondary key, the activity in reverse.
-    # final_sorted_activity_list = sorted(final_sorted_activity_list,key=get_activity,reverse=True)
     # Then sort based on the primary key, the average ranking.
     final_sorted_activity_list = sorted(final_sorted_activity_list, key=get_ranking)
 
@@ -929,6 +912,7 @@ def get_AUC_Single(active_cv_molecules, inactive_cv_molecules, molecules_to_frag
 def _molecular_model_creation(active_fragments,inactive_fragments,features_map, \
     features_matrix,num_active_molecules,num_inactive_molecules,parameter_dictionary, ALG_TYPE, \
     DIVERSITY_CHECK=True, PURITY_CHECK=True, DATA_DIRECTORY=None):
+    "Creates the imputed FFM, and runs the subspace clustering algorithm to find the key feature model."
 
     # Retrieve the molecular feature matrix corresponding to our dataset and 
     # flush it to file
@@ -952,12 +936,10 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     if DEBUG:
     # Analyze the clusters and output the most pure and diverse ones
         print "Starting analysis and pruning of found clusters..."
-    # PURITY_THRESHOLD = .5
-    # PURITY_THRESHOLD = parameter_dictionary["PURITY_THRESHOLD"]
+
     PURITY_THRESHOLD = .5
     DIVERSITY_THRESHOLD = num_active_molecules * .5
-    # DIVERSITY_THRESHOLD = num_active_molecules * parameter_dictionary["DIVERSITY_THRESHOLD"]
-    DIVERSITY_PERCENTAGE = False
+   
     cluster_analysis.create_cluster_centroid_model(PURITY_THRESHOLD, DIVERSITY_THRESHOLD, DIVERSITY_PERCENTAGE, DATA_DIRECTORY=DATA_DIRECTORY, ALG_TYPE=ALG_TYPE, dimensions=len(used_features), DIVERSITY_CHECK=DIVERSITY_CHECK, PURITY_CHECK=PURITY_CHECK)
     if DEBUG:
         print "Finished analysis and pruning of clusters! Clusters' model available in data directory for querying with \
@@ -966,11 +948,10 @@ def _molecular_model_creation(active_fragments,inactive_fragments,features_map, 
     return [global_median_cache,used_features]
 
 def main():
+    "Full pipeline."
+    
     sys.path.append(os.path.dirname(sys.argv[1]))
-    # config_file = importlib.import_module('params.py')
 
-    # from config_file import *
-    # from params import *
     with open(sys.argv[1],'r') as params_handle:
         params_file = json.load(params_handle)
 
@@ -996,10 +977,13 @@ def main():
     with open(training_test_split_file,"r+") as f_handle:
         training_test_molecules = json.load(f_handle)
 
-    active_training_molecule_names = [molecule["name"] for index,molecule in enumerate(training_test_molecules["data"]["train"]["ligands"]) if (index<=int(.9*len(training_test_molecules["data"]["train"]["ligands"])))]
-    inactive_training_molecule_names = [molecule["name"] for index,molecule in enumerate(training_test_molecules["data"]["train"]["decoys"]) if (index<=int(.9*len(training_test_molecules["data"]["train"]["decoys"])))]
-    active_cv_molecule_names = [molecule for index,molecule in enumerate(training_test_molecules["data"]["train"]["ligands"]) if (index>int(.9*len(training_test_molecules["data"]["train"]["ligands"])))]
-    inactive_cv_molecule_names = [molecule for index,molecule in enumerate(training_test_molecules["data"]["train"]["decoys"]) if (index>int(.9*len(training_test_molecules["data"]["train"]["decoys"])))]
+    active_training_molecule_names = [molecule["name"] for index,molecule in enumerate(training_test_molecules["data"]["train"]["ligands"]) if (index<int(.8*len(training_test_molecules["data"]["train"]["ligands"])))]
+    inactive_training_molecule_names = [molecule["name"] for index,molecule in enumerate(training_test_molecules["data"]["train"]["decoys"]) if (index<int(.8*len(training_test_molecules["data"]["train"]["decoys"])))]
+    active_cv_molecule_names = [molecule for index,molecule in enumerate(training_test_molecules["data"]["train"]["ligands"]) if (index>=int(.8*len(training_test_molecules["data"]["train"]["ligands"]))) and (index<int(.9*len(training_test_molecules["data"]["train"]["ligands"])))]
+    inactive_cv_molecule_names = [molecule for index,molecule in enumerate(training_test_molecules["data"]["train"]["decoys"]) if (index>=int(.8*len(training_test_molecules["data"]["train"]["decoys"]))) and (index<int(.9*len(training_test_molecules["data"]["train"]["decoys"])))]
+    active_cv_2_molecule_names = [molecule for index,molecule in enumerate(training_test_molecules["data"]["train"]["ligands"]) if (index>=int(.9*len(training_test_molecules["data"]["train"]["ligands"])))]
+    inactive_cv_2_molecule_names = [molecule for index,molecule in enumerate(training_test_molecules["data"]["train"]["decoys"]) if (index>=int(.9*len(training_test_molecules["data"]["train"]["decoys"])))]
+
 
     full_cv_molecules = active_cv_molecule_names + inactive_cv_molecule_names
 
@@ -1067,47 +1051,21 @@ def main():
 
 
     with open(results_file,'a') as f_handle:
-        f_handle.write("\nNext training/test split!\n")
+        
         if ALG_TYPE == 'DISH':
             BEST_AUC_SCORE = -1
             LOW_BAYES_COMMON_DIMENSIONS = 0
             LOW_BAYES_DISTANCE = 0
             LOW_BAYES_MEDIAN_DISTANCE = 0
-            # for mu_ratio in [.2,.4,.6,.8]:
-            for mu_ratio in [.2,.6,.9]: # NEW
-            # for mu_ratio in [.2]: # 5HT2B
-            # for mu_ratio in [.2,.4,.9]: # Another test
-            # for mu_ratio in [.4]: # V2R
-            # for mu_ratio in [0.8]: # DRD1
-                # for epsilon in [.1,.4,.6,.8]:
-                for epsilon in [.000000005,.0000005,.000005]: # NEW
-                # for epsilon in [.1]: #5HT2B
-                # for epsilon in [.1,.5,.7]: # Another test 
-                # for epsilon in [.1]: #V2R
-                # for epsilon in [0.4]: #DRD1
-            # for DIVERSITY_THRESHOLD in [.1,.2,.3,.5,.6,.7,.8,.9,1.0]: # CONCISE THIS FOR EACH DATASET...
-            # for DIVERSITY_THRESHOLD in [.2,.6,.9]: # NEW
-            # for DIVERSITY_THRESHOLD in [.3]: # 5HT2B
-            # for DIVERSITY_THRESHOLD in [.2,.4]: # Another test
-            # for DIVERSITY_THRESHOLD in [1.0]: #V2R
-            # for DIVERSITY_THRESHOLD in [0.8]: # DRD1
-                # for PURITY_THRESHOLD in [.2,.4,.6,.8]:
-                # for PURITY_THRESHOLD in [.2,.6,.9]: # NEW
-                # for PURITY_THRESHOLD in [.2]: #5HT2B
-                # for PURITY_THRESHOLD in [.1,.4,.7]: # Another test
-                # for PURITY_THRESHOLD in [.2]: #V2R
-                # for PURITY_THRESHOLD in [0.2]: #DRD1
-                    for scoring_method in [1,2]: # NEW
-                    # for scoring_method in [2]: #5HT2B
-                    # for scoring_method in [1,2]: # Another test
-                    # for scoring_method in [1]: #V2R 
-                    # for scoring_method in [2]: # DRD1
+            best_overall_cluster_model = None
+
+            for mu_ratio in [.2,.6,.9]: 
+                for epsilon in [.000000005,.0000005,.000005]: 
+                    for scoring_method in [1,2]:
                         for DIVERSITY_CHECK in [True, False]:
-                            # for PURITY_CHECK in [True, False]:
-                            f_handle.write("Got in here once\n")
 
                             DIVERSITY_THRESHOLD = .5
-                            PURITY_THRESHOLD = .3
+                            PURITY_THRESHOLD = .5
                             PURITY_CHECK = True
 
                             parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
@@ -1160,15 +1118,23 @@ def main():
                                 f_handle.write(str(PURITY_CHECK))
                                 f_handle.write("\n")
 
-                            AUC_SCORE = get_AUC(molecule_names_and_activity=testing_molecules,molecules_to_fragments=full_molecules_to_fragments,descriptors_map=features_map,descriptors=features,MODEL_DIRECTORY=MOLECULAR_MODEL_DIRECTORY,global_median_cache=global_median_cache,used_features=used_features,scoring_method=parameter_dictionary["scoring_method"],descriptor_csv_file=descriptor_csv_file,bayes_subspace=None,bayes_centroid=None,single_cluster_model = None, bayes_feature_file = bayes_model_file)
+                            AUC_SCORE = get_AUC_Single(active_cv_molecules=active_cv_2_molecule_names,inactive_cv_molecules=inactive_cv_2_molecule_names,molecules_to_fragments=full_molecules_to_fragments,descriptors_map=features_map,descriptors=features,MODEL_DIRECTORY=MOLECULAR_MODEL_DIRECTORY,global_median_cache=global_median_cache,used_features=used_features,scoring_method=parameter_dictionary["scoring_method"],descriptor_csv_file=descriptor_csv_file,bayes_subspace=None,bayes_centroid=None,single_cluster_model = best_cluster_model, bayes_feature_file = bayes_model_file)
                             if AUC_SCORE != -1:
                                 if AUC_SCORE[5] > BEST_AUC_SCORE:
                                     BEST_AUC_SCORE = AUC_SCORE[5]
                                     LOW_BAYES_COMMON_DIMENSIONS = AUC_SCORE[1]
                                     LOW_BAYES_DISTANCE = AUC_SCORE[2]
                                     LOW_BAYES_MEDIAN_DISTANCE = AUC_SCORE[6]
-                            print("\n")
-                            print AUC_SCORE
+                                    best_overall_cluster_model = best_cluster_model
+
+            with open(os.path.join(MOLECULAR_MODEL_DIRECTORY,"molecular_cluster_model.pkl"),'w+') as model_f_handle:
+                pickle.dump(best_overall_cluster_model, model_f_handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+            AUC_SCORE = get_AUC(molecule_names_and_activity=testing_molecules,molecules_to_fragments=full_molecules_to_fragments,descriptors_map=features_map,descriptors=features,MODEL_DIRECTORY=MOLECULAR_MODEL_DIRECTORY,global_median_cache=global_median_cache,used_features=used_features,scoring_method=parameter_dictionary["scoring_method"],descriptor_csv_file=descriptor_csv_file,bayes_subspace=None,bayes_centroid=None,single_cluster_model = None, bayes_feature_file = bayes_model_file)
+            BEST_AUC_SCORE = AUC_SCORE[5]
+            LOW_BAYES_COMMON_DIMENSIONS = AUC_SCORE[1]
+            LOW_BAYES_DISTANCE = AUC_SCORE[2]
+            LOW_BAYES_MEDIAN_DISTANCE = AUC_SCORE[6]
 
             f_handle.write(str(BEST_AUC_SCORE))
             f_handle.write("\n")
@@ -1178,216 +1144,6 @@ def main():
             f_handle.write("\n")
             f_handle.write(str(LOW_BAYES_MEDIAN_DISTANCE))
             f_handle.write("\n")
-
-        elif ALG_TYPE == 'DeLiClu':
-            # for mu_ratio in [.2,.4,.6,.8]:
-            for minpts_ratio in [.2,.6,.9]: # NEW
-            # for mu_ratio in [.2]: # 5HT2B
-            # for mu_ratio in [.2,.4,.9]: # Another test
-            # for mu_ratio in [.4]: # V2R
-            # for mu_ratio in [0.8]: # DRD1
-                # for DIVERSITY_THRESHOLD in [.1,.2,.3,.5,.6,.7,.8,.9,1.0]: # CONCISE THIS FOR EACH DATASET...
-                for DIVERSITY_THRESHOLD in [.2,.6,.9]: # NEW
-                # for DIVERSITY_THRESHOLD in [.3]: # 5HT2B
-                # for DIVERSITY_THRESHOLD in [.2,.4]: # Another test
-                # for DIVERSITY_THRESHOLD in [1.0]: #V2R
-                # for DIVERSITY_THRESHOLD in [0.8]: # DRD1
-                    # for PURITY_THRESHOLD in [.2,.4,.6,.8]:
-                    for PURITY_THRESHOLD in [.2,.6,.9]: # NEW
-                    # for PURITY_THRESHOLD in [.2]: #5HT2B
-                    # for PURITY_THRESHOLD in [.1,.4,.7]: # Another test
-                    # for PURITY_THRESHOLD in [.2]: #V2R
-                    # for PURITY_THRESHOLD in [0.2]: #DRD1
-                        for scoring_method in [1,2]: # NEW
-                        # for scoring_method in [2]: #5HT2B
-                        # for scoring_method in [1,2]: # Another test
-                        # for scoring_method in [1]: #V2R 
-                        # for scoring_method in [2]: # DRD1
-                            for DIVERSITY_CHECK in [True, False]:
-                                for PURITY_CHECK in [True, False]:
-
-                                    parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
-                                        "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
-                                        "minpts_ratio":minpts_ratio}
-
-                                    # Create the molecular model
-                                    [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK)
-
-                                    print("Finished creating molecular feature model, beginning testing...")
-
-                                    testing_molecules = training_test_molecules["data"]["test"]
-
-                                    # Combined active and inactive molecular fragments
-                                    full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
-
-                                    print("Getting AUC Score for current dataset...")
-                                    # Get the AUC score for the testing data
-                                    f_handle.write("AUC Score for the current parameters:\n")
-                                    json.dump(parameter_dictionary, f_handle)
-                                    f_handle.write("\n")
-                                    AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
-                                    f_handle.write(str(AUC_SCORE))
-                                    f_handle.write("\n")
-        elif ALG_TYPE == 'P3C':
-            # for mu_ratio in [.2,.4,.6,.8]:
-            for threshold in [.00001,.0000000001,.0000000000000001]: # NEW
-            # for mu_ratio in [.2]: # 5HT2B
-            # for mu_ratio in [.2,.4,.9]: # Another test
-            # for mu_ratio in [.4]: # V2R
-            # for mu_ratio in [0.8]: # DRD1
-                # for DIVERSITY_THRESHOLD in [.1,.2,.3,.5,.6,.7,.8,.9,1.0]: # CONCISE THIS FOR EACH DATASET...
-                for DIVERSITY_THRESHOLD in [.2,.6,.9]: # NEW
-                # for DIVERSITY_THRESHOLD in [.3]: # 5HT2B
-                # for DIVERSITY_THRESHOLD in [.2,.4]: # Another test
-                # for DIVERSITY_THRESHOLD in [1.0]: #V2R
-                # for DIVERSITY_THRESHOLD in [0.8]: # DRD1
-                    # for PURITY_THRESHOLD in [.2,.4,.6,.8]:
-                    for PURITY_THRESHOLD in [.2,.6,.9]: # NEW
-                    # for PURITY_THRESHOLD in [.2]: #5HT2B
-                    # for PURITY_THRESHOLD in [.1,.4,.7]: # Another test
-                    # for PURITY_THRESHOLD in [.2]: #V2R
-                    # for PURITY_THRESHOLD in [0.2]: #DRD1
-                        for scoring_method in [1,2]: # NEW
-                        # for scoring_method in [2]: #5HT2B
-                        # for scoring_method in [1,2]: # Another test
-                        # for scoring_method in [1]: #V2R 
-                        # for scoring_method in [2]: # DRD1
-                            for DIVERSITY_CHECK in [True, False]:
-                                for PURITY_CHECK in [True, False]:
-
-                                    parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
-                                        "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
-                                        "threshold":threshold}
-
-                                    # Create the molecular model
-                                    [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK)
-
-                                    print("Finished creating molecular feature model, beginning testing...")
-
-                                    testing_molecules = training_test_molecules["data"]["test"]
-
-                                    # Combined active and inactive molecular fragments
-                                    full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
-
-                                    print("Getting AUC Score for current dataset...")
-                                    # Get the AUC score for the testing data
-                                    f_handle.write("AUC Score for the current parameters:\n")
-                                    json.dump(parameter_dictionary, f_handle)
-                                    f_handle.write("\n")
-                                    AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
-                                    f_handle.write(str(AUC_SCORE))
-                                    f_handle.write("\n")
-        elif ALG_TYPE == 'HiSC':
-            # for mu_ratio in [.2,.4,.6,.8]:
-            for k_ratio in [.2,.6,.9]: # NEW
-            # for mu_ratio in [.2]: # 5HT2B
-            # for mu_ratio in [.2,.4,.9]: # Another test
-            # for mu_ratio in [.4]: # V2R
-            # for mu_ratio in [0.8]: # DRD1
-                # for epsilon in [.1,.4,.6,.8]:
-                for alpha in [.2,.6,.9]: # NEW
-                # for epsilon in [.1]: #5HT2B
-                # for epsilon in [.1,.5,.7]: # Another test 
-                # for epsilon in [.1]: #V2R
-                # for epsilon in [0.4]: #DRD1
-                    # for DIVERSITY_THRESHOLD in [.1,.2,.3,.5,.6,.7,.8,.9,1.0]: # CONCISE THIS FOR EACH DATASET...
-                    for DIVERSITY_THRESHOLD in [.2,.6,.9]: # NEW
-                    # for DIVERSITY_THRESHOLD in [.3]: # 5HT2B
-                    # for DIVERSITY_THRESHOLD in [.2,.4]: # Another test
-                    # for DIVERSITY_THRESHOLD in [1.0]: #V2R
-                    # for DIVERSITY_THRESHOLD in [0.8]: # DRD1
-                        # for PURITY_THRESHOLD in [.2,.4,.6,.8]:
-                        for PURITY_THRESHOLD in [.2,.6,.9]: # NEW
-                        # for PURITY_THRESHOLD in [.2]: #5HT2B
-                        # for PURITY_THRESHOLD in [.1,.4,.7]: # Another test
-                        # for PURITY_THRESHOLD in [.2]: #V2R
-                        # for PURITY_THRESHOLD in [0.2]: #DRD1
-                            for scoring_method in [1,2]: # NEW
-                            # for scoring_method in [2]: #5HT2B
-                            # for scoring_method in [1,2]: # Another test
-                            # for scoring_method in [1]: #V2R 
-                            # for scoring_method in [2]: # DRD1
-                                for DIVERSITY_CHECK in [True, False]:
-                                    for PURITY_CHECK in [True, False]:
-
-                                        parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
-                                            "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
-                                            "k_ratio":k_ratio,"alpha":alpha}
-
-                                        # Create the molecular model
-                                        [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK)
-
-                                        print("Finished creating molecular feature model, beginning testing...")
-
-                                        testing_molecules = training_test_molecules["data"]["test"]
-
-                                        # Combined active and inactive molecular fragments
-                                        full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
-
-                                        print("Getting AUC Score for current dataset...")
-                                        # Get the AUC score for the testing data
-                                        f_handle.write("AUC Score for the current parameters:\n")
-                                        json.dump(parameter_dictionary, f_handle)
-                                        f_handle.write("\n")
-                                        AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
-                                        f_handle.write(str(AUC_SCORE))
-                                        f_handle.write("\n")
-        elif ALG_TYPE == 'HiCO':
-            # for mu_ratio in [.2,.4,.6,.8]:
-            for mu_ratio in [.2,.6,.9]: # NEW
-            # for mu_ratio in [.2]: # 5HT2B
-            # for mu_ratio in [.2,.4,.9]: # Another test
-            # for mu_ratio in [.4]: # V2R
-            # for mu_ratio in [0.8]: # DRD1
-                # for epsilon in [.1,.4,.6,.8]:
-                for alpha in [.2,.6,.9]: # NEW
-                # for epsilon in [.1]: #5HT2B
-                # for epsilon in [.1,.5,.7]: # Another test 
-                # for epsilon in [.1]: #V2R
-                # for epsilon in [0.4]: #DRD1
-                    # for DIVERSITY_THRESHOLD in [.1,.2,.3,.5,.6,.7,.8,.9,1.0]: # CONCISE THIS FOR EACH DATASET...
-                    for DIVERSITY_THRESHOLD in [.2,.6,.9]: # NEW
-                    # for DIVERSITY_THRESHOLD in [.3]: # 5HT2B
-                    # for DIVERSITY_THRESHOLD in [.2,.4]: # Another test
-                    # for DIVERSITY_THRESHOLD in [1.0]: #V2R
-                    # for DIVERSITY_THRESHOLD in [0.8]: # DRD1
-                        # for PURITY_THRESHOLD in [.2,.4,.6,.8]:
-                        for PURITY_THRESHOLD in [.2,.6,.9]: # NEW
-                        # for PURITY_THRESHOLD in [.2]: #5HT2B
-                        # for PURITY_THRESHOLD in [.1,.4,.7]: # Another test
-                        # for PURITY_THRESHOLD in [.2]: #V2R
-                        # for PURITY_THRESHOLD in [0.2]: #DRD1
-                            for scoring_method in [1,2]: # NEW
-                            # for scoring_method in [2]: #5HT2B
-                            # for scoring_method in [1,2]: # Another test
-                            # for scoring_method in [1]: #V2R 
-                            # for scoring_method in [2]: # DRD1
-                                for DIVERSITY_CHECK in [True, False]:
-                                    for PURITY_CHECK in [True, False]:
-
-                                        parameter_dictionary = {"DIVERSITY_THRESHOLD":DIVERSITY_THRESHOLD, \
-                                            "PURITY_THRESHOLD":PURITY_THRESHOLD,"scoring_method":scoring_method,
-                                            "mu_ratio":mu_ratio,"alpha":alpha}
-
-                                        # Create the molecular model
-                                        [global_median_cache, used_features] = _molecular_model_creation(active_training_molecules,inactive_training_molecules,features_map,features,len(active_training_molecules),len(inactive_training_molecules),parameter_dictionary, ALG_TYPE, DIVERSITY_CHECK, PURITY_CHECK)
-
-                                        print("Finished creating molecular feature model, beginning testing...")
-
-                                        testing_molecules = training_test_molecules["data"]["test"]
-
-                                        # Combined active and inactive molecular fragments
-                                        full_molecules_to_fragments = actives_molecule_to_fragments + inactives_molecule_to_fragments
-
-                                        print("Getting AUC Score for current dataset...")
-                                        # Get the AUC score for the testing data
-                                        f_handle.write("AUC Score for the current parameters:\n")
-                                        json.dump(parameter_dictionary, f_handle)
-                                        f_handle.write("\n")
-                                        AUC_SCORE = get_AUC(testing_molecules,full_molecules_to_fragments,features_map,features,MOLECULAR_MODEL_DIRECTORY,global_median_cache,used_features,parameter_dictionary["scoring_method"])
-                                        f_handle.write(str(AUC_SCORE))
-                                        f_handle.write("\n")
-
     
     print("Finished computation of AUCs.")
 if __name__ == '__main__':
